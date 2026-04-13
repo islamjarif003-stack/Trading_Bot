@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Chart Viewer — Institutional Bot</title>
+    <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e17;
+            color: #e1e5eb;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0d1321 0%, #1a1f35 100%);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #818cf8, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header .subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .coin-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.1);
+            color: #a5b4fc;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .coin-btn:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+        
+        .coin-btn.active {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            border-color: #6366f1;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .coin-btn.has-position {
+            position: relative;
+        }
+        
+        .coin-btn.has-position::after {
+            content: '●';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            font-size: 10px;
+            color: #22c55e;
+        }
+        
+        .refresh-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            background: rgba(34, 197, 94, 0.1);
+            color: #4ade80;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            background: rgba(34, 197, 94, 0.25);
+        }
+        
+        .auto-label {
+            font-size: 11px;
+            color: #64748b;
+        }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 0;
+            height: calc(100vh - 65px);
+        }
+        
+        .chart-area {
+            position: relative;
+            background: #0d1117;
+        }
+        
+        #chart-container {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .info-panel {
+            background: linear-gradient(180deg, #0d1321 0%, #111827 100%);
+            border-left: 1px solid rgba(99, 102, 241, 0.15);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        
+        .info-section h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6366f1;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+        
+        .info-row .label {
+            color: #94a3b8;
+        }
+        
+        .info-row .value {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .value.green { color: #22c55e; }
+        .value.red { color: #ef4444; }
+        .value.blue { color: #818cf8; }
+        .value.yellow { color: #eab308; }
+        .value.white { color: #f1f5f9; }
+        
+        .phase-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .phase-INITIAL {
+            background: rgba(234, 179, 8, 0.15);
+            color: #eab308;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        
+        .phase-BREAKEVEN {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .phase-TRAILING {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .no-position {
+            text-align: center;
+            padding: 30px 15px;
+            color: #64748b;
+            font-size: 13px;
+        }
+        
+        .no-position .icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        
+        .legend-dot.entry { background: #818cf8; }
+        .legend-dot.sl { background: #ef4444; }
+        .legend-dot.be { background: #eab308; }
+        .legend-dot.trail { background: #22c55e; }
+        .legend-dot.best { background: #06b6d4; }
+        
+        .trade-history {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .trade-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 8px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            background: rgba(255,255,255,0.03);
+        }
+        
+        .trade-item.win { border-left: 2px solid #22c55e; }
+        .trade-item.loss { border-left: 2px solid #ef4444; }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #64748b;
+            font-size: 14px;
+        }
+        
+        .loading .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(99, 102, 241, 0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.live { background: #22c55e; }
+        .status-dot.idle { background: #eab308; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>📊 Trade Chart Viewer</h1>
+            <div class="subtitle">Institutional Bot v8.0 — Live Position Visualization</div>
+        </div>
+        <div class="controls">
+            <div id="coin-buttons"></div>
+            <button class="refresh-btn" onclick="loadData()">⟳ Refresh</button>
+            <label class="auto-label">
+                <input type="checkbox" id="auto-refresh" checked> Auto 10s
+            </label>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div class="chart-area">
+            <div id="chart-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Select a coin to view chart...
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-panel" id="info-panel">
+            <div class="info-section">
+                <h3>📌 Chart Legend</h3>
+                <div class="legend-item"><div class="legend-dot entry"></div> Entry Price</div>
+                <div class="legend-item"><div class="legend-dot sl"></div> Stop Loss (Current)</div>
+                <div class="legend-item"><div class="legend-dot be"></div> Break-Even Level</div>
+                <div class="legend-item"><div class="legend-dot trail"></div> Trailing SL</div>
+                <div class="legend-item"><div class="legend-dot best"></div> Best Price Reached</div>
+            </div>
+            
+            <div class="no-position">
+                <div class="icon">📈</div>
+                <p>Select a coin from the top bar to view its live chart with entry, SL, and trailing levels.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+        let candleSeries = null;
+        let volumeSeries = null;
+        let currentSymbol = null;
+        let autoRefreshInterval = null;
+        let markers = [];
+        
+        // Price lines references
+        let entryLine = null;
+        let slLine = null;
+        let beLine = null;
+        let trailLine = null;
+        let bestLine = null;
+        
+        // Available symbols (will be populated from state files)
+        const ALL_SYMBOLS = [
+            'OLUSDT', 'BTCUSDT', 'ETHUSDT', 'DOGEUSDT', 'XRPUSDT', 'BCHUSDT',
+            'QUICKUSDT', 'BNBUSDT', 'LRCUSDT', 'MYROUSDT', 'BIDUSDT', 'VOXELUSDT',
+            'DMCUSDT', 'GHSTUSDT', 'FISUSDT', 'ARIAUSDT', 'CUDISUSDT', 'REIUSDT',
+            'PORT3USDT', '1000XUSDT', 'RAVEUSDT', 'EPTUSDT', 'TOKENUSDT',
+            'UXLINKUSDT', 'PONKEUSDT', 'ZRCUSDT', 'BASUSDT', 'TRADOORUSDT',
+            'AGTUSDT', 'AKEUSDT', 'RDNTUSDT', 'CHESSUSDT', 'CYSUSDT', 'LABUSDT',
+            'SKATEUSDT'
+        ];
+        
+        function initChart() {
+            const container = document.getElementById('chart-container');
+            container.innerHTML = '';
+            
+            chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth,
+                height: container.clientHeight,
+                layout: {
+                    background: { type: 'solid', color: '#0d1117' },
+                    textColor: '#64748b',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: 12,
+                },
+                grid: {
+                    vertLines: { color: 'rgba(99, 102, 241, 0.06)' },
+                    horzLines: { color: 'rgba(99, 102, 241, 0.06)' },
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                    vertLine: {
+                        color: 'rgba(99, 102, 241, 0.4)',
+                        labelBackgroundColor: '#4f46e5',
+                    },
+                    horzLine: {
+                        color: 'rgba(99, 102, 241, 0.4)',
+                        labelBackgroundColor: '#4f46e5',
+                    },
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(99, 102, 241, 0.15)',
+                },
+                timeScale: {
+                    borderColor: 'rgba(99, 102, 241, 0.15)',
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+                handleScroll: true,
+                handleScale: true,
+            });
+            
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#22c55e',
+                downColor: '#ef4444',
+                borderUpColor: '#22c55e',
+                borderDownColor: '#ef4444',
+                wickUpColor: '#22c55e',
+                wickDownColor: '#ef4444',
+            });
+            
+            volumeSeries = chart.addHistogramSeries({
+                color: '#6366f1',
+                priceFormat: { type: 'volume' },
+                priceScaleId: 'volume',
+                scaleMargins: { top: 0.85, bottom: 0 },
+            });
+            
+            chart.priceScale('volume').applyOptions({
+                borderVisible: false,
+                scaleMargins: { top: 0.85, bottom: 0 },
+            });
+            
+            window.addEventListener('resize', () => {
+                if (chart) {
+                    chart.applyOptions({
+                        width: container.clientWidth,
+                        height: container.clientHeight,
+                    });
+                }
+            });
+        }
+        
+        function parseTimestamp(ts) {
+            // Parse "2026-04-11 07:05:00" format
+            const d = new Date(ts + 'Z');
+            return Math.floor(d.getTime() / 1000);
+        }
+        
+        async function loadData() {
+            if (!currentSymbol) return;
+            
+            try {
+                const resp = await fetch(`/api/state/${currentSymbol}`);
+                if (!resp.ok) {
+                    // Try direct file
+                    const resp2 = await fetch(`live_state_${currentSymbol}.json`);
+                    if (!resp2.ok) throw new Error('File not found');
+                    const data = await resp2.json();
+                    renderChart(data);
+                    return;
+                }
+                const data = await resp.json();
+                renderChart(data);
+            } catch (e) {
+                console.error('Failed to load data:', e);
+                // Try fetching directly
+                try {
+                    const resp = await fetch(`live_state_${currentSymbol}.json`);
+                    const data = await resp.json();
+                    renderChart(data);
+                } catch (e2) {
+                    console.error('Direct fetch also failed:', e2);
+                }
+            }
+        }
+        
+        function renderChart(data) {
+            if (!chart) initChart();
+            
+            const candles = data.candles;
+            if (!candles || !candles.timestamps) return;
+            
+            // Build candlestick data
+            const candleData = candles.timestamps.map((ts, i) => ({
+                time: parseTimestamp(ts),
+                open: candles.open[i],
+                high: candles.high[i],
+                low: candles.low[i],
+                close: candles.close[i],
+            }));
+            
+            // Build volume data
+            const volData = candles.timestamps.map((ts, i) => ({
+                time: parseTimestamp(ts),
+                value: candles.volume[i],
+                color: candles.close[i] >= candles.open[i] 
+                    ? 'rgba(34, 197, 94, 0.3)' 
+                    : 'rgba(239, 68, 68, 0.3)',
+            }));
+            
+            candleSeries.setData(candleData);
+            volumeSeries.setData(volData);
+            
+            // Remove old price lines
+            if (entryLine) { try { candleSeries.removePriceLine(entryLine); } catch(e){} }
+            if (slLine) { try { candleSeries.removePriceLine(slLine); } catch(e){} }
+            if (beLine) { try { candleSeries.removePriceLine(beLine); } catch(e){} }
+            if (trailLine) { try { candleSeries.removePriceLine(trailLine); } catch(e){} }
+            if (bestLine) { try { candleSeries.removePriceLine(bestLine); } catch(e){} }
+            
+            entryLine = null; slLine = null; beLine = null; trailLine = null; bestLine = null;
+            
+            // Draw position levels
+            const pos = data.position;
+            if (pos && pos.active) {
+                const entryPrice = pos.entry_price;
+                const trailSl = pos.trail_sl;
+                const bestPrice = pos.best_price;
+                const phase = pos.phase || 'INITIAL';
+                
+                // Entry Price Line (purple/indigo)
+                if (entryPrice > 0) {
+                    entryLine = candleSeries.createPriceLine({
+                        price: entryPrice,
+                        color: '#818cf8',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Solid,
+                        axisLabelVisible: true,
+                        title: `Entry ${pos.side} $${entryPrice}`,
+                    });
+                }
+                
+                // Break-Even Level (yellow dashed)
+                if (entryPrice > 0) {
+                    const beBuffer = 0.0004; // 0.04%
+                    const bePrice = pos.side === 'BUY' 
+                        ? entryPrice * (1 + beBuffer)
+                        : entryPrice * (1 - beBuffer);
+                    beLine = candleSeries.createPriceLine({
+                        price: bePrice,
+                        color: '#eab308',
+                        lineWidth: 1,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: true,
+                        title: 'Break-Even',
+                    });
+                }
+                
+                // Trailing SL (red or green depending on phase)
+                if (trailSl > 0) {
+                    const slColor = phase === 'TRAILING' ? '#22c55e' : '#ef4444';
+                    const slTitle = phase === 'TRAILING' ? `Trail SL $${trailSl}` : `SL $${trailSl}`;
+                    slLine = candleSeries.createPriceLine({
+                        price: trailSl,
+                        color: slColor,
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dotted,
+                        axisLabelVisible: true,
+                        title: slTitle,
+                    });
+                }
+                
+                // Best Price (cyan)
+                if (bestPrice > 0 && phase === 'TRAILING') {
+                    bestLine = candleSeries.createPriceLine({
+                        price: bestPrice,
+                        color: '#06b6d4',
+                        lineWidth: 1,
+                        lineStyle: LightweightCharts.LineStyle.Dashed,
+                        axisLabelVisible: true,
+                        title: `Best $${bestPrice}`,
+                    });
+                }
+            }
+            
+            // Draw overlay levels (POC, Fib GP)
+            const overlays = data.overlays;
+            if (overlays) {
+                if (overlays.poc > 0) {
+                    try {
+                        candleSeries.createPriceLine({
+                            price: overlays.poc,
+                            color: 'rgba(168, 85, 247, 0.4)',
+                            lineWidth: 1,
+                            lineStyle: LightweightCharts.LineStyle.Dashed,
+                            axisLabelVisible: false,
+                            title: 'POC',
+                        });
+                    } catch(e) {}
+                }
+            }
+            
+            // Update info panel
+            updateInfoPanel(data);
+            
+            chart.timeScale().fitContent();
+        }
+        
+        function updateInfoPanel(data) {
+            const panel = document.getElementById('info-panel');
+            const pos = data.position;
+            const bot = data.bot;
+            const signal = data.signal;
+            
+            let html = '';
+            
+            // Legend
+            html += `
+                <div class="info-section">
+                    <h3>📌 Chart Legend</h3>
+                    <div class="legend-item"><div class="legend-dot entry"></div> Entry Price</div>
+                    <div class="legend-item"><div class="legend-dot sl"></div> Stop Loss / Trailing SL</div>
+                    <div class="legend-item"><div class="legend-dot be"></div> Break-Even Level</div>
+                    <div class="legend-item"><div class="legend-dot trail"></div> Trailing SL (Profit Locked)</div>
+                    <div class="legend-item"><div class="legend-dot best"></div> Best Price Reached</div>
+                </div>
+            `;
+            
+            // Position Info
+            if (pos && pos.active) {
+                const pnlClass = pos.pnl_pct >= 0 ? 'green' : 'red';
+                const sideIcon = pos.side === 'BUY' ? '🟢' : '🔴';
+                
+                html += `
+                    <div class="info-section">
+                        <h3>${sideIcon} Active Position</h3>
+                        <div class="info-row">
+                            <span class="label">Symbol</span>
+                            <span class="value white">${data.symbol}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Side</span>
+                            <span class="value ${pos.side === 'BUY' ? 'green' : 'red'}">${pos.side}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Entry Price</span>
+                            <span class="value blue">$${pos.entry_price}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Mark Price</span>
+                            <span class="value white">$${pos.mark_price}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">PnL</span>
+                            <span class="value ${pnlClass}">${pos.pnl_pct >= 0 ? '+' : ''}${pos.pnl_pct.toFixed(2)}% ($${pos.pnl_usdt.toFixed(2)})</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Phase</span>
+                            <span class="phase-badge phase-${pos.phase}">${pos.phase}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Trail SL</span>
+                            <span class="value ${pos.phase === 'TRAILING' ? 'green' : 'red'}">$${pos.trail_sl}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Best Price</span>
+                            <span class="value" style="color:#06b6d4">$${pos.best_price}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Current ATR</span>
+                            <span class="value white">$${pos.current_atr}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="info-section">
+                        <h3>Position</h3>
+                        <div class="no-position">
+                            <div class="icon">⏳</div>
+                            <p>No active position on ${data.symbol}. Bot is scanning for signals.</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Signal Info
+            if (signal) {
+                html += `
+                    <div class="info-section">
+                        <h3>📡 Signal Engine</h3>
+                        <div class="info-row">
+                            <span class="label">Direction</span>
+                            <span class="value ${signal.direction === 'BUY' ? 'green' : signal.direction === 'SELL' ? 'red' : 'white'}">${signal.direction || 'NONE'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Score</span>
+                            <span class="value ${signal.score >= signal.score_threshold ? 'green' : 'yellow'}">${signal.score}/${signal.max_score} (need ≥${signal.score_threshold})</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Regime</span>
+                            <span class="value white">${signal.regime || '-'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">ADX</span>
+                            <span class="value white">${(signal.adx || 0).toFixed(1)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">RSI</span>
+                            <span class="value white">${(signal.rsi || 50).toFixed(1)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Bot Stats
+            if (bot) {
+                const statusDot = bot.status === 'IN TRADE' || bot.status === 'IN_TRADE' ? 'live' : 'idle';
+                html += `
+                    <div class="info-section">
+                        <h3>🤖 Bot Stats (${data.symbol})</h3>
+                        <div class="info-row">
+                            <span class="label">Status</span>
+                            <span class="value"><span class="status-dot ${statusDot}"></span>${bot.status}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Total PnL</span>
+                            <span class="value ${bot.total_pnl >= 0 ? 'green' : 'red'}">$${bot.total_pnl.toFixed(2)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Win Rate</span>
+                            <span class="value ${bot.win_rate >= 50 ? 'green' : 'yellow'}">${bot.win_rate}%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Trades</span>
+                            <span class="value white">${bot.trade_count} (${bot.win_count}W / ${bot.trade_count - bot.win_count}L)</span>
+                        </div>
+                    </div>
+                `;
+                
+                // Trade History
+                if (bot.recent_trades && bot.recent_trades.length > 0) {
+                    html += `<div class="info-section"><h3>📜 Recent Trades</h3><div class="trade-history">`;
+                    bot.recent_trades.forEach(t => {
+                        const cls = t.pnl >= 0 ? 'win' : 'loss';
+                        const time = t.timestamp ? t.timestamp.substring(11, 19) : '';
+                        html += `
+                            <div class="trade-item ${cls}">
+                                <span>${t.side} #${t.trade_no}</span>
+                                <span class="value ${t.pnl >= 0 ? 'green' : 'red'}">$${t.pnl.toFixed(2)}</span>
+                                <span style="color:#64748b;font-size:11px">${time}</span>
+                            </div>
+                        `;
+                    });
+                    html += `</div></div>`;
+                }
+            }
+            
+            panel.innerHTML = html;
+        }
+        
+        function selectCoin(symbol) {
+            currentSymbol = symbol;
+            
+            // Update button states
+            document.querySelectorAll('.coin-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.symbol === symbol);
+            });
+            
+            // Reset chart
+            if (chart) {
+                chart.remove();
+                chart = null;
+            }
+            initChart();
+            loadData();
+        }
+        
+        // Initialize coin buttons dynamically from API
+        async function initButtons() {
+            const container = document.getElementById('coin-buttons');
+            container.innerHTML = '<span style="font-size: 12px; color: #64748b;">Loading trades...</span>';
+            
+            try {
+                const resp = await fetch('/api/symbols');
+                const symbols = await resp.json();
+                
+                // Filter only symbols that have an active position
+                const activeTrades = symbols.filter(s => s.has_position);
+                
+                container.innerHTML = '';
+                
+                if (activeTrades.length === 0) {
+                    container.innerHTML = '<span style="font-size: 12px; color: #fbbf24;">No Active Trades</span>';
+                    return;
+                }
+                
+                activeTrades.forEach(data => {
+                    const sym = data.symbol;
+                    const btn = document.createElement('button');
+                    btn.className = 'coin-btn has-position';
+                    btn.dataset.symbol = sym;
+                    btn.textContent = sym.replace('USDT', '');
+                    btn.onclick = () => selectCoin(sym);
+                    container.appendChild(btn);
+                });
+                
+                // If currentSymbol is not set and we have active trades, select the first one
+                if (!currentSymbol && activeTrades.length > 0) {
+                    selectCoin(activeTrades[0].symbol);
+                } else if (currentSymbol) {
+                    // Update active state
+                    document.querySelectorAll('.coin-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.symbol === currentSymbol);
+                    });
+                }
+                
+            } catch (e) {
+                console.error('Failed to load symbols:', e);
+                container.innerHTML = '<span style="font-size: 12px; color: #ef4444;">API Error</span>';
+            }
+        }
+        
+        // Auto-refresh
+        function setupAutoRefresh() {
+            const checkbox = document.getElementById('auto-refresh');
+            if (checkbox) {
+                checkbox.addEventListener('change', () => {
+                    if (checkbox.checked) {
+                        autoRefreshInterval = setInterval(loadData, 10000);
+                    } else {
+                        clearInterval(autoRefreshInterval);
+                    }
+                });
+            }
+            autoRefreshInterval = setInterval(loadData, 10000);
+        }
+        
+        // Auto-refresh buttons periodically to catch new trades
+        setInterval(initButtons, 30000);
+        
+        // Init
+        initButtons();
+        setupAutoRefresh();
+    </script>
+</body>
+</html>

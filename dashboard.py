@@ -539,7 +539,18 @@ def render_symbol_dashboard(symbol: str, state: dict):
 # ═════════════════════════════════════════════════════════════════════════════
 
 def main():
-    st.title("Elite Multi-Pair Dashboard")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.title("Elite Multi-Pair Dashboard")
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(
+            '<a href="http://103.174.50.149:8085" target="_blank" '
+            'style="display: inline-block; padding: 10px 20px; background-color: #4f46e5; color: white; '
+            'text-decoration: none; border-radius: 8px; font-weight: bold; font-family: Inter, sans-serif; text-align: center; width: 100%;">'
+            '📊 Open Live Trade Chart Viewer</a>', 
+            unsafe_allow_html=True
+        )
     
     SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
     

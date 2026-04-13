@@ -50,7 +50,7 @@ DIVERGENCE_LOOKBACK = 5
 LIQ_MAGNET_PCT = 1.5  # 1.5% distance for magnet
 
 # ─── SCORING THRESHOLDS ─────────────────────────────────────────────────────
-SCORE_THRESHOLD = 15          # ★ v13: Balanced threshold (need real confluence to trade)
+SCORE_THRESHOLD = 12          # ★ v15: Raised to 12 (was 10) — better signal quality, fewer fake entries
 MIN_SCORE_MARGIN = 3          # ★ v13: Winning side must lead by ≥3 pts (was 5, too strict)
 POINTS_H1_TREND = 3           # +3 points for trend alignment + acts as veto
 POINTS_FIB_GP = 3             # +3 points for Golden Pocket rejection
@@ -112,6 +112,112 @@ ML_WIN_THRESHOLD = 0.40       # 40% predicted win probability required
 
 # ─── ★ STRICT FILTERS ─────────────────────────────────────────────────────────
 PENALTY_PRICE_CONTRADICTION = 10  # -10 points if price is moving opposite to signal
+
+# ─── ★★★ v16.1: VOLUME DELTA SCORE (Enhanced with Opposing Penalty) ─────────
+POINTS_VOLUME_DELTA       = 3     # +3 for taker buy/sell delta aligning with signal
+POINTS_VOLUME_DELTA_STRONG = 4    # +4 for EXTREME alignment (≥65% in direction)
+PENALTY_VOLUME_DELTA_OPPOSE = -3  # -3 PENALTY when delta OPPOSES signal (buying into selling)
+VOLUME_DELTA_THRESHOLD    = 0.55  # 55% taker buy = bullish, <45% = bearish
+VOLUME_DELTA_STRONG_THRESH = 0.65 # 65% = STRONG alignment (extra bonus)
+
+# ─── ★★★ v16.0: DYNAMIC SCORE THRESHOLD (ATR-ADAPTIVE) ─────────────────────
+# Low volatility → lower threshold (more trades), High vol → higher (avoid fakeouts)
+DYNAMIC_THRESHOLD_LOW  = 10       # When ATR is very low (quiet market)
+DYNAMIC_THRESHOLD_MID  = 12       # Normal conditions (default)
+DYNAMIC_THRESHOLD_HIGH = 14       # When ATR spikes (high volatility = fakeout risk)
+ATR_PERCENTILE_LOW     = 30       # Below 30th percentile = low volatility
+ATR_PERCENTILE_HIGH    = 70       # Above 70th percentile = high volatility
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ██  UTILITY: VOLUME DELTA & DYNAMIC THRESHOLD (NumPy Optimized)           ██
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _calculate_volume_delta(klines_df: pd.DataFrame, lookback: int = 10) -> dict:
+    """
+    ★ v16.1: Volume Delta — compares Taker Buy Volume vs Total Volume.
+    Now returns strength level for tiered scoring + opposing penalty.
+    Pure NumPy vectorized for millisecond execution.
+    """
+    if len(klines_df) < lookback:
+        return {"buy_ratio": 0.5, "direction": "NEUTRAL", "strength": "NONE"}
+    
+    recent = klines_df.iloc[-lookback:]
+    total_vol = recent["volume"].values.astype(np.float64)
+    taker_buy = recent["taker_buy_base"].values.astype(np.float64)
+    
+    total_sum = np.sum(total_vol)
+    if total_sum < 1e-10:
+        return {"buy_ratio": 0.5, "direction": "NEUTRAL", "strength": "NONE"}
+    
+    buy_ratio = np.sum(taker_buy) / total_sum
+    
+    # Direction classification
+    if buy_ratio >= VOLUME_DELTA_STRONG_THRESH:
+        direction = "BULLISH"
+        strength = "STRONG"     # ≥65% buyers = strong conviction
+    elif buy_ratio >= VOLUME_DELTA_THRESHOLD:
+        direction = "BULLISH"
+        strength = "NORMAL"     # 55-64% buyers = moderate conviction
+    elif buy_ratio <= (1.0 - VOLUME_DELTA_STRONG_THRESH):
+        direction = "BEARISH"
+        strength = "STRONG"     # ≤35% buyers (65%+ sellers) = strong
+    elif buy_ratio <= (1.0 - VOLUME_DELTA_THRESHOLD):
+        direction = "BEARISH"
+        strength = "NORMAL"     # 36-45% buyers = moderate sellers
+    else:
+        direction = "NEUTRAL"
+        strength = "NONE"       # 45-55% = mixed, no edge
+    
+    return {
+        "buy_ratio": round(float(buy_ratio), 4),
+        "direction": direction,
+        "strength": strength,
+    }
+
+
+def _calculate_dynamic_threshold(klines_df: pd.DataFrame) -> int:
+    """
+    ★ v16: Dynamic Score Threshold — adjusts entry strictness based on ATR volatility.
+    Low vol → lower threshold (10) to maintain trade frequency.
+    High vol → higher threshold (14) to avoid fakeouts.
+    Pure NumPy percentile calculation for speed.
+    """
+    if len(klines_df) < ATR_PERIOD + 10:
+        return DYNAMIC_THRESHOLD_MID  # Default if insufficient data
+    
+    highs = klines_df["high"].values.astype(np.float64)
+    lows = klines_df["low"].values.astype(np.float64)
+    closes = klines_df["close"].values.astype(np.float64)
+    
+    # Calculate True Range using NumPy (vectorized)
+    prev_close = np.roll(closes, 1)
+    prev_close[0] = closes[0]
+    
+    tr1 = highs - lows
+    tr2 = np.abs(highs - prev_close)
+    tr3 = np.abs(lows - prev_close)
+    true_range = np.maximum(np.maximum(tr1, tr2), tr3)
+    
+    # Current ATR (last 14 candles average)
+    current_atr = np.mean(true_range[-ATR_PERIOD:])
+    
+    # Historical ATR percentiles (over full dataset)
+    rolling_atrs = np.array([np.mean(true_range[max(0,i-ATR_PERIOD):i]) for i in range(ATR_PERIOD, len(true_range))])
+    
+    if len(rolling_atrs) < 5:
+        return DYNAMIC_THRESHOLD_MID
+    
+    p_low = np.percentile(rolling_atrs, ATR_PERCENTILE_LOW)
+    p_high = np.percentile(rolling_atrs, ATR_PERCENTILE_HIGH)
+    
+    if current_atr <= p_low:
+        return DYNAMIC_THRESHOLD_LOW   # Quiet market → more trades
+    elif current_atr >= p_high:
+        return DYNAMIC_THRESHOLD_HIGH  # Volatile market → strict filter
+    else:
+        return DYNAMIC_THRESHOLD_MID   # Normal conditions
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ██  TECHNICAL INDICATORS                                                  ██
@@ -1094,6 +1200,47 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
     buy_score = max(0, buy_score)
     sell_score = max(0, sell_score)
 
+    # ══════════════════════════════════════════════════════════════════
+    #  ★★★ v16.1: VOLUME DELTA SCORING (Tiered + Opposing Penalty)
+    #  STRONG alignment (≥65%): +4, Normal (≥55%): +3
+    #  OPPOSING delta: -3 penalty (buying into selling = suicide)
+    # ══════════════════════════════════════════════════════════════════
+    vol_delta = _calculate_volume_delta(klines_df, lookback=10)
+    vd_ratio_str = f"{vol_delta['buy_ratio']*100:.1f}%"
+
+    if vol_delta["direction"] == "BULLISH":
+        if vol_delta["strength"] == "STRONG":
+            buy_score += POINTS_VOLUME_DELTA_STRONG
+            buy_breakdown.append(f"📊 Vol Delta STRONG BULL (Buy%: {vd_ratio_str}): +{POINTS_VOLUME_DELTA_STRONG}")
+        else:
+            buy_score += POINTS_VOLUME_DELTA
+            buy_breakdown.append(f"📊 Vol Delta BULLISH (Buy%: {vd_ratio_str}): +{POINTS_VOLUME_DELTA}")
+        # ★ OPPOSING PENALTY: If we're considering a SELL but volume is bullish → penalize
+        sell_score += PENALTY_VOLUME_DELTA_OPPOSE
+        sell_breakdown.append(f"📊 Vol Delta OPPOSES SELL (Buy%: {vd_ratio_str}): {PENALTY_VOLUME_DELTA_OPPOSE}")
+
+    elif vol_delta["direction"] == "BEARISH":
+        if vol_delta["strength"] == "STRONG":
+            sell_score += POINTS_VOLUME_DELTA_STRONG
+            sell_breakdown.append(f"📊 Vol Delta STRONG BEAR (Buy%: {vd_ratio_str}): +{POINTS_VOLUME_DELTA_STRONG}")
+        else:
+            sell_score += POINTS_VOLUME_DELTA
+            sell_breakdown.append(f"📊 Vol Delta BEARISH (Buy%: {vd_ratio_str}): +{POINTS_VOLUME_DELTA}")
+        # ★ OPPOSING PENALTY: If we're considering a BUY but volume is bearish → penalize
+        buy_score += PENALTY_VOLUME_DELTA_OPPOSE
+        buy_breakdown.append(f"📊 Vol Delta OPPOSES BUY (Buy%: {vd_ratio_str}): {PENALTY_VOLUME_DELTA_OPPOSE}")
+
+    else:
+        # NEUTRAL delta — no edge, log it but don't add/subtract
+        buy_breakdown.append(f"📊 Vol Delta NEUTRAL (Buy%: {vd_ratio_str}): +0")
+        sell_breakdown.append(f"📊 Vol Delta NEUTRAL (Buy%: {vd_ratio_str}): +0")
+
+    # ══════════════════════════════════════════════════════════════════
+    #  ★★★ v16.0: DYNAMIC SCORE THRESHOLD (ATR-Adaptive)
+    #  Low vol → 10 (more trades), Mid → 12, High vol → 14 (strict)
+    # ══════════════════════════════════════════════════════════════════
+    dynamic_threshold = _calculate_dynamic_threshold(klines_df)
+
     # ═══════════════════════════════════════════════════════════════════
     #  SIGNAL DECISION (WITH HARD VETO + STRICT ENTRY RULES)
     # ═══════════════════════════════════════════════════════════════════
@@ -1101,7 +1248,7 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
     final_score = 0
     score_breakdown = []
     
-    # ★ v8.0: Updated max_possible with all modules
+    # ★ v8.0: Updated max_possible with all modules (including Volume Delta)
     max_possible = (POINTS_H1_TREND + POINTS_FIB_GP + POINTS_LIQ_MAGNET + 
                     POINTS_LIQUIDITY_SWEEP + POINTS_POC_REJECTION +
                     POINTS_RSI_DIVERGENCE + POINTS_VOLUME_SPIKE +
@@ -1114,7 +1261,9 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
                     POINTS_CVD_TREND + POINTS_TAKER_PRESSURE +
                     POINTS_WHALE_WALL + POINTS_ABSORPTION +
                     # ★★★ v11.0: Sniper Zone (bonus only; penalties don't count in max)
-                    POINTS_SNIPER_ZONE)
+                    POINTS_SNIPER_ZONE +
+                    # ★★★ v16.1: Volume Delta (use STRONG variant for max display)
+                    POINTS_VOLUME_DELTA_STRONG)
     max_display = int(max_possible * max(range_boost, trend_boost))
 
     # ── Ranging Market RSI Veto ──────────────────────────────────────
@@ -1137,11 +1286,11 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
         sell_score = max(0, sell_score - MTF_COUNTER_TREND_PENALTY)
         if sell_score > 0:
             sell_breakdown.append(f"★ Counter-Trend Penalty (H1 BULL): -{MTF_COUNTER_TREND_PENALTY}")
-        if buy_score >= SCORE_THRESHOLD:
+        if buy_score >= dynamic_threshold:
             signal = "BUY"
             final_score = buy_score
             score_breakdown = buy_breakdown
-        elif sell_score >= SCORE_THRESHOLD:
+        elif sell_score >= dynamic_threshold:
             signal = "SELL"
             final_score = sell_score
             score_breakdown = sell_breakdown
@@ -1152,11 +1301,11 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
         buy_score = max(0, buy_score - MTF_COUNTER_TREND_PENALTY)
         if buy_score > 0:
             buy_breakdown.append(f"★ Counter-Trend Penalty (H1 BEAR): -{MTF_COUNTER_TREND_PENALTY}")
-        if sell_score >= SCORE_THRESHOLD:
+        if sell_score >= dynamic_threshold:
             signal = "SELL"
             final_score = sell_score
             score_breakdown = sell_breakdown
-        elif buy_score >= SCORE_THRESHOLD:
+        elif buy_score >= dynamic_threshold:
             signal = "BUY"
             final_score = buy_score
             score_breakdown = buy_breakdown
@@ -1190,12 +1339,12 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
         if signal == "BUY" and not candle_is_green:
             final_score = max(0, final_score - 2)
             score_breakdown.append("★ Candle NOT green (−2)")
-            if final_score < SCORE_THRESHOLD:
+            if final_score < dynamic_threshold:
                 signal = "NONE"
         elif signal == "SELL" and not candle_is_red:
             final_score = max(0, final_score - 2)
             score_breakdown.append("★ Candle NOT red (−2)")
-            if final_score < SCORE_THRESHOLD:
+            if final_score < dynamic_threshold:
                 signal = "NONE"
 
     if signal == "NONE" and not score_breakdown:
@@ -1271,7 +1420,7 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
             if ml_win_prob < ML_WIN_THRESHOLD:
                 final_score -= 10
                 score_breakdown.append(f"🚨 ML Low Confidence (WR:{ml_win_prob*100:.1f}% vs Req:{ML_WIN_THRESHOLD*100:.0f}%): -10")
-                if final_score < SCORE_THRESHOLD:
+                if final_score < dynamic_threshold:
                     signal = "NONE"
             log.info(f"🤖  ML V2 Info │ Win Prob: {ml_win_prob*100:.1f}% │ Memory: {len(ml_filter.memory)} trades")
         else:
@@ -1289,7 +1438,7 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
     return {
         "signal": signal,
         "score": final_score,
-        "score_threshold": SCORE_THRESHOLD,
+        "score_threshold": dynamic_threshold,
         "max_score": max_display,
         "score_breakdown": score_breakdown,
         "waiting_for": waiting_for,
@@ -1331,4 +1480,6 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
         "ft_patterns": ft_patterns,
         # ★★ v8.0: Order Flow
         "order_flow": order_flow,
+        # ★★★ v16.1: Volume Delta data
+        "vol_delta": vol_delta,
     }

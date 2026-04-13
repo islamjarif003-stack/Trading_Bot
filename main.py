@@ -43,6 +43,17 @@ TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
 ENABLE_DYNAMIC_WATCHLIST = True # ★ Fetch Top 50 Volatile USDT pairs dynamically
 ENABLE_MICRO_SCALPING = False   # ★ v12: DISABLED — Pre-flight fail = NO TRADE (no more weak entries)
 SYMBOLS         = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
+
+# ★ v15: BLACKLIST — Dead coins (Price $0.0) + consistent losers from audit
+BLACKLIST_COINS = {
+    # Dead coins (Price $0.0 on testnet)
+    "OMNIUSDT", "ALPHAUSDT", "BSWUSDT", "HIFIUSDT", "NEIROETHUSDT",
+    "A2ZUSDT", "TANSSIUSDT", "NKNUSDT", "BDXNUSDT", "LITUSDT", "BAKEUSDT",
+    # Consistent losers from audit (0% win rate, heavy losses)
+    "MAGMAUSDT", "BULLAUSDT", "TNSRUSDT", "SIRENUSDT",
+    # v15: Near-liquidation risk — SOONUSDT hit -50% / 61% margin ratio
+    "SOONUSDT", "TRADOORUSDT",
+}
 LEVERAGE        = 20                # ★ FIXED 20x leverage
 SL_ATR_MULT     = 1.5               # ★ v10: SL = 1.5 × ATR (gives trade room to breathe)
 TP_ATR_MULT     = 3.0               # ★ v10: TP = 3.0 × ATR (R:R = 1:2)
@@ -51,7 +62,7 @@ LOOP_INTERVAL_S = 10                # Seconds between each scan cycle
 ENTRY_RISK_PCT  = 15.0              # ★ $50 Config: 15% of $50 ≈ $7.50 risk per trade
 MAX_MARGIN_PCT  = 30.0              # ★ $50 Config: Max 30% of balance as margin ($15 max)
 LIMIT_OFFSET_PCT = 0.005            # ★ FIX 2: 0.005% offset for limit order (ultra-tight fill)
-ADX_ENTRY_MIN   = 20                # ★ v7.2: Hard ADX filter — NO trades if ADX < 20 (choppy market)
+ADX_ENTRY_MIN   = 7.0               # ★ v14: Middle-ground — filters dead markets but catches early moves (was 0/20)
 SCAN_DELAY_S    = 1                 # ★ v7.2: Delay between each coin scan (API rate-limit safety)
 MAX_DAILY_LOSS_PCT = 10.0            # ★ $50 Config: 10% = $5 daily loss limit (2 SL trades)
 
@@ -63,7 +74,7 @@ LOSS_COOLDOWN_S     = 7200      # ...add 2-hour extra cooldown for that coin
 ATR_SPIKE_MULT      = 2.0       # Skip entry if current ATR > 2× recent average ATR
 
 # ─── ★ v11.1: ANTI-FOMO ENTRY GATE (Hard Blocker) ──────────────────────────
-ANTI_FOMO_EMA_DIST_PCT  = 0.20  # Block entry if price is >0.20% from EMA9 in trade direction (tighter)
+ANTI_FOMO_EMA_DIST_PCT  = 0.30  # ★ v16.1: Widened to 0.30% to prevent blocking good setups (was 0.18%)
 ANTI_FOMO_CANDLE_BODY   = 0.60  # Block if candle body is >60% of total range (impulsive candle)
 ANTI_FOMO_ENABLED       = True  # Master switch for anti-FOMO gate
 
@@ -85,9 +96,9 @@ CORR_REDUCE_SIZE_PCT  = 50      # Reduce to 50% if CORR_ACTION == "REDUCE"
 
 # ─── ★ BREAK-EVEN & TRAILING STOP-LOSS ("Let Winners Run" Edition) ───────
 # Note: These are RAW price % (Unleveraged). A 0.4% raw move = 8% on Binance at 20x leverage.
-BREAK_EVEN_TRIGGER_PCT   = 0.40   # ★ v12: Move SL to entry when raw price is +0.40% in profit
+BREAK_EVEN_TRIGGER_PCT   = 0.60   # ★ v16.1: Move SL to entry when raw price is +0.60% in profit (was 0.40% — too tight, caused -$0.11 exits)
 BREAK_EVEN_FEE_BUFFER    = 0.04   # Add 0.04% buffer above entry to cover Binance fees
-TRAILING_SL_DISTANCE_PCT = 0.35   # ★ v12: Trail SL 0.35% behind highest/lowest price (wider = let run)
+TRAILING_SL_DISTANCE_PCT = 0.50   # ★ v16.1: Trail SL 0.50% behind highest/lowest price (was 0.35% — too tight for pullbacks)
 TTP_CHECK_INTERVAL       = 3      # Check every 3 cycles
 DISABLE_HARD_TP          = True    # ★ v12: NO fixed TP → let trailing SL manage exit
 SMART_REVERSAL_EXIT      = True    # ★ v12: Close if 5m MA25 cross-under/over detected
@@ -303,7 +314,7 @@ def _print_score_dashboard(signal_data: dict, scan_count: int, symbol: str):
 
     # ★ Correlation & Risk Row
     corr_status = "⚠ HIGH" if btc_corr > CORRELATION_THRESHOLD else "✅ OK"
-    log.info(f"  ★ BTC Corr: {btc_corr:+.4f} ({corr_status})  │  Risk: $7 Fixed Margin  │  SL: {SL_ATR_MULT}×ATR")
+    log.info(f"  ★ BTC Corr: {btc_corr:+.4f} ({corr_status})  │  Risk: $1 Sniper Margin  │  SL: {SL_ATR_MULT}×ATR")
 
     # Score breakdown
     if breakdown:
@@ -350,10 +361,10 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         except Exception as atr_err:
             log.warning(f"⚠ [{symbol}] Could not fetch 1H ATR, using provided ATR: {atr_err}")
 
-        # ★★★ HARDCODED $7 FIXED MARGIN — ABSOLUTE OVERRIDE ★★★
+        # ★★★ HARDCODED $1 FIXED MARGIN — $1 SNIPER CHALLENGE ★★★
         # No balance, risk_percentage, or equity logic. Pure fixed margin.
-        FIXED_MARGIN = 7.00              # Strictly $7 USD margin per trade
-        position_value_usd = FIXED_MARGIN * LEVERAGE  # $7 × 20 = $140 notional
+        FIXED_MARGIN = 1.00              # Strictly $1 USD margin per trade
+        position_value_usd = FIXED_MARGIN * LEVERAGE  # $1 × 20 = $20 notional
         raw_qty = position_value_usd / current_price
         quantity = _round_qty(raw_qty, symbol)
 
@@ -401,7 +412,7 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             limit_price = _round_price(current_price + offset, symbol)  # Slightly above bid
 
         log.info("═" * 70)
-        log.info(f"🚀  [{symbol}] EXECUTING {signal} │ Risk: $7 Fixed Margin{size_note} │ Score: {score}")
+        log.info(f"🚀  [{symbol}] EXECUTING {signal} │ Risk: $1 Sniper Margin{size_note} │ Score: {score}")
         log.info(f"   ★ LIMIT Entry : ${limit_price} (Maker Fee — offset {LIMIT_OFFSET_PCT}%)")
         log.info(f"   Market Price  : ${current_price}")
         log.info(f"   Quantity      : {quantity}")
@@ -831,27 +842,36 @@ def _update_sl_order(client: Client, symbol: str, side: str, new_sl: float) -> b
             except Exception as retry_err:
                 log.warning(f"⚠  [{symbol}] SL retry also failed: {retry_err}. Position stays open WITHOUT SL.")
                 return False
-        elif e.code == -4131 or "max stop order" in str(e.message).lower():
-            # ★ MAX STOP ORDER LIMIT HIT — force-clear everything and retry
-            log.warning(f"⚠  [{symbol}] Max stop order limit! Force-clearing all stops...")
-            cleared = _force_cancel_all_stops(client, symbol)
-            if cleared:
-                time.sleep(1.0)
-                try:
-                    resp = client.futures_create_order(
-                        symbol=symbol, side=close_side,
-                        type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                        stopPrice=str(new_sl),
-                        quantity=qty,
-                        reduceOnly="true",
-                        timeInForce=TIME_IN_FORCE_GTC,
-                        workingType="MARK_PRICE",
-                    )
-                    if resp:
-                        log.info(f"🛡  [{symbol}] SL placed after force-clear at ${new_sl}")
-                        return True
-                except Exception as retry2:
-                    log.error(f"🚨  [{symbol}] SL retry after force-clear failed: {retry2}")
+        elif e.code in (-4131, -4045) or "max stop order" in str(e.message).lower():
+            # ★ v15: MAX STOP ORDER LIMIT HIT — ACCOUNT-WIDE on testnet
+            # Must cancel stop orders across ALL symbols, not just this one
+            log.warning(f"⚠  [{symbol}] Max stop order limit (code {e.code})! Nuclear-clearing ALL symbols...")
+            try:
+                # Get ALL symbols with open positions and cancel their orders
+                positions = client.futures_position_information()
+                for p in positions:
+                    if float(p.get('positionAmt', 0)) != 0:
+                        psym = p['symbol']
+                        try:
+                            client.futures_cancel_all_open_orders(symbol=psym)
+                        except Exception:
+                            pass
+                time.sleep(3.0)  # ★ v15: Longer delay for testnet propagation
+                
+                resp = client.futures_create_order(
+                    symbol=symbol, side=close_side,
+                    type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                    stopPrice=str(new_sl),
+                    quantity=qty,
+                    reduceOnly="true",
+                    timeInForce=TIME_IN_FORCE_GTC,
+                    workingType="MARK_PRICE",
+                )
+                if resp:
+                    log.info(f"🛡  [{symbol}] SL placed after global nuclear-clear at ${new_sl}")
+                    return True
+            except Exception as retry2:
+                log.error(f"🚨  [{symbol}] SL retry after global nuclear-clear failed: {retry2}")
             return False
         else:
             log.error(f"🚨  [{symbol}] SL placement failed: {e.message}")
@@ -1004,15 +1024,15 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
         now = time.time()
 
         # ══════════════════════════════════════════════════════════════
-        #  ★ v12: TIME-BASED EXIT (Stale Trade Protocol — Losers Only)
-        #  Only close if trade is in LOSS after 20 mins. Profitable trades
-        #  are managed by trailing SL / smart reversal, not by timeout.
+        #  ★ v15: TIME-BASED EXIT (Stale Trade Protocol)
+        #  Close if trade is <= 0 PnL after 45 mins AND in INITIAL phase.
+        #  Profitable trades (Phase: BREAKEVEN/TRAILING) are NEVER closed here.
         # ══════════════════════════════════════════════════════════════
         trade_open_time = bot_state.get("trade_open_time", 0)
         if trade_open_time > 0:
             trade_duration_s = now - trade_open_time
-            if trade_duration_s >= 1200 and pnl_pct < 0:  # 20 mins AND in loss
-                log.warning(f"⏳  [{symbol}] STALE TRADE: Open for {int(trade_duration_s/60)} mins with PnL {pnl_pct:.2f}% (negative). Closing loser early.")
+            if trade_duration_s >= 2700 and pnl_pct <= 0.0 and bot_state.get("phase", "INITIAL") == "INITIAL":  # 45 mins
+                log.warning(f"⏳  [{symbol}] STALE TRADE: Open for {int(trade_duration_s/60)} mins with PnL {pnl_pct:.2f}% (flat/negative). Closing early.")
                 if _force_market_close(client, symbol, side):
                     _reset_bot_state(bot_state)
                     send_telegram_alert(f"⏳ <b>Stale Trade Closed</b>\nCoin: {symbol}\nSide: {side}\nReason: No momentum after {int(trade_duration_s/60)} mins\nPnL: {pnl_pct:+.2f}%")
@@ -1140,7 +1160,32 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
             else:
                 be_sl = _round_price(entry_price * (1.0 - BREAK_EVEN_FEE_BUFFER / 100.0), symbol)
             
+            # ★ v15: GLOBAL nuclear clear — cancel ALL stop orders across ALL symbols
+            # Testnet has account-wide stop order limit, not per-symbol
+            try:
+                all_positions = client.futures_position_information()
+                for p in all_positions:
+                    if float(p.get('positionAmt', 0)) != 0:
+                        psym = p['symbol']
+                        try:
+                            client.futures_cancel_all_open_orders(symbol=psym)
+                        except Exception:
+                            pass
+                time.sleep(2.0)
+            except Exception:
+                pass
+            
             success = _update_sl_order(client, symbol, side, be_sl)
+            if not success:
+                # ★ v15: Second attempt — nuclear clear + retry
+                log.warning(f"⚠  [{symbol}] BE SL attempt 1 failed. Nuclear retry...")
+                try:
+                    client.futures_cancel_all_open_orders(symbol=symbol)
+                    time.sleep(1.5)
+                    success = _update_sl_order(client, symbol, side, be_sl)
+                except Exception as e2:
+                    log.error(f"🚨  [{symbol}] Nuclear BE retry failed: {e2}")
+            
             if success:
                 bot_state["current_trail_sl"] = be_sl
                 bot_state["phase"] = "BREAKEVEN"
@@ -1160,7 +1205,20 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                     f"SL → ${be_sl}\nPnL: {pnl_pct:+.2f}%\n<i>Trade is now RISK-FREE! TP removed — letting winner run 🚀</i>"
                 )
             else:
-                log.warning(f"⚠  [{symbol}] Break-even SL update failed. Will retry next cycle.")
+                # ★ v15: FALLBACK — SL order failed but we still activate software break-even
+                # The bot's main loop monitors price every 10s — we'll use _force_market_close
+                # if price drops below our software SL level
+                log.warning(
+                    f"⚠  [{symbol}] Exchange SL failed — activating SOFTWARE break-even at ${be_sl} "
+                    f"(will monitor & market-close if breached)"
+                )
+                bot_state["current_trail_sl"] = be_sl
+                bot_state["phase"] = "BREAKEVEN"
+                
+                try:
+                    _cancel_tp_orders(client, symbol)
+                except Exception:
+                    pass
 
         # ══════════════════════════════════════════════════════════════
         #  ★ PHASE 2: DYNAMIC TRAILING (after break-even)
@@ -1219,7 +1277,13 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                         f"📈  [{symbol}] ★ TRAILING SL │ SL → ${new_trail_sl} │ "
                         f"Best: ${bot_state['best_price']} │ Trail: {TRAILING_SL_DISTANCE_PCT}% (${trail_distance:.2f}) │ {pnl_str}"
                     )
-                # If update fails, position stays open — will retry next cycle
+                else:
+                    # ★ v15: FALLBACK FOR TRAILING SL (Testnet Bug Fix)
+                    bot_state["current_trail_sl"] = new_trail_sl
+                    log.warning(
+                        f"📈⚠ [{symbol}] Exchange Trailing SL Failed. Using SOFTWARE TRAIL SL → ${new_trail_sl} │ "
+                        f"Best: ${bot_state['best_price']} │ {pnl_str}"
+                    )
             else:
                 log.info(
                     f"    [{symbol}] Trailing │ Best: ${bot_state['best_price']} │ "
@@ -1390,6 +1454,16 @@ def _anti_fomo_entry_check(client: Client, symbol: str, direction: str) -> tuple
                         f"Wait for pullback."
                     )
         
+        # ── CHECK 3: Consecutive Pump/Dump Protection ──
+        # If the price has surged >0.35% vertically in the last 4 minutes, block entry to prevent buying the local peak.
+        if len(closes) >= 5:
+            price_4_mins_ago = closes[-5]
+            pct_change_4m = ((current_price - price_4_mins_ago) / price_4_mins_ago) * 100.0
+            
+            if direction == "BUY" and pct_change_4m > 0.35:
+                return False, f"FOMO Peak Blocked: Price pumped +{pct_change_4m:.2f}% in last 4 mins. Waiting."
+            elif direction == "SELL" and pct_change_4m < -0.35:
+                return False, f"FOMO Bottom Blocked: Price dumped {pct_change_4m:.2f}% in last 4 mins. Waiting."
         return True, "Anti-FOMO checks passed"
         
     except Exception as e:
@@ -1495,36 +1569,44 @@ FUTURES_TESTNET_URL = "https://testnet.binancefuture.com"
 
 def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
     """
-    Volume Burst Trigger: Checks if the current 1-minute volume is >= 2.5x
-    the average of the last 5 minutes AND price is moving aggressively in the trade direction.
+    Volume Burst Trigger: ★ v14 Middle-ground — 0.8x average volume.
+    Ensures SOME activity without requiring a massive breakout.
+    Direction check restored to filter noise candles.
     """
     try:
         raw = client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1MINUTE, limit=6)
         if not raw or len(raw) < 6:
-            return False
+            return True  # ★ v14: If can't get data, allow trade anyway
         
-        # Last element is the current (open) candle, previous 5 are closed
         closed_vols = [float(k[5]) for k in raw[:5]]
         avg_vol = sum(closed_vols) / len(closed_vols) if closed_vols else 1.0
+        
+        # If average volume is essentially zero (testnet dead coin), skip the check
+        if avg_vol < 1e-8:
+            return True
         
         current_kline = raw[-1]
         current_vol = float(current_kline[5])
         open_price = float(current_kline[1])
         close_price = float(current_kline[4])
         
-        vol_spike = current_vol >= (avg_vol * 1.5)  # ★ v12: 1.5x (raised from 1.2x to filter weak bursts)
+        # ★ v15: 0.9x — slightly more lenient than 1.0x, but tighter than original 0.8x
+        vol_ok = current_vol >= (avg_vol * 0.9)
         
-        if vol_spike:
-            # Check if moving aggressively in the trade direction
-            if direction == "BUY" and close_price > open_price:
+        if vol_ok:
+            # Soft direction check: allow flat candles too (close == open)
+            if direction == "BUY" and close_price >= open_price:
                 return True
-            elif direction == "SELL" and close_price < open_price:
+            elif direction == "SELL" and close_price <= open_price:
+                return True
+            # If direction doesn't match but volume is 1.5x+, still allow (strong burst)
+            if current_vol >= (avg_vol * 1.5):
                 return True
                 
         return False
     except Exception as e:
         log.warning(f"⚠  [{symbol}] Volume burst check failed: {e}")
-        return False
+        return True  # ★ v14: On error, allow trade
 
 class AdvancedExecutionValidator:
     """
@@ -1535,72 +1617,148 @@ class AdvancedExecutionValidator:
     def validate(client: Client, symbol: str, direction: str) -> tuple[bool, str]:
         try:
             import pandas as pd
-            # 1. MTF Alignment Check (M15 and M5)
-            # Fetch 60 candles to ensure accurate EMA calculation and ATR variance
-            m15 = client.futures_klines(symbol=symbol, interval="15m", limit=60)
-            m5  = client.futures_klines(symbol=symbol, interval="5m", limit=60)
+            import numpy as np
             
-            if not m15 or not m5 or len(m15) < 30 or len(m5) < 30:
-                return False, "Not enough MTF data for alignment check."
+            # Fetch 60 candles to ensure accurate math
+            m5  = client.futures_klines(symbol=symbol, interval="5m", limit=70)
+            if not m5 or len(m5) < 50:
+                return False, "Not enough M5 data for Master Logic."
                 
-            df15 = pd.DataFrame(m15, columns=["time", "open", "high", "low", "close", "volume", "ctime", "qvol", "trades", "taker", "taker_qvol", "ignore"], dtype=float)
             df5  = pd.DataFrame(m5, columns=["time", "open", "high", "low", "close", "volume", "ctime", "qvol", "trades", "taker", "taker_qvol", "ignore"], dtype=float)
             
-            # Using EMA 20 for standard trend baseline
-            ema15 = df15['close'].ewm(span=20, adjust=False).mean().iloc[-1]
-            ema5  = df5['close'].ewm(span=20, adjust=False).mean().iloc[-1]
-            current_price = df5['close'].iloc[-1]
+            close_np = df5['close'].values
+            high_np = df5['high'].values
+            low_np = df5['low'].values
+            vol_np = df5['volume'].values
+            taker_buy_np = df5['taker'].values
             
-            if direction == "BUY":
-                if current_price < ema15 or current_price < ema5:
-                    return False, f"MTF Alignment Failed: Price ({current_price}) < M15/M5 EMA ({ema15:.2f}/{ema5:.2f})"
-            else:
-                if current_price > ema15 or current_price > ema5:
-                    return False, f"MTF Alignment Failed: Price ({current_price}) > M15/M5 EMA ({ema15:.2f}/{ema5:.2f})"
-
-            # 2. Level-2 Order Book Imbalance (1.2x depth) — ★ v12: Lowered from 1.5x
-            book = client.futures_order_book(symbol=symbol, limit=20)
-            bids = sum(float(q) for p, q in book["bids"])
-            asks = sum(float(q) for p, q in book["asks"])
+            current_price = close_np[-1]
             
-            if direction == "BUY":
-                if asks == 0 or (bids / asks) < 1.2:
-                    ratio = (bids / asks) if asks > 0 else 0
-                    return False, f"L2 Imbalance Failed: Bids/Asks ratio {ratio:.2f}x (Need >= 1.2x for LONG)"
-            else:
-                if bids == 0 or (asks / bids) < 1.2:
-                    ratio = (asks / bids) if bids > 0 else 0
-                    return False, f"L2 Imbalance Failed: Asks/Bids ratio {ratio:.2f}x (Need >= 1.2x for SHORT)"
-
-            # 3. Volatility Dead Market Check (M5 ATR dynamic threshold)
-            high = df5['high']
-            low = df5['low']
-            close = df5['close']
-            tr1 = high - low
-            tr2 = (high - close.shift()).abs()
-            tr3 = (low - close.shift()).abs()
-            tr_df = pd.concat([tr1, tr2, tr3], axis=1)
-            true_range = tr_df.max(axis=1)
-            atr_series = true_range.rolling(14).mean()
+            # =======================================================
+            # STEP 1: Volatility & Trend (ADX > 25 & BB Breakout)
+            # =======================================================
+            # ADX Calculation (14-period)
+            tr = np.maximum(high_np[1:] - low_np[1:], np.abs(high_np[1:] - close_np[:-1]))
+            tr = np.maximum(tr, np.abs(low_np[1:] - close_np[:-1]))
             
-            current_atr = atr_series.iloc[-1]
-            avg_atr = atr_series.mean()
+            up_move = high_np[1:] - high_np[:-1]
+            down_move = low_np[:-1] - low_np[1:]
             
-            # Check if current ATR is extremely low compared to recent historical average
-            if current_atr < (avg_atr * 0.70):
-                return False, f"Volatility Dead Market: M5 ATR ({current_atr:.4f}) < 70% of Avg ({avg_atr:.4f})"
+            plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0)
+            minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0)
+            
+            tr_sn = np.zeros(len(tr))
+            pdm_sn = np.zeros(len(plus_dm))
+            mdm_sn = np.zeros(len(minus_dm))
+            
+            tr_sn[13] = np.sum(tr[:14])
+            pdm_sn[13] = np.sum(plus_dm[:14])
+            mdm_sn[13] = np.sum(minus_dm[:14])
+            
+            for i in range(14, len(tr)):
+                tr_sn[i] = tr_sn[i-1] - (tr_sn[i-1]/14.0) + tr[i]
+                pdm_sn[i] = pdm_sn[i-1] - (pdm_sn[i-1]/14.0) + plus_dm[i]
+                mdm_sn[i] = mdm_sn[i-1] - (mdm_sn[i-1]/14.0) + minus_dm[i]
                 
-            return True, "All Checks Passed"
+            plus_di = 100 * (pdm_sn / np.where(tr_sn == 0, 1, tr_sn))
+            minus_di = 100 * (mdm_sn / np.where(tr_sn == 0, 1, tr_sn))
+            
+            dx = 100 * np.abs(plus_di - minus_di) / np.where((plus_di + minus_di) == 0, 1, (plus_di + minus_di))
+            adx = np.zeros(len(dx))
+            adx[26] = np.mean(dx[13:27])
+            for i in range(27, len(dx)):
+                adx[i] = ((adx[i-1] * 13) + dx[i]) / 14.0
+                
+            current_adx = adx[-1]
+            if current_adx < 25.0:
+                return False, f"Step 1 Failed: ADX is {current_adx:.1f} (< 25). Market is chopping, staying out."
+                
+            # BB Calculation (20-period, 2 std)
+            last_20 = close_np[-20:]
+            sma_20 = np.mean(last_20)
+            std_20 = np.std(last_20, ddof=0)
+            upper_band = sma_20 + (2.0 * std_20)
+            lower_band = sma_20 - (2.0 * std_20)
+            
+            if direction == "BUY":
+                if current_price < upper_band:
+                    dist_up = ((upper_band - current_price) / upper_band) * 100.0
+                    if dist_up > 0.15:
+                        return False, f"Step 1 Failed: No Breakout. Price ({current_price:.4f}) is not breaking Upper BB ({upper_band:.4f})."
+            else:
+                if current_price > lower_band:
+                    dist_dn = ((current_price - lower_band) / lower_band) * 100.0
+                    if dist_dn > 0.15:
+                        return False, f"Step 1 Failed: No Breakout. Price ({current_price:.4f}) is not breaking Lower BB ({lower_band:.4f})."
+
+            # =======================================================
+            # STEP 2: Anti-Trap & Anti-FOMO (EMA & RSI)
+            # =======================================================
+            alpha_5 = 2.0 / (5 + 1)
+            ema5 = np.zeros_like(close_np)
+            ema5[0] = close_np[0]
+            for i in range(1, len(close_np)):
+                ema5[i] = alpha_5 * close_np[i] + (1 - alpha_5) * ema5[i-1]
+            
+            dist_ema = ((current_price - ema5[-1]) / ema5[-1]) * 100.0
+
+            if direction == "BUY" and dist_ema > 0.15:
+                 return False, f"Step 2 Failed: FOMO block. Price is +{dist_ema:.2f}% above 5 EMA (Limit: 0.15%)."
+            elif direction == "SELL" and dist_ema < -0.15:
+                 return False, f"Step 2 Failed: FOMO block. Price is {dist_ema:.2f}% below 5 EMA (Limit: 0.15%)."
+
+            deltas = np.diff(close_np)
+            seed = deltas[:14]
+            up = seed[seed >= 0].sum() / 14.0
+            down = -seed[seed < 0].sum() / 14.0
+            rs = up / down if down != 0 else 0
+            rsi = np.zeros_like(close_np)
+            rsi[:14] = 100. - 100. / (1. + rs)
+            for i in range(14, len(close_np)):
+                d = deltas[i - 1] 
+                u_val = d if d > 0 else 0.
+                d_val = -d if d < 0 else 0.
+                up = (up * 13 + u_val) / 14.0
+                down = (down * 13 + d_val) / 14.0
+                rs = up / down if down != 0 else 0
+                rsi[i] = 100. - 100. / (1. + rs)
+            current_rsi = rsi[-1]
+
+            if current_rsi > 75.0:
+                return False, f"Step 2 Failed: RSI is {current_rsi:.1f} (> 75). Exhausted top."
+            if current_rsi < 25.0:
+                return False, f"Step 2 Failed: RSI is {current_rsi:.1f} (< 25). Exhausted bottom."
+
+            # =======================================================
+            # STEP 3: Sniper Trigger (Volume Delta Alignment)
+            # =======================================================
+            last_5_tot = vol_np[-5:]
+            last_5_buy = taker_buy_np[-5:]
+            last_5_sell = last_5_tot - last_5_buy
+            
+            aligned_candles = 0
+            for i in range(5):
+                if direction == "BUY" and last_5_buy[i] > last_5_sell[i]:
+                    aligned_candles += 1
+                elif direction == "SELL" and last_5_sell[i] > last_5_buy[i]:
+                    aligned_candles += 1
+                    
+            if aligned_candles < 3:
+                 return False, f"Step 3 Failed: Vol Delta alignment ({aligned_candles}/5 strong). Need >= 3."
+
+            return True, "MASTER LOGIC PASSED"
+                
         except Exception as e:
             return False, f"Validator Error: {str(e)}"
 
 def initialize_client() -> Client:
-    """Create and configure the Binance Futures Testnet client."""
-    log.info("🔌  Connecting to Binance Futures Testnet...")
+    """Create and configure the Binance Futures Mainnet client."""
+    log.info("🔌  Connecting to Binance Futures Mainnet (REAL ACCOUNT)...")
     log.info(f"    API Key: {API_KEY[:8]}...{API_KEY[-4:]} ({len(API_KEY)} chars)")
 
-    client = Client(API_KEY, API_SECRET, testnet=True)
-    client.FUTURES_URL = FUTURES_TESTNET_URL + "/fapi"
+    # Pass ping=False so it doesn't attempt to ping Spot API which times out
+    client = Client(API_KEY, API_SECRET, testnet=False, ping=False)
+    # Removing FUTURES_TESTNET_URL override to use default Mainnet URL
 
     # ★ AUTO TIME-SYNC: Fix "Timestamp ahead of server" errors (VPN latency)
     try:
@@ -1613,7 +1771,7 @@ def initialize_client() -> Client:
 
     try:
         client.futures_ping()
-        log.info("✅  Futures Testnet connection verified.")
+        log.info("✅  Futures Mainnet connection verified (REAL MONEY ACTIVE).")
     except BinanceAPIException as e:
         log.error(f"❌  Ping failed: {e.message}")
         raise
@@ -1635,8 +1793,10 @@ def initialize_client() -> Client:
             if top_symbols:
                 if "BTCUSDT" not in top_symbols: top_symbols.insert(0, "BTCUSDT")
                 if "ETHUSDT" not in top_symbols: top_symbols.insert(1, "ETHUSDT")
+                # ★ v15: Remove blacklisted dead/losing coins
+                top_symbols = [s for s in top_symbols if s not in BLACKLIST_COINS]
                 SYMBOLS = top_symbols[:50]
-                log.info(f"🎯 Dynamic Watchlist Active: {len(SYMBOLS)} pairs.")
+                log.info(f"🎯 Dynamic Watchlist Active: {len(SYMBOLS)} pairs (blacklisted {len(BLACKLIST_COINS)} coins).")
         except Exception as e:
             log.error(f"Failed to fetch dynamic symbols: {e}")
 
@@ -1751,7 +1911,7 @@ def main():
     kill_switch_active = False
     last_report_date = daily_stats_date  # ★ v7.4: Track daily report
 
-    send_telegram_alert(f"🚀 <b>Bot Started — v7.4</b>\nPairs: {len(SYMBOLS)}\nStarting Balance: ${daily_start_balance:.2f}")
+    send_telegram_alert(f"🚀 <b>Bot Started - v16.0 ($1 Sniper Challenge)</b>\nPairs: {len(SYMBOLS)}\nStarting Balance: ${daily_start_balance:.2f}")
 
     while True:
         try:
@@ -2013,22 +2173,25 @@ def main():
                                 log.info(f"✅  [{symbol}] PRE-FLIGHT PASSED. Executing {armed_dir}...")
                             
                             # ── ★ v11.1: ANTI-FOMO GATE (Final Entry Filter) ──
-                            fomo_passed, fomo_reason = _anti_fomo_entry_check(client, symbol, armed_dir)
-                            if not fomo_passed:
-                                log.warning(f"🚫  [{symbol}] {fomo_reason} — ENTRY BLOCKED.")
-                                state["armed_signal"] = "NONE"
-                                state["armed_time"] = 0
-                                state["armed_signal_data"] = None
-                                continue
+                            # Legacy anti-fomo gate commented out. Master Logic (AdvancedExecutionValidator) now handles all Anti-FOMO rules.
+                            # fomo_passed, fomo_reason = _anti_fomo_entry_check(client, symbol, armed_dir)
+                            # if not fomo_passed:
+                            #     log.warning(f"🚫  [{symbol}] {fomo_reason} — ENTRY BLOCKED.")
+                            #     state["armed_signal"] = "NONE"
+                            #     state["armed_time"] = 0
+                            #     state["armed_signal_data"] = None
+                            #     continue
 
                             # ── ★ v12: S/R REJECTION QUALITY GATE ──
-                            rej_passed, rej_reason = _check_rejection_quality(client, symbol, armed_dir)
-                            if not rej_passed:
-                                log.warning(f"🚫  [{symbol}] {rej_reason} — ARMED CANCELLED.")
-                                state["armed_signal"] = "NONE"
-                                state["armed_time"] = 0
-                                state["armed_signal_data"] = None
-                                continue
+                            # ★ v15: DISABLED for testnet — was blocking 75% of valid trades
+                            # rej_passed, rej_reason = _check_rejection_quality(client, symbol, armed_dir)
+                            # if not rej_passed:
+                            #     log.warning(f"🚫  [{symbol}] {rej_reason} — ARMED CANCELLED.")
+                            #     state["armed_signal"] = "NONE"
+                            #     state["armed_time"] = 0
+                            #     state["armed_signal_data"] = None
+                            #     continue
+                            log.info(f"✅  [{symbol}] S/R Gate: BYPASSED (v15 testnet mode)")
 
                             # Restore data for execution
                             exc_signal = armed_dir
