@@ -96,12 +96,14 @@ CORR_REDUCE_SIZE_PCT  = 50      # Reduce to 50% if CORR_ACTION == "REDUCE"
 
 # ─── ★ BREAK-EVEN & TRAILING STOP-LOSS ("Let Winners Run" Edition) ───────
 # Note: These are RAW price % (Unleveraged). A 0.4% raw move = 8% on Binance at 20x leverage.
-BREAK_EVEN_TRIGGER_PCT   = 0.60   # ★ v16.1: Move SL to entry when raw price is +0.60% in profit (was 0.40% — too tight, caused -$0.11 exits)
-BREAK_EVEN_FEE_BUFFER    = 0.04   # Add 0.04% buffer above entry to cover Binance fees
+# ★ v17: TRUE BREAK-EVEN — uses dynamic R:R, not static %. BE triggers at 1R profit.
+TRUE_BE_FEE_BUFFER_PCT   = 0.15   # ★ v17: Fee-adjusted BE — covers 0.05% entry + 0.05% exit + 0.05% safety
+TRAILING_ACTIVATION_RR   = 1.5    # ★ v17: Trailing ONLY activates after 1:1.5 R:R is achieved
 TRAILING_SL_DISTANCE_PCT = 0.50   # ★ v16.1: Trail SL 0.50% behind highest/lowest price (was 0.35% — too tight for pullbacks)
 TTP_CHECK_INTERVAL       = 3      # Check every 3 cycles
 DISABLE_HARD_TP          = True    # ★ v12: NO fixed TP → let trailing SL manage exit
 SMART_REVERSAL_EXIT      = True    # ★ v12: Close if 5m MA25 cross-under/over detected
+STALE_TRADE_MIN_LOSS_PCT = -0.50   # ★ v17: Stale timeout only fires if PnL < -0.50% (prevents fee-draining flat closes)
 
 
 # ─── LOGGING ────────────────────────────────────────────────────────────────
@@ -927,6 +929,7 @@ def _reset_bot_state(bot_state: dict):
     bot_state["atr_refresh_counter"] = 0
     bot_state["original_qty"] = 0.0
     bot_state["trade_open_time"] = 0.0  # Reset open time
+    bot_state["initial_risk_pct"] = 0.0  # ★ v17: Reset dynamic R:R risk baseline
 
 
 def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=None):
@@ -1031,8 +1034,8 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
         trade_open_time = bot_state.get("trade_open_time", 0)
         if trade_open_time > 0:
             trade_duration_s = now - trade_open_time
-            if trade_duration_s >= 2700 and pnl_pct <= 0.0 and bot_state.get("phase", "INITIAL") == "INITIAL":  # 45 mins
-                log.warning(f"⏳  [{symbol}] STALE TRADE: Open for {int(trade_duration_s/60)} mins with PnL {pnl_pct:.2f}% (flat/negative). Closing early.")
+            if trade_duration_s >= 2700 and pnl_pct <= STALE_TRADE_MIN_LOSS_PCT and bot_state.get("phase", "INITIAL") == "INITIAL":  # 45 mins, only if genuinely losing
+                log.warning(f"⏳  [{symbol}] STALE TRADE: Open for {int(trade_duration_s/60)} mins with PnL {pnl_pct:.2f}% (genuine loss < {STALE_TRADE_MIN_LOSS_PCT}%). Closing early.")
                 if _force_market_close(client, symbol, side):
                     _reset_bot_state(bot_state)
                     send_telegram_alert(f"⏳ <b>Stale Trade Closed</b>\nCoin: {symbol}\nSide: {side}\nReason: No momentum after {int(trade_duration_s/60)} mins\nPnL: {pnl_pct:+.2f}%")
@@ -1150,15 +1153,26 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                 bot_state["best_price"] = mark_price
 
         # ══════════════════════════════════════════════════════════════
-        #  ★ PHASE 1: BREAK-EVEN (PnL ≥ +1.0%)
-        #    Move SL to entry price → ZERO RISK guarantee
+        #  ★ v17: PHASE 1: TRUE BREAK-EVEN (Dynamic R:R Based)
+        #    Triggers at 1R profit. SL → Entry + 0.15% fee buffer.
+        #    Covers Taker fees on BOTH sides so net PnL is always ≥ $0.
         # ══════════════════════════════════════════════════════════════
-        if bot_state["phase"] == "INITIAL" and pnl_pct >= BREAK_EVEN_TRIGGER_PCT:
-            # SL = Entry + small fee buffer (so we don't lose to fees)
+        # Calculate dynamic initial risk % (based on ATR at entry)
+        initial_risk_pct = bot_state.get("initial_risk_pct", 0.0)
+        if initial_risk_pct == 0.0 and current_atr > 0 and entry_price > 0:
+            initial_risk_pct = (current_atr * SL_ATR_MULT / entry_price) * 100.0
+            bot_state["initial_risk_pct"] = initial_risk_pct
+            log.info(f"📐  [{symbol}] Dynamic Risk Baseline: {initial_risk_pct:.3f}% (ATR: ${current_atr:.2f} × {SL_ATR_MULT})")
+
+        # BE triggers when profit reaches 1R (the same distance as initial risk)
+        dynamic_be_trigger = max(initial_risk_pct, 0.30)  # Floor at 0.30% to avoid micro-triggers
+
+        if bot_state["phase"] == "INITIAL" and pnl_pct >= dynamic_be_trigger:
+            # ★ v17: TRUE BREAK-EVEN — hardcoded 0.15% fee buffer (covers entry + exit taker fees)
             if side == "BUY":
-                be_sl = _round_price(entry_price * (1.0 + BREAK_EVEN_FEE_BUFFER / 100.0), symbol)
+                be_sl = _round_price(entry_price * (1.0 + TRUE_BE_FEE_BUFFER_PCT / 100.0), symbol)
             else:
-                be_sl = _round_price(entry_price * (1.0 - BREAK_EVEN_FEE_BUFFER / 100.0), symbol)
+                be_sl = _round_price(entry_price * (1.0 - TRUE_BE_FEE_BUFFER_PCT / 100.0), symbol)
             
             # ★ v15: GLOBAL nuclear clear — cancel ALL stop orders across ALL symbols
             # Testnet has account-wide stop order limit, not per-symbol
@@ -1190,7 +1204,7 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                 bot_state["current_trail_sl"] = be_sl
                 bot_state["phase"] = "BREAKEVEN"
                 log.info(
-                    f"🛡  [{symbol}] ★ BREAK-EVEN ACTIVATED │ {pnl_str} │ SL → ${be_sl} (entry +{BREAK_EVEN_FEE_BUFFER}%)"
+                    f"🛡  [{symbol}] ★ TRUE BREAK-EVEN │ {pnl_str} │ SL → ${be_sl} (entry +{TRUE_BE_FEE_BUFFER_PCT}% fee cover) │ 1R={initial_risk_pct:.2f}%"
                 )
                 
                 # ★ v12: Cancel hard TP orders → let trailing SL manage exit ("Let Winners Run")
@@ -1201,13 +1215,12 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                 
                 # ── TELEGRAM ALERT ──
                 send_telegram_alert(
-                    f"🛡 <b>BREAK-EVEN</b>\nCoin: {symbol}\nSide: {side}\nEntry: ${entry_price}\n"
-                    f"SL → ${be_sl}\nPnL: {pnl_pct:+.2f}%\n<i>Trade is now RISK-FREE! TP removed — letting winner run 🚀</i>"
+                    f"🛡 <b>TRUE BREAK-EVEN (v17)</b>\nCoin: {symbol}\nSide: {side}\nEntry: ${entry_price}\n"
+                    f"SL → ${be_sl} (+{TRUE_BE_FEE_BUFFER_PCT}% fee buffer)\nPnL: {pnl_pct:+.2f}% (1R={initial_risk_pct:.2f}%)\n"
+                    f"<i>Trade is now FEE-PROOF risk-free! Trailing activates at {TRAILING_ACTIVATION_RR}R 🚀</i>"
                 )
             else:
                 # ★ v15: FALLBACK — SL order failed but we still activate software break-even
-                # The bot's main loop monitors price every 10s — we'll use _force_market_close
-                # if price drops below our software SL level
                 log.warning(
                     f"⚠  [{symbol}] Exchange SL failed — activating SOFTWARE break-even at ${be_sl} "
                     f"(will monitor & market-close if breached)"
@@ -1221,10 +1234,14 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                     pass
 
         # ══════════════════════════════════════════════════════════════
-        #  ★ PHASE 2: DYNAMIC TRAILING (after break-even)
+        #  ★ v17: PHASE 2: DYNAMIC TRAILING (after 1:1.5 R:R reached)
         #    Trail SL 0.5% behind highest/lowest price
+        #    ONLY activates when PnL >= initial_risk * TRAILING_ACTIVATION_RR
         # ══════════════════════════════════════════════════════════════
-        if bot_state["phase"] in ("BREAKEVEN", "TRAILING") and pnl_pct >= BREAK_EVEN_TRIGGER_PCT:
+        trailing_activation_pct = max(initial_risk_pct * TRAILING_ACTIVATION_RR, 0.45)  # Floor 0.45%
+        if bot_state["phase"] in ("BREAKEVEN", "TRAILING") and pnl_pct >= trailing_activation_pct:
+            if bot_state["phase"] == "BREAKEVEN":
+                log.info(f"🚀  [{symbol}] ★ TRAILING UNLOCKED │ PnL {pnl_pct:.2f}% ≥ {TRAILING_ACTIVATION_RR}R ({trailing_activation_pct:.2f}%) │ Now trailing!")
             bot_state["phase"] = "TRAILING"
             
             # ★ v12: SMART REVERSAL CHECK — Exit if momentum has definitively shifted
@@ -1294,8 +1311,8 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
         #  ★ INITIAL PHASE: Waiting for Break-Even trigger
         # ══════════════════════════════════════════════════════════════
         elif bot_state["phase"] == "INITIAL":
-            # Progress bar toward break-even
-            progress = max(0, pnl_pct) / BREAK_EVEN_TRIGGER_PCT if BREAK_EVEN_TRIGGER_PCT > 0 else 0
+            # Progress bar toward dynamic BE trigger (1R)
+            progress = max(0, pnl_pct) / dynamic_be_trigger if dynamic_be_trigger > 0 else 0
             filled_blocks = min(int(progress * 15), 15)
             bar = "█" * filled_blocks + "░" * (15 - filled_blocks)
 
@@ -1327,8 +1344,16 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
 
             log.info(
                 f"   [{symbol}] [{bar}] {pnl_str} │ "
-                f"Phase: INITIAL → Break-Even at +{BREAK_EVEN_TRIGGER_PCT}% │ "
+                f"Phase: INITIAL → True BE at +{dynamic_be_trigger:.2f}% (1R) │ Trail at {trailing_activation_pct:.2f}% (1.5R) │ "
                 f"SL: ${bot_state['current_trail_sl']} │ ATR: ${current_atr:.2f}"
+            )
+
+        elif bot_state["phase"] == "BREAKEVEN":
+            # ★ v17: Show waiting for trailing activation
+            log.info(
+                f"   [{symbol}] 🛡 {pnl_str} │ "
+                f"Phase: BREAKEVEN → Trail activates at +{trailing_activation_pct:.2f}% (1.5R) │ "
+                f"SL: ${bot_state['current_trail_sl']} │ Best: ${bot_state['best_price']}"
             )
 
         # ── Update visualizer ──
@@ -1871,6 +1896,7 @@ def main():
             "atr_refresh_counter": 0,
             "current_atr": 0.0,
             "original_qty": 0.0,        # Full entry qty for SL order sizing
+            "initial_risk_pct": 0.0,    # ★ v17: Dynamic R:R baseline (ATR × SL_MULT / entry)
             # Core state
             "last_trade_time": 0,
             "last_signal_data": None,
@@ -1897,8 +1923,9 @@ def main():
     log.info(f"    ★ LIMIT Orders (Maker Fee) │ Offset: {LIMIT_OFFSET_PCT}%")
     log.info(f"    ★ Dynamic Risk: $7 Fixed Margin │ ADX Filter: ≥{ADX_ENTRY_MIN}")
     log.info(f"    ★ Correlation: >{CORRELATION_THRESHOLD} → {CORR_ACTION}")
-    log.info(f"    ★ Break-Even: +{BREAK_EVEN_TRIGGER_PCT}% → SL to entry (+{BREAK_EVEN_FEE_BUFFER}% fee buffer)")
-    log.info(f"    ★ Trailing SL: {TRAILING_SL_DISTANCE_PCT}% behind best price (after break-even)")
+    log.info(f"    ★ v17 True Break-Even: +1R dynamic → SL to entry (+{TRUE_BE_FEE_BUFFER_PCT}% fee cover)")
+    log.info(f"    ★ Trailing SL: {TRAILING_SL_DISTANCE_PCT}% behind best price (activates at {TRAILING_ACTIVATION_RR}R)")
+    log.info(f"    ★ Stale Trade: timeout only if PnL < {STALE_TRADE_MIN_LOSS_PCT}%")
     log.info(f"    ★ ML Filter: ACTIVE │ Penalty: DISABLED (retraining on clean data)")
     print()
 
