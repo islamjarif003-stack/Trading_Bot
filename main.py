@@ -1633,6 +1633,65 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
         log.warning(f"⚠  [{symbol}] Volume burst check failed: {e}")
         return True  # ★ v14: On error, allow trade
 
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ██  ★ v18: MULTI-TIMEFRAME ANALYSIS (MTFA) — 1H Trend Filter            ██
+# ═════════════════════════════════════════════════════════════════════════════
+
+MTFA_ENABLED = True          # ★ v18: Master switch for 1H trend filter
+MTFA_EMA_PERIOD = 50         # ★ v18: 50-period EMA on the 1H chart
+
+def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
+    """
+    ★ v18: Multi-Timeframe Analysis — 1H 50 EMA Trend Filter.
+    
+    Fetches 1H klines, calculates 50 EMA using pure NumPy.
+    Returns (aligned: bool, reason: str).
+      - LONG only if 1H Price > 1H 50 EMA (macro uptrend)
+      - SHORT only if 1H Price < 1H 50 EMA (macro downtrend)
+    """
+    try:
+        import numpy as np
+        
+        h1 = client.futures_klines(
+            symbol=symbol,
+            interval=Client.KLINE_INTERVAL_1HOUR,
+            limit=60,  # 60 candles gives plenty of data for 50 EMA
+        )
+        if not h1 or len(h1) < MTFA_EMA_PERIOD:
+            return True, "MTFA SKIP: Not enough 1H data"  # Allow on insufficient data
+        
+        # Extract close prices as numpy array
+        close_1h = np.array([float(k[4]) for k in h1])
+        
+        # Calculate 50 EMA using pure NumPy
+        alpha = 2.0 / (MTFA_EMA_PERIOD + 1)
+        ema_50 = np.zeros_like(close_1h)
+        ema_50[0] = close_1h[0]
+        for i in range(1, len(close_1h)):
+            ema_50[i] = alpha * close_1h[i] + (1.0 - alpha) * ema_50[i - 1]
+        
+        current_price_1h = close_1h[-1]
+        current_ema_50 = ema_50[-1]
+        trend = "UP" if current_price_1h > current_ema_50 else "DOWN"
+        dist_pct = ((current_price_1h - current_ema_50) / current_ema_50) * 100.0
+        
+        # Alignment check
+        if direction == "BUY" and trend == "UP":
+            return True, f"MTFA ALIGNED: 1H Trend UP (Price ${current_price_1h:.4f} > EMA50 ${current_ema_50:.4f}, +{dist_pct:.2f}%)"
+        elif direction == "SELL" and trend == "DOWN":
+            return True, f"MTFA ALIGNED: 1H Trend DOWN (Price ${current_price_1h:.4f} < EMA50 ${current_ema_50:.4f}, {dist_pct:.2f}%)"
+        else:
+            return False, (
+                f"Signal Rejected: MTFA 1H Trend mismatch. "
+                f"Signal={direction} but 1H Trend={trend} "
+                f"(Price ${current_price_1h:.4f} vs EMA50 ${current_ema_50:.4f}, {dist_pct:+.2f}%)"
+            )
+    except Exception as e:
+        log.warning(f"⚠  [{symbol}] MTFA check failed: {e}")
+        return True, f"MTFA SKIP: Error ({e})"  # Allow on error (fail-open)
+
+
 class AdvancedExecutionValidator:
     """
     Advanced Pre-Flight Check System.
@@ -2219,6 +2278,18 @@ def main():
                             #     state["armed_signal_data"] = None
                             #     continue
                             log.info(f"✅  [{symbol}] S/R Gate: BYPASSED (v15 testnet mode)")
+
+                            # ── ★ v18: MULTI-TIMEFRAME ANALYSIS (MTFA) GATE ──
+                            if MTFA_ENABLED:
+                                mtfa_aligned, mtfa_reason = _check_1h_trend_ema50(client, symbol, armed_dir)
+                                if not mtfa_aligned:
+                                    log.warning(f"🚫  [{symbol}] {mtfa_reason}")
+                                    state["armed_signal"] = "NONE"
+                                    state["armed_time"] = 0
+                                    state["armed_signal_data"] = None
+                                    continue
+                                else:
+                                    log.info(f"🌍  [{symbol}] {mtfa_reason}")
 
                             # Restore data for execution
                             exc_signal = armed_dir
