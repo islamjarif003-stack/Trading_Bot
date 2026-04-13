@@ -1692,6 +1692,173 @@ def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
         return True, f"MTFA SKIP: Error ({e})"  # Allow on error (fail-open)
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+# ██  ★ v19: 3-LAYER ENTRY VALIDATION SYSTEM                               ██
+# ═════════════════════════════════════════════════════════════════════════════
+
+ENTRY_VALIDATION_ENABLED = True   # ★ v19: Master switch
+EXHAUSTION_RANGE_MULT    = 2.5    # ★ Layer 1: 8-bar range > 2.5x ATR14 = exhaustion
+PULLBACK_ATR_DIST        = 0.3    # ★ Layer 2: Price must be within 0.3x ATR of EMA21
+RR_MIN_RATIO             = 1.5    # ★ Layer 3: Minimum TP/SL ratio
+SL_ATR_MULTIPLIER        = 2.0    # ★ Layer 3: SL distance = 2.0x ATR
+WAIT_QUEUE_MAX_CANDLES   = 8      # ★ WAIT queue: max candles before expiry
+
+def _3layer_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
+    """
+    ★ v19: 3-Layer Entry Validation System.
+    
+    Returns: (result: str, reason: str)
+      - "PASS"    → All 3 layers passed, proceed to execute.
+      - "NEUTRAL" → Layer 1 (Exhaustion) or Layer 3 (R:R) failed. Kill signal.
+      - "WAIT"    → Layer 2 (Pullback) failed. Keep signal in WAIT queue.
+    """
+    try:
+        import numpy as np
+        
+        m5 = client.futures_klines(symbol=symbol, interval="5m", limit=80)
+        if not m5 or len(m5) < 30:
+            return "PASS", "3-Layer SKIP: Not enough M5 data"
+        
+        close = np.array([float(k[4]) for k in m5])
+        high  = np.array([float(k[2]) for k in m5])
+        low   = np.array([float(k[3]) for k in m5])
+        
+        current_price = close[-1]
+        
+        # ---- ATR14 Calculation ----
+        prev_close = close[:-1]
+        tr_h_l = high[1:] - low[1:]
+        tr_h_c = np.abs(high[1:] - prev_close)
+        tr_l_c = np.abs(low[1:] - prev_close)
+        tr = np.maximum(tr_h_l, np.maximum(tr_h_c, tr_l_c))
+        
+        atr_arr = np.zeros(len(tr))
+        if len(tr) >= 14:
+            atr_arr[13] = np.mean(tr[:14])
+            for i in range(14, len(tr)):
+                atr_arr[i] = (atr_arr[i-1] * 13 + tr[i]) / 14.0
+        atr14 = atr_arr[-1]
+        if atr14 <= 0:
+            return "PASS", "3-Layer SKIP: ATR14 is zero"
+        
+        # ================================================================
+        # LAYER 1: Move Exhaustion (8-bar range > 2.5x ATR14 = exhausted)
+        # ================================================================
+        last_8_high = np.max(high[-8:])
+        last_8_low  = np.min(low[-8:])
+        range_8bar  = last_8_high - last_8_low
+        exhaustion_threshold = EXHAUSTION_RANGE_MULT * atr14
+        
+        if range_8bar > exhaustion_threshold:
+            reason = (
+                f"Layer 1 FAILED (Exhaustion): 8-bar range ${range_8bar:.4f} > "
+                f"{EXHAUSTION_RANGE_MULT}x ATR14 ${atr14:.4f} (threshold ${exhaustion_threshold:.4f}). "
+                f"Move is exhausted."
+            )
+            log.warning(f"🟡  [{symbol}] {reason}")
+            return "NEUTRAL", reason
+        
+        log.info(f"    [{symbol}] Layer 1 PASSED: 8-bar range ${range_8bar:.4f} < {EXHAUSTION_RANGE_MULT}x ATR (${exhaustion_threshold:.4f})")
+        
+        # ================================================================
+        # LAYER 2: Pullback Confirmation (price near EMA21 + slope check)
+        # ================================================================
+        # EMA21 calculation
+        alpha_21 = 2.0 / (21 + 1)
+        ema21 = np.zeros_like(close)
+        ema21[0] = close[0]
+        for i in range(1, len(close)):
+            ema21[i] = alpha_21 * close[i] + (1.0 - alpha_21) * ema21[i-1]
+        
+        current_ema21 = ema21[-1]
+        ema21_prev = ema21[-2]
+        ema21_slope = current_ema21 - ema21_prev  # positive = rising, negative = falling
+        dist_to_ema21 = abs(current_price - current_ema21)
+        max_pullback_dist = PULLBACK_ATR_DIST * atr14
+        
+        pullback_ok = False
+        if direction == "BUY":
+            if dist_to_ema21 <= max_pullback_dist and ema21_slope > 0:
+                pullback_ok = True
+        elif direction == "SELL":
+            if dist_to_ema21 <= max_pullback_dist and ema21_slope < 0:
+                pullback_ok = True
+        
+        if not pullback_ok:
+            slope_dir = "rising" if ema21_slope > 0 else "falling"
+            reason = (
+                f"Layer 2 WAIT (Pullback): Price ${current_price:.4f} is ${dist_to_ema21:.4f} from EMA21 ${current_ema21:.4f} "
+                f"(max ${max_pullback_dist:.4f}). Slope: {slope_dir} ({ema21_slope:+.6f}). "
+                f"Signal={direction}. Queued for re-check."
+            )
+            log.warning(f"⏳  [{symbol}] {reason}")
+            return "WAIT", reason
+        
+        log.info(f"    [{symbol}] Layer 2 PASSED: Pullback confirmed. Dist ${dist_to_ema21:.4f} < {PULLBACK_ATR_DIST}x ATR (${max_pullback_dist:.4f}), slope={'UP' if ema21_slope > 0 else 'DOWN'}")
+        
+        # ================================================================
+        # LAYER 3: R:R Validation (TP/SL >= 1.5)
+        # ================================================================
+        sl_distance = SL_ATR_MULTIPLIER * atr14
+        
+        # Find nearest S/R using pivot highs/lows from last 30 candles
+        # Support = recent swing lows, Resistance = recent swing highs
+        pivot_window = 3  # A pivot is a local extreme within +/-3 bars
+        resistances = []
+        supports = []
+        
+        for i in range(pivot_window, len(high) - pivot_window):
+            # Swing high
+            if high[i] == np.max(high[i - pivot_window : i + pivot_window + 1]):
+                resistances.append(high[i])
+            # Swing low
+            if low[i] == np.min(low[i - pivot_window : i + pivot_window + 1]):
+                supports.append(low[i])
+        
+        tp_distance = 0.0
+        if direction == "BUY":
+            # TP = nearest resistance above current price
+            above = [r for r in resistances if r > current_price + (0.1 * atr14)]
+            if above:
+                nearest_tp = min(above)
+                tp_distance = nearest_tp - current_price
+            else:
+                tp_distance = sl_distance * 2.0  # Default 1:2 if no S/R found
+        else:  # SELL
+            # TP = nearest support below current price
+            below = [s for s in supports if s < current_price - (0.1 * atr14)]
+            if below:
+                nearest_tp = max(below)
+                tp_distance = current_price - nearest_tp
+            else:
+                tp_distance = sl_distance * 2.0  # Default 1:2 if no S/R found
+        
+        rr_ratio = tp_distance / sl_distance if sl_distance > 0 else 0
+        
+        if rr_ratio < RR_MIN_RATIO:
+            reason = (
+                f"Layer 3 FAILED (R:R): TP dist ${tp_distance:.4f} / SL dist ${sl_distance:.4f} = "
+                f"{rr_ratio:.2f}R (need >= {RR_MIN_RATIO}R). Bad risk/reward."
+            )
+            log.warning(f"🟡  [{symbol}] {reason}")
+            return "NEUTRAL", reason
+        
+        log.info(f"    [{symbol}] Layer 3 PASSED: R:R = {rr_ratio:.2f} (TP ${tp_distance:.4f} / SL ${sl_distance:.4f}) >= {RR_MIN_RATIO}R")
+        
+        # ALL 3 LAYERS PASSED
+        final_reason = (
+            f"3-Layer PASSED: Exhaustion OK (range ${range_8bar:.4f}), "
+            f"Pullback confirmed (dist ${dist_to_ema21:.4f}), "
+            f"R:R = {rr_ratio:.2f}"
+        )
+        log.info(f"✅  [{symbol}] {final_reason}")
+        return "PASS", final_reason
+        
+    except Exception as e:
+        log.warning(f"⚠  [{symbol}] 3-Layer validation error: {e}")
+        return "PASS", f"3-Layer SKIP: Error ({e})"  # Fail-open
+
+
 class AdvancedExecutionValidator:
     """
     Advanced Pre-Flight Check System.
@@ -1970,6 +2137,11 @@ def main():
             "armed_signal": "NONE",
             "armed_time": 0,
             "armed_signal_data": None,
+            # ★ v19: 3-Layer WAIT Queue
+            "wait_queue_signal": "NONE",       # Signal direction in WAIT
+            "wait_queue_data": None,            # Signal data snapshot
+            "wait_queue_candle_count": 0,        # Candles elapsed since WAIT
+            "wait_queue_start_time": 0,          # When WAIT started
         }
         visualizers[sym] = StateExporter(client, sym)
 
@@ -2217,6 +2389,43 @@ def main():
                             )
                             signal = "WAIT"
 
+                # ── ★ v19: WAIT QUEUE PROCESSOR (re-check Layer 2 every cycle) ──
+                if state["wait_queue_signal"] != "NONE" and state["armed_signal"] == "NONE":
+                    wq_age_s = now - state["wait_queue_start_time"]
+                    wq_candles = int(wq_age_s / 300)  # Each M5 candle = 300s
+                    state["wait_queue_candle_count"] = wq_candles
+                    
+                    if wq_candles >= WAIT_QUEUE_MAX_CANDLES:
+                        log.warning(f"⌛  [{symbol}] WAIT QUEUE EXPIRED: {WAIT_QUEUE_MAX_CANDLES} candles elapsed. Signal killed.")
+                        state["wait_queue_signal"] = "NONE"
+                        state["wait_queue_data"] = None
+                        state["wait_queue_candle_count"] = 0
+                        state["wait_queue_start_time"] = 0
+                    else:
+                        wq_dir = state["wait_queue_signal"]
+                        # Re-run Layer 2 only (Pullback check)
+                        layer_result, layer_reason = _3layer_entry_validate(client, symbol, wq_dir)
+                        
+                        if layer_result == "PASS":
+                            log.info(f"🔄  [{symbol}] WAIT QUEUE → PASS after {wq_candles} candles! Re-arming {wq_dir}...")
+                            state["armed_signal"] = wq_dir
+                            state["armed_time"] = now
+                            state["armed_signal_data"] = state["wait_queue_data"]
+                            # Clear WAIT queue
+                            state["wait_queue_signal"] = "NONE"
+                            state["wait_queue_data"] = None
+                            state["wait_queue_candle_count"] = 0
+                            state["wait_queue_start_time"] = 0
+                        elif layer_result == "NEUTRAL":
+                            log.warning(f"🚫  [{symbol}] WAIT QUEUE → NEUTRAL on re-check. Signal killed.")
+                            state["wait_queue_signal"] = "NONE"
+                            state["wait_queue_data"] = None
+                            state["wait_queue_candle_count"] = 0
+                            state["wait_queue_start_time"] = 0
+                        else:
+                            if scan_count % 3 == 0:
+                                log.info(f"⏳  [{symbol}] WAIT QUEUE: Still waiting ({wq_candles}/{WAIT_QUEUE_MAX_CANDLES} candles) for pullback...")
+
                 # ── ★ ARM the Signal instead of immediate execution ────────────
                 if signal in ("BUY", "SELL") and state["armed_signal"] == "NONE":
                     log.info(f"🔫  [{symbol}] SIGNAL ARMED ({signal}) │ Waiting max 4 mins for Vol Burst...")
@@ -2290,6 +2499,32 @@ def main():
                                     continue
                                 else:
                                     log.info(f"🌍  [{symbol}] {mtfa_reason}")
+
+                            # ── ★ v19: 3-LAYER ENTRY VALIDATION GATE ──
+                            if ENTRY_VALIDATION_ENABLED:
+                                layer_result, layer_reason = _3layer_entry_validate(client, symbol, armed_dir)
+                                log.info(f"📊  [{symbol}] 3-Layer Result: {layer_result} | {layer_reason}")
+                                
+                                if layer_result == "NEUTRAL":
+                                    # Kill the signal entirely
+                                    log.warning(f"🚫  [{symbol}] 3-Layer NEUTRAL — Signal killed.")
+                                    state["armed_signal"] = "NONE"
+                                    state["armed_time"] = 0
+                                    state["armed_signal_data"] = None
+                                    continue
+                                elif layer_result == "WAIT":
+                                    # Move to WAIT queue (don't cancel, don't execute)
+                                    log.info(f"⏳  [{symbol}] 3-Layer WAIT — Signal queued. Will re-check for {WAIT_QUEUE_MAX_CANDLES} candles.")
+                                    state["wait_queue_signal"] = armed_dir
+                                    state["wait_queue_data"] = state["armed_signal_data"]
+                                    state["wait_queue_candle_count"] = 0
+                                    state["wait_queue_start_time"] = time.time()
+                                    # Disarm so it doesn't re-trigger burst logic
+                                    state["armed_signal"] = "NONE"
+                                    state["armed_time"] = 0
+                                    state["armed_signal_data"] = None
+                                    continue
+                                # else: "PASS" — continue to execution
 
                             # Restore data for execution
                             exc_signal = armed_dir
