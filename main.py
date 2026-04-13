@@ -2459,6 +2459,7 @@ def main():
                                     is_micro_scalp = True
                                 else:
                                     log.warning(f"🚫  [{symbol}] PRE-FLIGHT REJECTED: {reason}")
+                                    visualizer.record_rejection(f"PRE-FLIGHT: {reason}")
                                     state["armed_signal"] = "NONE"
                                     state["armed_time"] = 0
                                     state["armed_signal_data"] = None
@@ -2493,6 +2494,7 @@ def main():
                                 mtfa_aligned, mtfa_reason = _check_1h_trend_ema50(client, symbol, armed_dir)
                                 if not mtfa_aligned:
                                     log.warning(f"🚫  [{symbol}] {mtfa_reason}")
+                                    visualizer.record_rejection(mtfa_reason)
                                     state["armed_signal"] = "NONE"
                                     state["armed_time"] = 0
                                     state["armed_signal_data"] = None
@@ -2508,6 +2510,7 @@ def main():
                                 if layer_result == "NEUTRAL":
                                     # Kill the signal entirely
                                     log.warning(f"🚫  [{symbol}] 3-Layer NEUTRAL — Signal killed.")
+                                    visualizer.record_rejection(layer_reason)
                                     state["armed_signal"] = "NONE"
                                     state["armed_time"] = 0
                                     state["armed_signal_data"] = None

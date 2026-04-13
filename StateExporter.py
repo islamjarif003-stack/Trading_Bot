@@ -50,6 +50,8 @@ class StateExporter:
         self._total_pnl = 0.0
         self._trade_count = 0
         self._win_count = 0
+        self._reject_count = 0        # ★ v20: Track rejected trades
+        self._saved_amount = 0.0      # ★ v20: Track estimated avoided losses
         self.state_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"live_state_{self.symbol}.json")
         self.pnl_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"pnl_history_{self.symbol}.json")
         self._load_pnl_history()
@@ -65,6 +67,8 @@ class StateExporter:
                     self._total_pnl = data.get("total_pnl", 0.0)
                     self._trade_count = data.get("trade_count", 0)
                     self._win_count = data.get("win_count", 0)
+                    self._reject_count = data.get("reject_count", 0)
+                    self._saved_amount = data.get("saved_amount", 0.0)
                     self._recent_trades = data.get("recent_trades", [])
                     log.info(f"📡  PnL History [{self.symbol}] loaded: ${self._total_pnl:.2f} over {self._trade_count} trades")
         except Exception:
@@ -80,6 +84,8 @@ class StateExporter:
                     "total_pnl": round(self._total_pnl, 4),
                     "trade_count": self._trade_count,
                     "win_count": self._win_count,
+                    "reject_count": self._reject_count,
+                    "saved_amount": round(self._saved_amount, 2),
                     "recent_trades": getattr(self, '_recent_trades', []),
                 }, f, indent=2)
         except Exception:
@@ -105,6 +111,13 @@ class StateExporter:
         
         self._save_pnl_history()
         log.info(f"📡  PnL updated: ${pnl_usdt:+.2f} ({side}) │ Total: ${self._total_pnl:.2f} │ {self._trade_count} trades")
+
+    def record_rejection(self, reason: str, est_sl_loss: float = 2.0):
+        """★ v20: Record a rejected signal (e.g. from MTFA or 3-Layer) to track avoided losses."""
+        self._reject_count += 1
+        self._saved_amount += est_sl_loss
+        self._save_pnl_history()
+        # Internal tracking, no need to log here since main.py already logs the rejection
 
     # ─── STATUS SETTERS (called from main.py) ───────────────────────────
     def set_signal_data(self, signal_data: dict):
@@ -216,6 +229,8 @@ class StateExporter:
                     "trade_count": self._trade_count,
                     "win_count": self._win_count,
                     "win_rate": round(self._win_count / max(self._trade_count, 1) * 100, 1),
+                    "reject_count": self._reject_count,
+                    "saved_amount": round(self._saved_amount, 2),
                     "recent_trades": getattr(self, '_recent_trades', []),
                 },
 

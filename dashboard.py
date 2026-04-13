@@ -451,6 +451,14 @@ def render_symbol_dashboard(symbol: str, state: dict):
         b2.metric("Bot Win Rate", f"{bot.get('win_rate', 0):.1f}%")
         b3.metric("Total PnL", f"${bot.get('total_pnl', 0):+.2f}")
 
+        # ★ v20: Safety Engine stats
+        st.markdown("### 🛡️ Safety Filters")
+        s1, s2 = st.columns(2)
+        r_count = bot.get("reject_count", 0)
+        s_amount = bot.get("saved_amount", 0.0)
+        s1.metric("Bad Setups Blocked", f"{r_count} 🚫")
+        s2.metric("Est. Money Saved", f"${s_amount:,.2f} 💰")
+
     # ═══════════════════════════════════════════════════════════════════
     #  RECENT TRADE HISTORY
     # ═══════════════════════════════════════════════════════════════════
