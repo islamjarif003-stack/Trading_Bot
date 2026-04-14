@@ -40,6 +40,8 @@ TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 
 # ─── TRADING CONFIGURATION ───────────────────────────────────────────────────
+DRY_RUN              = True     # ★ v20.1: True = simulate orders (no real API calls), False = LIVE TRADING
+USE_TESTNET          = True     # ★ v20.1: True = Binance Testnet, False = Binance Mainnet
 ENABLE_DYNAMIC_WATCHLIST = True # ★ Fetch Top 50 Volatile USDT pairs dynamically
 ENABLE_MICRO_SCALPING = False   # ★ v12: DISABLED — Pre-flight fail = NO TRADE (no more weak entries)
 SYMBOLS         = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
@@ -441,66 +443,70 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         log.info(f"   Confluence    : {' | '.join(breakdown)}")
         log.info("═" * 70)
 
-        # ★ FIX 2: Try LIMIT order first (maker fee), fallback to MARKET
-        use_market = False
-        try:
-            entry_order = client.futures_create_order(
-                symbol=symbol, side=side,
-                type=ORDER_TYPE_LIMIT,
-                price=str(limit_price),
-                quantity=quantity,
-                timeInForce=TIME_IN_FORCE_GTC,
-            )
-            e_id = entry_order.get('orderId', entry_order.get('order_id', 'UNKNOWN'))
-            log.info(f"📋  [{symbol}] LIMIT ORDER PLACED — ${limit_price} │ OrderID: {e_id}")
-
-            # Wait for fill (up to 45 seconds, check every 3s)
-            filled = False
-            for _wait in range(15):  # 15 × 3s = 45s max
-                time.sleep(3)
-                try:
-                    order_status = client.futures_get_order(symbol=symbol, orderId=e_id)
-                    status = order_status.get('status', '')
-                    if status == 'FILLED':
-                        log.info(f"✅  [{symbol}] LIMIT FILLED (Maker Fee!) — OrderID: {e_id}")
-                        filled = True
-                        break
-                    elif status in ('CANCELED', 'EXPIRED', 'REJECTED'):
-                        log.warning(f"⚠  [{symbol}] LIMIT {status}. Falling back to MARKET.")
-                        use_market = True
-                        break
-                except Exception:
-                    pass
-
-            if not filled and not use_market:
-                # Cancel unfilled limit and use market
-                try:
-                    client.futures_cancel_order(symbol=symbol, orderId=e_id)
-                    log.warning(f"⏳  [{symbol}] LIMIT not filled in 45s. Cancelled → MARKET fallback.")
-                except Exception:
-                    pass
-                use_market = True
-
-        except BinanceAPIException as limit_err:
-            log.warning(f"⚠  [{symbol}] LIMIT order failed: {limit_err.message}. Falling back to MARKET.")
-            use_market = True
-
-        if use_market:
-            entry_order = client.futures_create_order(
-                symbol=symbol, side=side,
-                type=ORDER_TYPE_MARKET, quantity=quantity,
-            )
-            e_id = entry_order.get('orderId', entry_order.get('order_id', 'UNKNOWN'))
-            log.info(f"✅  [{symbol}] MARKET FILLED (Fallback) — OrderID: {e_id}")
-
-        # Fetch actual entry price from position
-        pos = _has_open_position(client, symbol)
-        if pos:
-            avg_entry = pos["entry_price"]
-            actual_qty = pos["qty"]
-        else:
-            avg_entry = current_price
+        # ★ v20.1: DRY-RUN or GTX POST-ONLY ENTRY
+        if DRY_RUN:
+            # ★ DRY RUN: Simulate entry — no API call
+            notional = dynamic_margin * LEVERAGE
+            est_fee = notional * 0.0002  # Maker fee estimate (0.02%)
+            log.info(f"🟢  [DRY RUN] ENTRY {signal} at ${limit_price} │ Qty: {quantity} │ Notional: ${notional:.2f} │ Est. Fee: ${est_fee:.4f}")
+            e_id = f"DRY-{symbol}-{int(time.time())}"
+            avg_entry = limit_price  # Use limit price as simulated fill
             actual_qty = quantity
+        else:
+            # ★ LIVE: GTX (Post-Only) Limit Order — ZERO taker fee tolerance
+            try:
+                entry_order = client.futures_create_order(
+                    symbol=symbol, side=side,
+                    type=ORDER_TYPE_LIMIT,
+                    price=str(limit_price),
+                    quantity=quantity,
+                    timeInForce='GTX',  # ★ Post-Only: Rejected if would be taker
+                )
+                e_id = entry_order.get('orderId', entry_order.get('order_id', 'UNKNOWN'))
+                log.info(f"📋  [{symbol}] GTX POST-ONLY PLACED — ${limit_price} │ OrderID: {e_id}")
+
+                # Wait for fill (up to 30 seconds, check every 2s)
+                filled = False
+                for _wait in range(15):  # 15 × 2s = 30s max
+                    time.sleep(2)
+                    try:
+                        order_status = client.futures_get_order(symbol=symbol, orderId=e_id)
+                        status = order_status.get('status', '')
+                        if status == 'FILLED':
+                            log.info(f"✅  [{symbol}] GTX FILLED (Maker Fee!) — OrderID: {e_id}")
+                            filled = True
+                            break
+                        elif status in ('CANCELED', 'EXPIRED', 'REJECTED'):
+                            log.warning(f"🚫  [{symbol}] GTX {status} — Would have been taker. Trade SKIPPED.")
+                            return False, 0.0
+                    except Exception:
+                        pass
+
+                if not filled:
+                    # Cancel unfilled GTX — NO market fallback!
+                    try:
+                        client.futures_cancel_order(symbol=symbol, orderId=e_id)
+                    except Exception:
+                        pass
+                    log.warning(f"⏳  [{symbol}] GTX not filled in 30s. Trade SKIPPED. No taker fallback.")
+                    return False, 0.0
+
+            except BinanceAPIException as gtx_err:
+                if gtx_err.code == -5022 or 'post only' in str(gtx_err.message).lower() or 'would immediately' in str(gtx_err.message).lower():
+                    log.warning(f"🚫  [{symbol}] GTX REJECTED — Spread too tight. Trade SKIPPED (saved taker fee!)")
+                else:
+                    log.error(f"❌  [{symbol}] GTX order error: {gtx_err.message}")
+                return False, 0.0
+
+        # Fetch actual entry price from position (skip in DRY RUN — already set above)
+        if not DRY_RUN:
+            pos = _has_open_position(client, symbol)
+            if pos:
+                avg_entry = pos["entry_price"]
+                actual_qty = pos["qty"]
+            else:
+                avg_entry = current_price
+                actual_qty = quantity
             
         # ★ FIX 1: Calculate SL and TP prices
         if signal == "BUY":
@@ -531,36 +537,42 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             log.warning(f"⚠  [{symbol}] Telegram alert failed: {tel_err}")
 
         # Place STOP-LOSS order (use quantity+reduceOnly to avoid closePosition conflict)
-        try:
-            sl_order = client.futures_create_order(
-                symbol=symbol, side=close_side,
-                type=FUTURE_ORDER_TYPE_STOP_MARKET,
-                stopPrice=str(sl_price),
-                quantity=actual_qty,
-                reduceOnly="true",
-                timeInForce=TIME_IN_FORCE_GTC,
-                workingType="MARK_PRICE",
-            )
-            s_id = sl_order.get('orderId', sl_order.get('order_id', 'UNKNOWN'))
-            log.info(f"🛡  [{symbol}] INITIAL SL — ${sl_price} ({SL_ATR_MULT}×ATR = ${sl_distance:.2f}) │ OrderID: {s_id}")
-        except BinanceAPIException as sl_err:
-            log.error(f"🚨  [{symbol}] INITIAL SL placement failed: {sl_err.message}. System will drop Emergency SL on next cycle.")
-
-        # ★ v12: Place TAKE-PROFIT order ONLY if DISABLE_HARD_TP is False
-        if not DISABLE_HARD_TP:
+        if DRY_RUN:
+            log.info(f"🟢  [DRY RUN] SL ORDER — ${sl_price} ({SL_ATR_MULT}×ATR = ${sl_distance:.2f}) │ Side: {close_side} │ Qty: {actual_qty}")
+        else:
             try:
-                tp_order = client.futures_create_order(
+                sl_order = client.futures_create_order(
                     symbol=symbol, side=close_side,
-                    type="TAKE_PROFIT_MARKET",
-                    stopPrice=str(tp_price),
-                    closePosition="true",
+                    type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                    stopPrice=str(sl_price),
+                    quantity=actual_qty,
+                    reduceOnly="true",
                     timeInForce=TIME_IN_FORCE_GTC,
                     workingType="MARK_PRICE",
                 )
-                t_id = tp_order.get('orderId', tp_order.get('order_id', 'UNKNOWN'))
-                log.info(f"🎯  [{symbol}] INITIAL TP — ${tp_price} ({TP_ATR_MULT}×ATR = ${tp_distance:.2f}) │ R:R 1:2 │ OrderID: {t_id}")
-            except BinanceAPIException as tp_err:
-                log.warning(f"⚠  [{symbol}] TP placement failed: {tp_err.message}. Trailing TP will manage exit.")
+                s_id = sl_order.get('orderId', sl_order.get('order_id', 'UNKNOWN'))
+                log.info(f"🛡  [{symbol}] INITIAL SL — ${sl_price} ({SL_ATR_MULT}×ATR = ${sl_distance:.2f}) │ OrderID: {s_id}")
+            except BinanceAPIException as sl_err:
+                log.error(f"🚨  [{symbol}] INITIAL SL placement failed: {sl_err.message}. System will drop Emergency SL on next cycle.")
+
+        # ★ v12: Place TAKE-PROFIT order ONLY if DISABLE_HARD_TP is False
+        if not DISABLE_HARD_TP:
+            if DRY_RUN:
+                log.info(f"🟢  [DRY RUN] TP ORDER — ${tp_price} ({TP_ATR_MULT}×ATR = ${tp_distance:.2f}) │ R:R 1:2")
+            else:
+                try:
+                    tp_order = client.futures_create_order(
+                        symbol=symbol, side=close_side,
+                        type="TAKE_PROFIT_MARKET",
+                        stopPrice=str(tp_price),
+                        closePosition="true",
+                        timeInForce=TIME_IN_FORCE_GTC,
+                        workingType="MARK_PRICE",
+                    )
+                    t_id = tp_order.get('orderId', tp_order.get('order_id', 'UNKNOWN'))
+                    log.info(f"🎯  [{symbol}] INITIAL TP — ${tp_price} ({TP_ATR_MULT}×ATR = ${tp_distance:.2f}) │ R:R 1:2 │ OrderID: {t_id}")
+                except BinanceAPIException as tp_err:
+                    log.warning(f"⚠  [{symbol}] TP placement failed: {tp_err.message}. Trailing TP will manage exit.")
         else:
             log.info(f"🔓  [{symbol}] NO HARD TP — 'Let Winners Run' mode. Trailing SL will manage exit.")
 
@@ -619,6 +631,11 @@ def execute_partial_close(client: Client, symbol: str, side: str,
             return False
         
         close_side = SIDE_SELL if side == "BUY" else SIDE_BUY
+        
+        if DRY_RUN:
+            remaining = _round_qty(current_qty - close_qty, symbol)
+            log.info(f"🟢  [DRY RUN] {reason} PARTIAL CLOSE — {close_pct}% ({close_qty}) │ Remaining: {remaining}")
+            return True
         
         order = client.futures_create_order(
             symbol=symbol,
@@ -796,6 +813,11 @@ def _update_sl_order(client: Client, symbol: str, side: str, new_sl: float) -> b
     if qty <= 0:
         return False
     
+    # ★ v20.1: DRY RUN — simulate SL update
+    if DRY_RUN:
+        log.info(f"🟢  [DRY RUN] SL UPDATE — ${new_sl} │ Side: {close_side} │ Qty: {qty}")
+        return True
+    
     try:
         # ★ Step 1: Cancel old STOP orders (preserve TP!)
         _cancel_stop_orders_only(client, symbol)
@@ -902,6 +924,10 @@ def _force_market_close(client: Client, symbol: str, side: str) -> bool:
     """Emergency market close for the entire position. Returns True if successfully closed."""
     close_side = SIDE_SELL if side == "BUY" else SIDE_BUY
     try:
+        if DRY_RUN:
+            log.info(f"🟢  [DRY RUN] FORCE MARKET CLOSE — {symbol} │ Side: {close_side}")
+            return True
+        
         _cancel_all_open_orders(client, symbol)
         
         # We must get exact position quantity; MARKET with closePosition is not supported
@@ -2200,14 +2226,21 @@ class AdvancedExecutionValidator:
             return False, f"SMC Pre-Flight BLOCKED ({result}): {reason}"
 
 def initialize_client() -> Client:
-    """Create and configure the Binance Futures Testnet client."""
-    log.info("🔌  Connecting to Binance Futures TESTNET (DEMO ACCOUNT)...")
-    log.info(f"    API Key: {API_KEY[:8]}...{API_KEY[-4:]} ({len(API_KEY)} chars)")
+    """Create and configure the Binance Futures client (Testnet or Mainnet)."""
+    if USE_TESTNET:
+        log.info("🔌  Connecting to Binance Futures TESTNET (DEMO ACCOUNT)...")
+        client = Client(API_KEY, API_SECRET, testnet=True, ping=False)
+        client.FUTURES_URL = 'https://testnet.binancefuture.com/fapi'
+    else:
+        log.info("🔴  Connecting to Binance Futures MAINNET (REAL MONEY)...")
+        if DRY_RUN:
+            log.info("🟢  DRY RUN MODE — No real orders will be placed.")
+        else:
+            log.warning("⚠️  LIVE TRADING MODE — Real orders WILL be placed!")
+        client = Client(API_KEY, API_SECRET, testnet=False, ping=False)
 
-    # Connect to Testnet
-    client = Client(API_KEY, API_SECRET, testnet=True, ping=False)
-    # Ensure Testnet Futures URL is used
-    client.FUTURES_URL = 'https://testnet.binancefuture.com/fapi'
+    log.info(f"    API Key: {API_KEY[:8]}...{API_KEY[-4:]} ({len(API_KEY)} chars)")
+    log.info(f"    Mode: {'TESTNET' if USE_TESTNET else 'MAINNET'} │ DRY_RUN: {DRY_RUN}")
 
     # ★ AUTO TIME-SYNC: Fix "Timestamp ahead of server" errors (VPN latency)
     try:
