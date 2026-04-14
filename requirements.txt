@@ -7,3 +7,4 @@ streamlit>=1.30.0
 streamlit-autorefresh>=1.0.0
 plotly>=5.18.0
 python-dotenv>=1.0.0
+requests>=2.31.0

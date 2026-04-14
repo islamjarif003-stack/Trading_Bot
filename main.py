@@ -316,7 +316,7 @@ def _print_score_dashboard(signal_data: dict, scan_count: int, symbol: str):
 
     # ★ Correlation & Risk Row
     corr_status = "⚠ HIGH" if btc_corr > CORRELATION_THRESHOLD else "✅ OK"
-    log.info(f"  ★ BTC Corr: {btc_corr:+.4f} ({corr_status})  │  Risk: $1 Sniper Margin  │  SL: {SL_ATR_MULT}×ATR")
+    log.info(f"  ★ BTC Corr: {btc_corr:+.4f} ({corr_status})  │  Risk: Dynamic 10% Margin  │  SL: {SL_ATR_MULT}×ATR")
 
     # Score breakdown
     if breakdown:
@@ -376,11 +376,12 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             
         position_value_usd = dynamic_margin * LEVERAGE
         raw_qty = position_value_usd / current_price
-        quantity = _round_qty(raw_qty, symbol)
+        quantity = _round_qty(raw_qty * size_multiplier, symbol)  # ★ FIX: Apply correlation size_multiplier
 
-        # ATR-based SL/TP distances (fallback)
+        # ATR-based SL/TP distances (fallback) with 4% safety cap
         sl_distance = atr * SL_ATR_MULT   # 1.5 × ATR
-        tp_distance = atr * TP_ATR_MULT   # 3.0 × ATR (1:2 R:R)
+        sl_distance = min(sl_distance, current_price * 0.04)  # ★ FIX: Cap ATR fallback SL at 4% of price
+        tp_distance = sl_distance * (TP_ATR_MULT / SL_ATR_MULT)  # Maintain R:R ratio from capped SL
         
         # ★ v20 SMC Override: Use deeply calculated structural SL behind Liquidity Sweep
         if signal_data and signal_data.get("smc_zone") and signal_data["smc_zone"].get("sl_distance", 0) > 0:
@@ -428,7 +429,7 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             limit_price = _round_price(current_price + offset, symbol)  # Slightly above bid
 
         log.info("═" * 70)
-        log.info(f"🚀  [{symbol}] EXECUTING {signal} │ Risk: $1 Sniper Margin{size_note} │ Score: {score}")
+        log.info(f"🚀  [{symbol}] EXECUTING {signal} │ Risk: ${dynamic_margin:.2f} Dynamic Margin{size_note} │ Score: {score}")
         log.info(f"   ★ LIMIT Entry : ${limit_price} (Maker Fee — offset {LIMIT_OFFSET_PCT}%)")
         log.info(f"   Market Price  : ${current_price}")
         log.info(f"   Quantity      : {quantity}")
@@ -2367,7 +2368,7 @@ def main():
     kill_switch_active = False
     last_report_date = daily_stats_date  # ★ v7.4: Track daily report
 
-    send_telegram_alert(f"🚀 <b>Bot Started - v16.0 ($1 Sniper Challenge)</b>\nPairs: {len(SYMBOLS)}\nStarting Balance: ${daily_start_balance:.2f}")
+    send_telegram_alert(f"🚀 <b>Bot Started - v20.1 (Dynamic 10% Margin + SMC Engine)</b>\nPairs: {len(SYMBOLS)}\nStarting Balance: ${daily_start_balance:.2f}")
 
     while True:
         try:
@@ -2743,7 +2744,11 @@ def main():
                             size_multiplier = 1.0
 
                             if abs(btc_corr) > CORRELATION_THRESHOLD and symbol != "BTCUSDT":
-                                btc_same_dir = _check_btc_same_direction(client, exc_signal)
+                                # ★ FIX: Direct BTC position check (replaces missing _check_btc_same_direction)
+                                btc_pos = _has_open_position(client, "BTCUSDT")
+                                btc_same_dir = False
+                                if btc_pos:
+                                    btc_same_dir = (btc_pos["side"] == exc_signal)  # Same direction = correlated risk
                                 if btc_same_dir:
                                     if CORR_ACTION == "SKIP":
                                         log.info(f"🚫  [{symbol}] CORR FILTER SKIP — BTC Corr: {btc_corr:+.4f} > {CORRELATION_THRESHOLD} & BTC {exc_signal} running")
