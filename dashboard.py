@@ -331,10 +331,10 @@ def render_symbol_dashboard(symbol: str, state: dict):
         )
 
     # ═══════════════════════════════════════════════════════════════════
-    #  TOP METRICS BAR
+    #  TOP METRICS BAR (ROW 1 - CORE)
     # ═══════════════════════════════════════════════════════════════════
     st.markdown("---")
-    m1, m2, m3, m4, m5, m6, m7, m8 = st.columns(8)
+    m1, m2, m3, m4, m5, m6 = st.columns(6)
 
     price = sig.get("current_price", 0)
     score = sig.get("score", 0)
@@ -352,21 +352,37 @@ def render_symbol_dashboard(symbol: str, state: dict):
                 unsafe_allow_html=True)
 
     m3.metric("Score", f"{score}/{max_sc}")
-    m4.metric("ADX", f"{sig.get('adx', 0):.1f}")
-    m5.metric("RSI", f"{sig.get('rsi', 50):.1f}")
-    m6.metric("Regime", sig.get("regime", "—"))
 
     # Total PnL with color
     pnl_cls = "pnl-positive" if total_pnl >= 0 else "pnl-negative"
-    m7.markdown(f'<div class="metric-card"><div class="metric-label">Total PnL</div>'
+    m4.markdown(f'<div class="metric-card"><div class="metric-label">Total PnL</div>'
                 f'<div class="metric-value {pnl_cls}">${total_pnl:+,.2f}</div></div>',
                 unsafe_allow_html=True)
+                
+    m5.metric("Regime", sig.get("regime", "—"))
 
     # ML Win %
     ml_color = "#22c55e" if ml_prob >= 0.65 else ("#fbbf24" if ml_prob >= 0.5 else "#ef4444")
-    m8.markdown(f'<div class="metric-card"><div class="metric-label">ML Win %</div>'
+    m6.markdown(f'<div class="metric-card"><div class="metric-label">ML Win %</div>'
                 f'<div class="metric-value" style="color:{ml_color};">{ml_prob*100:.0f}%</div></div>',
                 unsafe_allow_html=True)
+
+    # ═══════════════════════════════════════════════════════════════════
+    #  TOP METRICS BAR (ROW 2 - SAFETY & TECHNICALS)
+    # ═══════════════════════════════════════════════════════════════════
+    st.markdown("<br>", unsafe_allow_html=True)
+    m7, m8, m9, m10 = st.columns(4)
+
+    m7.metric("ADX (Trend Strength)", f"{sig.get('adx', 0):.1f}")
+    m8.metric("RSI (Momentum)", f"{sig.get('rsi', 50):.1f}")
+    
+    # ★ v20: Safety Engine stats
+    r_count = bot.get("reject_count", 0)
+    s_amount = bot.get("saved_amount", 0.0)
+    m9.markdown(f'<div class="metric-card" style="border-bottom: 2px solid #f59e0b;"><div class="metric-label">Bad Setups Blocked 🚫</div>'
+                f'<div class="metric-value" style="color:#fbbf24;">{r_count}</div></div>', unsafe_allow_html=True)
+    m10.markdown(f'<div class="metric-card" style="border-bottom: 2px solid #10b981;"><div class="metric-label">Est. Money Saved 💰</div>'
+                 f'<div class="metric-value" style="color:#34d399;">${s_amount:,.2f}</div></div>', unsafe_allow_html=True)
 
     # ═══════════════════════════════════════════════════════════════════
     #  LIVE POSITION PANEL (if in trade)
