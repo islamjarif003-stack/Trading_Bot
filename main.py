@@ -41,7 +41,7 @@ TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 # ─── TRADING CONFIGURATION ───────────────────────────────────────────────────
 DRY_RUN              = True     # ★ v20.1: True = simulate orders (no real API calls), False = LIVE TRADING
-USE_TESTNET          = True     # ★ v20.1: True = Binance Testnet, False = Binance Mainnet
+USE_TESTNET          = False    # ★ v20.1: True = Binance Testnet, False = Binance Mainnet
 ENABLE_DYNAMIC_WATCHLIST = True # ★ Fetch Top 50 Volatile USDT pairs dynamically
 ENABLE_MICRO_SCALPING = False   # ★ v12: DISABLED — Pre-flight fail = NO TRADE (no more weak entries)
 SYMBOLS         = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
@@ -357,6 +357,9 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         if symbol not in SYMBOL_PRECISION:
             _fetch_symbol_precision(client, symbol)
 
+        # ★ v21: Save 1m ATR for dynamic limit offset (before 1H override)
+        atr_1m_for_offset = atr
+
         # ★ FIX: Use 1-Hour ATR for SL/TP distances so they are large enough to breathe
         try:
             atr_1h = _get_current_atr(client, symbol)
@@ -423,8 +426,10 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
 
         size_note = f" (REDUCED {size_multiplier*100:.0f}%)" if size_multiplier < 1.0 else ""
 
-        # ★ FIX 2: Calculate LIMIT price (tight offset for fast fill, maker fee)
-        offset = current_price * (LIMIT_OFFSET_PCT / 100.0)
+        # ★ v21: Dynamic ATR-Based Limit Offset (replaces static LIMIT_OFFSET_PCT)
+        # Uses 1m ATR × 0.10 — adapts to current market volatility automatically
+        dynamic_offset = atr_1m_for_offset * 0.10
+        offset = max(dynamic_offset, current_price * 0.00001)  # Floor to prevent zero offset
         if signal == "BUY":
             limit_price = _round_price(current_price - offset, symbol)  # Slightly below ask
         else:
@@ -432,7 +437,7 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
 
         log.info("═" * 70)
         log.info(f"🚀  [{symbol}] EXECUTING {signal} │ Risk: ${dynamic_margin:.2f} Dynamic Margin{size_note} │ Score: {score}")
-        log.info(f"   ★ LIMIT Entry : ${limit_price} (Maker Fee — offset {LIMIT_OFFSET_PCT}%)")
+        log.info(f"   ★ LIMIT Entry : ${limit_price} (Maker Fee — Dynamic ATR Offset ${offset:.4f})")
         log.info(f"   Market Price  : ${current_price}")
         log.info(f"   Quantity      : {quantity}")
         log.info(f"   ★ Risk Amt    : ${risk_amount:.2f} ({ENTRY_RISK_PCT}%{size_note})")
@@ -1947,7 +1952,7 @@ def _detect_ob_fvg(highs: np.ndarray, lows: np.ndarray, opens: np.ndarray,
                 size = ob_high - ob_low
                 
                 # Strict size filter
-                if size < 0.5 * atr or size > 3.0 * atr:
+                if size < 0.2 * atr or size > 3.0 * atr:  # ★ v21 TESTING: Lowered min from 0.5 to 0.2 (accept more OB setups)
                     continue
                     
                 qual = min(1.0, size / atr)
@@ -1963,7 +1968,7 @@ def _detect_ob_fvg(highs: np.ndarray, lows: np.ndarray, opens: np.ndarray,
                 ob_low = float(opens[i])    # body bottom
                 size = ob_high - ob_low
                 
-                if size < 0.5 * atr or size > 3.0 * atr:
+                if size < 0.2 * atr or size > 3.0 * atr:  # ★ v21 TESTING: Lowered min from 0.5 to 0.2 (accept more OB setups)
                     continue
                     
                 qual = min(1.0, size / atr)
@@ -2040,7 +2045,7 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
       - "WAIT"    → Valid setup but price not in OB/FVG zone yet. Queue for retest.
     """
     try:
-        m5 = client.futures_klines(symbol=symbol, interval="5m", limit=100)
+        m5 = client.futures_klines(symbol=symbol, interval="1m", limit=200)  # ★ v21 TESTING MODE: 1m (was 5m)
         if not m5 or len(m5) < 40:
             return "PASS", "SMC SKIP: Not enough M5 data", None
         
@@ -2221,8 +2226,11 @@ class AdvancedExecutionValidator:
         result, reason, zone_data = _smc_entry_validate(client, symbol, direction)
         if result == "PASS":
             return True, f"SMC Pre-Flight PASSED: {reason}"
+        elif result == "WAIT":
+            # ★ FIX: Let WAIT pass the pre-flight so the downstream gate can add it to the wait_queue
+            return True, f"SMC Pre-Flight WAIT (passing to queue): {reason}"
         else:
-            # NEUTRAL or WAIT — both block immediate execution at the pre-flight stage
+            # NEUTRAL blocks immediate execution
             return False, f"SMC Pre-Flight BLOCKED ({result}): {reason}"
 
 def initialize_client() -> Client:

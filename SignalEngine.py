@@ -33,8 +33,8 @@ from MLModelV2 import MLFilterV2, build_feature_vector
 log = logging.getLogger("InstitutionalBot")
 
 # ─── CONFIGURATION ───────────────────────────────────────────────────────────
-KLINE_INTERVAL = Client.KLINE_INTERVAL_5MINUTE
-KLINE_LIMIT = 100
+KLINE_INTERVAL = Client.KLINE_INTERVAL_1MINUTE   # ★ v21 TESTING MODE: 1m for rapid signal generation (revert to 5MINUTE for production)
+KLINE_LIMIT = 200                                  # ★ v21: Increased from 100 — 200×1m ≈ 3.3 hours of data
 H1_KLINE_INTERVAL = Client.KLINE_INTERVAL_1HOUR
 H1_KLINE_LIMIT = 250
 ORDER_BOOK_DEPTH = 20
@@ -398,7 +398,8 @@ def _check_volume_guard(klines_df: pd.DataFrame, sma_period: int = VOLUME_SMA_PE
         return {"volume_ok": False, "current_vol": 0.0, "vol_sma": 0.0}
     vol_sma = klines_df["volume"].iloc[-(sma_period + 1):-1].mean()
     current_vol = klines_df["volume"].iloc[-1]
-    return {"volume_ok": current_vol > vol_sma, "current_vol": round(float(current_vol), 2), "vol_sma": round(float(vol_sma), 2)}
+    # ★ v21: Dynamic Rolling Volume Baseline — require 1.5× SMA (adapts to weekend vs weekday)
+    return {"volume_ok": current_vol > (vol_sma * 1.5), "current_vol": round(float(current_vol), 2), "vol_sma": round(float(vol_sma), 2)}
 
 
 # ═════════════════════════════════════════════════════════════════════════════
