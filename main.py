@@ -57,9 +57,9 @@ BLACKLIST_COINS = {
     "SOONUSDT", "TRADOORUSDT",
 }
 LEVERAGE        = 20                # ★ FIXED 20x leverage
-SL_ATR_MULT     = 1.5               # ★ v10: SL = 1.5 × ATR (gives trade room to breathe)
-TP_ATR_MULT     = 3.0               # ★ v10: TP = 3.0 × ATR (R:R = 1:2)
-HARD_LOCKOUT_S  = 1800              # 30-minute hard lockout after every trade
+SL_ATR_MULT     = 2.5               # ★ v22: SL = 2.5 × ATR (was 1.5 — too tight, all trades SL'd on noise)
+TP_ATR_MULT     = 5.0               # ★ v22: TP = 5.0 × ATR (R:R = 1:2 maintained)
+HARD_LOCKOUT_S  = 300               # ★ v22: 5-minute hard lockout after every trade (was 30m)
 LOOP_INTERVAL_S = 10                # Seconds between each scan cycle
 ENTRY_RISK_PCT  = 15.0              # ★ $50 Config: 15% of $50 ≈ $7.50 risk per trade
 MAX_MARGIN_PCT  = 30.0              # ★ $50 Config: Max 30% of balance as margin ($15 max)
@@ -106,6 +106,76 @@ TTP_CHECK_INTERVAL       = 3      # Check every 3 cycles
 DISABLE_HARD_TP          = True    # ★ v12: NO fixed TP → let trailing SL manage exit
 SMART_REVERSAL_EXIT      = True    # ★ v12: Close if 5m MA25 cross-under/over detected
 STALE_TRADE_MIN_LOSS_PCT = -0.50   # ★ v17: Stale timeout only fires if PnL < -0.50% (prevents fee-draining flat closes)
+
+
+# ─── ★ v22: HALF-KELLY CRITERION POSITION SIZING ────────────────────────────
+KELLY_DEFAULT_WIN_RATE = 0.40     # Baseline assumption: 40% win rate
+KELLY_DEFAULT_AVG_RR   = 2.0      # Baseline assumption: 1:2 Reward-to-Risk
+KELLY_MAX_RISK_PCT     = 0.10     # Hard cap: never risk more than 10% of balance
+KELLY_MIN_TRADES_FOR_LIVE = 10    # Use live stats only after 10+ trades
+
+# Global Kelly performance tracker (shared across all symbols)
+kelly_state = {
+    "total_wins": 0,
+    "total_losses": 0,
+    "total_win_pnl": 0.0,    # Sum of all winning trade PnLs
+    "total_loss_pnl": 0.0,   # Sum of all losing trade PnLs (absolute value)
+}
+
+# ★ v22: DRY RUN Position Simulator
+# Tracks simulated positions so the bot doesn't think trades are closed immediately
+# Each entry: {symbol: {"side": "BUY"/"SELL", "qty": float, "entry_price": float, "sl_price": float, "tp_price": float}}
+dry_run_positions = {}
+
+def calculate_kelly_risk_pct(win_rate: float, avg_rr: float) -> float:
+    """
+    ★ v22: Half-Kelly Criterion Calculator.
+    
+    Full Kelly: K = W - ((1 - W) / R)
+    Half Kelly: K / 2 (more conservative, reduces variance by ~50%)
+    
+    Args:
+        win_rate: Historical win rate (0.0 to 1.0)
+        avg_rr:   Average Reward-to-Risk ratio (e.g., 2.0 = 1:2 R:R)
+    
+    Returns:
+        float: Fraction of balance to risk (0.0 to KELLY_MAX_RISK_PCT)
+    """
+    if avg_rr <= 0:
+        return 0.0
+    
+    full_kelly = win_rate - ((1.0 - win_rate) / avg_rr)
+    
+    if full_kelly <= 0.0:
+        return 0.0  # No statistical edge → do not trade
+    
+    half_kelly = full_kelly / 2.0
+    
+    # Safety cap: never exceed KELLY_MAX_RISK_PCT
+    return min(half_kelly, KELLY_MAX_RISK_PCT)
+
+
+def _get_kelly_params() -> tuple:
+    """
+    Returns (win_rate, avg_rr) from live tracking if enough data,
+    otherwise falls back to conservative defaults.
+    """
+    total_trades = kelly_state["total_wins"] + kelly_state["total_losses"]
+    
+    if total_trades >= KELLY_MIN_TRADES_FOR_LIVE:
+        live_wr = kelly_state["total_wins"] / total_trades
+        
+        # Average R:R = avg_win / avg_loss
+        if kelly_state["total_losses"] > 0 and kelly_state["total_loss_pnl"] > 0:
+            avg_win = kelly_state["total_win_pnl"] / max(kelly_state["total_wins"], 1)
+            avg_loss = kelly_state["total_loss_pnl"] / kelly_state["total_losses"]
+            live_rr = avg_win / avg_loss if avg_loss > 0 else KELLY_DEFAULT_AVG_RR
+        else:
+            live_rr = KELLY_DEFAULT_AVG_RR
+        
+        return live_wr, live_rr
+    else:
+        return KELLY_DEFAULT_WIN_RATE, KELLY_DEFAULT_AVG_RR
 
 
 # ─── LOGGING ────────────────────────────────────────────────────────────────
@@ -175,7 +245,60 @@ def _get_account_balance(client: Client) -> float:
 
 
 def _has_open_position(client: Client, symbol: str) -> dict:
-    """Returns position info dict or None."""
+    """Returns position info dict or None.
+    ★ v22: In DRY RUN mode, uses simulated positions and checks SL/TP hits."""
+    
+    # ★ v22: DRY RUN — use simulated position tracker
+    if DRY_RUN and symbol in dry_run_positions:
+        sim = dry_run_positions[symbol]
+        # Check if SL or TP hit by fetching current price
+        try:
+            ticker = client.futures_symbol_ticker(symbol=symbol)
+            current_price = float(ticker["price"])
+            
+            # Check SL hit
+            sl_hit = False
+            tp_hit = False
+            if sim["side"] == "BUY":
+                sl_hit = current_price <= sim["sl_price"]
+                tp_hit = current_price >= sim["tp_price"] if sim["tp_price"] > 0 else False
+            else:  # SELL
+                sl_hit = current_price >= sim["sl_price"]
+                tp_hit = current_price <= sim["tp_price"] if sim["tp_price"] > 0 else False
+            
+            if sl_hit:
+                pnl = abs(sim["entry_price"] - sim["sl_price"]) * sim["qty"] * (-1)
+                log.info(f"🔻  [DRY RUN] [{symbol}] SL HIT @ ${current_price:.4f} (SL: ${sim['sl_price']:.4f}) | Sim PnL: ${pnl:.4f}")
+                del dry_run_positions[symbol]
+                return None  # Position closed
+            elif tp_hit:
+                pnl = abs(sim["tp_price"] - sim["entry_price"]) * sim["qty"]
+                log.info(f"🎯  [DRY RUN] [{symbol}] TP HIT @ ${current_price:.4f} (TP: ${sim['tp_price']:.4f}) | Sim PnL: +${pnl:.4f}")
+                del dry_run_positions[symbol]
+                return None  # Position closed
+            else:
+                # Position still open
+                unrealized = (current_price - sim["entry_price"]) * sim["qty"]
+                if sim["side"] == "SELL":
+                    unrealized = -unrealized
+                return {
+                    "side": sim["side"],
+                    "qty": sim["qty"],
+                    "entry_price": sim["entry_price"],
+                    "unrealized_pnl": unrealized,
+                }
+        except Exception:
+            # Can't get price, assume position still open
+            return {
+                "side": sim["side"],
+                "qty": sim["qty"],
+                "entry_price": sim["entry_price"],
+                "unrealized_pnl": 0.0,
+            }
+    elif DRY_RUN:
+        return None  # No simulated position for this symbol
+    
+    # LIVE mode — check Binance API
     positions = client.futures_position_information(symbol=symbol)
     for pos in positions:
         amt = float(pos["positionAmt"])
@@ -368,16 +491,27 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         except Exception as atr_err:
             log.warning(f"⚠ [{symbol}] Could not fetch 1H ATR, using provided ATR: {atr_err}")
 
-        # ★ Upgraded Position Sizing: Dynamic 10% of Account Balance with $1 Floor
+        # ★ v22: HALF-KELLY CRITERION POSITION SIZING
         try:
             account = client.futures_account()
             total_balance = float(account.get("totalWalletBalance", 0.0))
-            calc_margin = total_balance * 0.10
-            dynamic_margin = max(calc_margin, 1.00)  # Floor at $1.00
         except Exception as bal_err:
             log.warning(f"⚠ [{symbol}] Could not fetch balance. Defaulting margin to $1.00. Error: {bal_err}")
             total_balance = 0.0
-            dynamic_margin = 1.00
+        
+        # Calculate Kelly-optimal risk fraction
+        kelly_wr, kelly_rr = _get_kelly_params()
+        half_kelly_pct = calculate_kelly_risk_pct(kelly_wr, kelly_rr)
+        kelly_trades = kelly_state["total_wins"] + kelly_state["total_losses"]
+        kelly_source = "LIVE" if kelly_trades >= KELLY_MIN_TRADES_FOR_LIVE else "DEFAULT"
+        
+        if half_kelly_pct <= 0.0:
+            log.warning(f"🚨  [{symbol}] NEGATIVE KELLY: WR={kelly_wr*100:.1f}% RR={kelly_rr:.2f} → No statistical edge. ABORTING ENTRY.")
+            return False, 0.0
+        
+        # Apply Kelly sizing with $1 floor
+        calc_margin = total_balance * half_kelly_pct
+        dynamic_margin = max(calc_margin, 1.00)  # Floor at $1.00
             
         position_value_usd = dynamic_margin * LEVERAGE
         raw_qty = position_value_usd / current_price
@@ -405,7 +539,8 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             log.warning("⚠  ATR is zero. Cannot calculate SL/TP. Skipping.")
             return False, 0.0
 
-        log.info(f"   ★ DYNAMIC MARGIN: ${dynamic_margin:.2f} (10% of Bal: ${total_balance:.2f}) × {LEVERAGE}x = ${position_value_usd:.2f} notional → qty: {quantity}")
+        log.info(f"   ★ KELLY SIZING: {half_kelly_pct*100:.2f}% of ${total_balance:.2f} = ${dynamic_margin:.2f} margin × {LEVERAGE}x = ${position_value_usd:.2f} notional → qty: {quantity}")
+        log.info(f"   ★ KELLY PARAMS ({kelly_source}): WR={kelly_wr*100:.1f}% | Avg R:R={kelly_rr:.2f} | Trades={kelly_trades}")
 
         if quantity <= 0:
             log.warning("⚠  Calculated quantity is 0.")
@@ -583,6 +718,16 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
 
         # ── TELEGRAM ALERT: Entry ──
 
+        # ★ v22: Register DRY RUN position for simulated tracking
+        if DRY_RUN:
+            dry_run_positions[symbol] = {
+                "side": signal,
+                "qty": actual_qty,
+                "entry_price": avg_entry,
+                "sl_price": sl_price,
+                "tp_price": tp_price if not DISABLE_HARD_TP else 0.0,
+            }
+            log.info(f"📍  [DRY RUN] [{symbol}] Position registered: {signal} @ ${avg_entry} | SL: ${sl_price} | TP: ${tp_price}")
 
         return True, actual_qty
 
@@ -1649,29 +1794,36 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
         if not raw or len(raw) < 6:
             return True  # ★ v14: If can't get data, allow trade anyway
         
-        closed_vols = [float(k[5]) for k in raw[:5]]
-        avg_vol = sum(closed_vols) / len(closed_vols) if closed_vols else 1.0
+        closed_klines = raw[:-1]
+        prev_4_vols = [float(k[5]) for k in closed_klines[-5:-1]]
+        avg_vol = sum(prev_4_vols) / len(prev_4_vols) if prev_4_vols else 1.0
         
-        # If average volume is essentially zero (testnet dead coin), skip the check
+        # If average volume is essentially zero, skip the check
         if avg_vol < 1e-8:
             return True
         
+        last_closed_kline = closed_klines[-1]
+        last_closed_vol = float(last_closed_kline[5])
+        last_close_price = float(last_closed_kline[4])
+        last_open_price = float(last_closed_kline[1])
+
         current_kline = raw[-1]
         current_vol = float(current_kline[5])
-        open_price = float(current_kline[1])
-        close_price = float(current_kline[4])
+        curr_close_price = float(current_kline[4])
+        curr_open_price = float(current_kline[1])
         
-        # ★ v15: 0.9x — slightly more lenient than 1.0x, but tighter than original 0.8x
-        vol_ok = current_vol >= (avg_vol * 0.9)
+        # ★ v22: A burst is valid if either the LAST COMPLETED candle spiked, 
+        # OR the CURRENT INCOMPLETE candle already spiked
+        vol_ok = last_closed_vol >= (avg_vol * 0.9) or current_vol >= (avg_vol * 0.9)
         
         if vol_ok:
-            # Soft direction check: allow flat candles too (close == open)
-            if direction == "BUY" and close_price >= open_price:
+            # Soft direction check: allow flat candles too
+            if direction == "BUY" and (last_close_price >= last_open_price or curr_close_price >= curr_open_price):
                 return True
-            elif direction == "SELL" and close_price <= open_price:
+            elif direction == "SELL" and (last_close_price <= last_open_price or curr_close_price <= curr_open_price):
                 return True
             # If direction doesn't match but volume is 1.5x+, still allow (strong burst)
-            if current_vol >= (avg_vol * 1.5):
+            if last_closed_vol >= (avg_vol * 1.5) or current_vol >= (avg_vol * 1.5):
                 return True
                 
         return False
@@ -1684,7 +1836,7 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
 # ██  ★ v18: MULTI-TIMEFRAME ANALYSIS (MTFA) — 1H Trend Filter            ██
 # ═════════════════════════════════════════════════════════════════════════════
 
-MTFA_ENABLED = True          # ★ v18: Master switch for 1H trend filter
+MTFA_ENABLED = False         # ★ v22: Disabled MTFA to allow aggressive 1m testing and SMC pullbacks
 MTFA_EMA_PERIOD = 50         # ★ v18: 50-period EMA on the 1H chart
 
 def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
@@ -2045,7 +2197,7 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
       - "WAIT"    → Valid setup but price not in OB/FVG zone yet. Queue for retest.
     """
     try:
-        m5 = client.futures_klines(symbol=symbol, interval="1m", limit=200)  # ★ v21 TESTING MODE: 1m (was 5m)
+        m5 = client.futures_klines(symbol=symbol, interval="5m", limit=200)  # ★ v22 PRODUCTION MODE: 5m
         if not m5 or len(m5) < 40:
             return "PASS", "SMC SKIP: Not enough M5 data", None
         
@@ -2095,16 +2247,23 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
         )
         log.info(f"    [{symbol}] SMC Structure: {struct_type} | {struct_detail}")
         
-        valid_structure = False
-        if direction == "BUY" and struct_type in ("CHOCH_BULL", "BOS_BULL"):
-            valid_structure = True
-        elif direction == "SELL" and struct_type in ("CHOCH_BEAR", "BOS_BEAR"):
-            valid_structure = True
+        # ★ v22: Direction-Agnostic Structure Validation
+        # Accept ANY valid structure shift. If SMC direction opposes signal,
+        # flip the trade direction to follow Smart Money instead of blocking.
+        valid_structure = struct_type in ("CHOCH_BULL", "BOS_BULL", "CHOCH_BEAR", "BOS_BEAR")
         
-        # ── Decision Gate: Need Valid Structure ──────────────
         if not valid_structure:
-            reason = f"SMC NEUTRAL: No valid structure shift ({struct_type}) for {direction}."
-            return "NEUTRAL", reason, None
+            # ★ v22: FAIL-OPEN — No structure detected means market is ranging/quiet.
+            # Let SignalEngine's score (already ≥12) handle it. Don't block.
+            reason = f"SMC PASS (No Structure): 5m has no clear BOS/CHOCH ({struct_type}). Passing on SignalEngine confidence."
+            log.info(f"    [{symbol}] ✅ {reason}")
+            return "PASS", reason, None
+        
+        # ★ v22: Auto-flip direction to match 5m SMC structure
+        smc_direction = "BUY" if struct_type in ("CHOCH_BULL", "BOS_BULL") else "SELL"
+        if smc_direction != direction:
+            log.info(f"    [{symbol}] 🔄 SMC FLIP: Signal was {direction} but 5m structure is {struct_type} → Flipping to {smc_direction}")
+            direction = smc_direction
             
         # ── Step 4: Inducement Detection ──────────────────────────────────
         inducement_found = _detect_inducement(
@@ -2131,6 +2290,7 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
             "swept": swept,
             "inducement": inducement_found,
             "sweep_level": sweep_level,
+            "smc_direction": direction,  # ★ v22: May be flipped from original signal
         }
         
         # ── Step 6: Is price IN the zone now? ─────────────────────────────
@@ -2363,6 +2523,7 @@ def main():
             "original_qty": 0.0,        # Full entry qty for SL order sizing
             "initial_risk_pct": 0.0,    # ★ v17: Dynamic R:R baseline (ATR × SL_MULT / entry)
             # Core state
+            "trade_open_time": 0.0,
             "last_trade_time": 0,
             "last_signal_data": None,
             "last_side": "UNKNOWN",
@@ -2508,9 +2669,15 @@ def main():
                         if pnl > 0:
                             state["consec_losses"] = 0
                             daily_wins += 1
+                            # ★ v22: Feed Kelly tracker
+                            kelly_state["total_wins"] += 1
+                            kelly_state["total_win_pnl"] += abs(pnl)
                         else:
                             state["consec_losses"] += 1
                             daily_losses += 1
+                            # ★ v22: Feed Kelly tracker
+                            kelly_state["total_losses"] += 1
+                            kelly_state["total_loss_pnl"] += abs(pnl)
                             if state["consec_losses"] >= MAX_CONSEC_LOSSES:
                                 state["loss_cooldown_until"] = time.time() + LOSS_COOLDOWN_S
                                 log.warning(f"🧊  [{symbol}] {MAX_CONSEC_LOSSES} CONSECUTIVE LOSSES → Extra {LOSS_COOLDOWN_S}s cooldown activated.")
@@ -2548,7 +2715,8 @@ def main():
                         )
 
                         # ── KILL SWITCH EVALUATION ──
-                        if daily_pnl < 0 and abs(daily_pnl) >= daily_start_balance * (MAX_DAILY_LOSS_PCT / 100.0):
+                        # ★ v22: Skip kill switch in DRY RUN mode (balance is $0.02, any PnL triggers it)
+                        if not DRY_RUN and daily_pnl < 0 and abs(daily_pnl) >= daily_start_balance * (MAX_DAILY_LOSS_PCT / 100.0):
                             kill_switch_active = True
                             log.error(f"🚨 KILL SWITCH ACTIVATED! Daily Loss = ${daily_pnl:.2f}")
                             send_telegram_alert(
@@ -2606,6 +2774,16 @@ def main():
                 current_price = signal_data["current_price"]
                 atr = signal_data["atr"]
                 current_adx = signal_data.get("adx", 0)
+                fr_val = signal_data.get("funding_rate", 0.0)
+
+                # ── ★ FUNDING RATE ENTRY GATE ──
+                # If BUY and funding is strongly positive (> 0.03%), skip (costly to hold long)
+                if signal == "BUY" and fr_val > 0.0003:
+                    log.info(f"🚫  [{symbol}] FUNDING GATE — FR {fr_val*100:.4f}% > 0.03% │ Too expensive to hold LONG. Skipping BUY.")
+                    signal = "WAIT"
+                elif signal == "SELL" and fr_val < -0.0001:
+                    log.info(f"🚫  [{symbol}] FUNDING GATE — FR {fr_val*100:.4f}% < -0.01% │ Too expensive to hold SHORT. Skipping SELL.")
+                    signal = "WAIT"
 
                 # ── ★ v7.2: ADX HARD FILTER — Block trades in choppy markets ─
                 if signal in ("BUY", "SELL") and current_adx < ADX_ENTRY_MIN:
@@ -2629,7 +2807,11 @@ def main():
                             )
                             signal = "WAIT"
 
+                wq_just_passed = False
                 # ── ★ v20: SMC WAIT QUEUE PROCESSOR (re-check OB/FVG zone retest) ──
+                if state["wait_queue_signal"] != "NONE":
+                    signal = "WAIT"  # Prevent new indicators from overwriting our wait setup
+                    
                 if state["wait_queue_signal"] != "NONE" and state["armed_signal"] == "NONE":
                     wq_age_s = now - state["wait_queue_start_time"]
                     wq_candles = int(wq_age_s / 300)  # Each M5 candle = 300s
@@ -2648,7 +2830,8 @@ def main():
                         smc_result, smc_reason, smc_zone = _smc_entry_validate(client, symbol, wq_dir)
                         
                         if smc_result == "PASS":
-                            log.info(f"🔄  [{symbol}] WAIT QUEUE → SMC PASS after {wq_candles} candles! Re-arming {wq_dir}...")
+                            wq_just_passed = True
+                            log.info(f"🔄  [{symbol}] WAIT QUEUE → SMC PASS after {wq_candles} candles! Executing {wq_dir}...")
                             state["armed_signal"] = wq_dir
                             state["armed_time"] = now
                             state["armed_signal_data"] = state["wait_queue_data"]
@@ -2687,7 +2870,7 @@ def main():
                         state["armed_signal_data"] = None
                     else:
                         armed_dir = state["armed_signal"]
-                        burst_detected = _check_volume_burst(client, symbol, armed_dir)
+                        burst_detected = True if wq_just_passed else _check_volume_burst(client, symbol, armed_dir)
                         
                         if burst_detected:
                             log.info(f"💥  [{symbol}] VOLUME BURST TRIGGERED! Running Pre-Flight Check...")
@@ -2761,7 +2944,9 @@ def main():
                                 elif smc_result == "WAIT":
                                     # Move to WAIT queue (don't cancel, don't execute)
                                     log.info(f"⏳  [{symbol}] SMC WAIT — Signal queued for OB/FVG retest. {WAIT_QUEUE_MAX_CANDLES} candles max.")
-                                    state["wait_queue_signal"] = armed_dir
+                                    # ★ v22: Use SMC-flipped direction if available
+                                    smc_dir = smc_zone.get("smc_direction", armed_dir) if smc_zone else armed_dir
+                                    state["wait_queue_signal"] = smc_dir
                                     state["wait_queue_data"] = state["armed_signal_data"]
                                     state["wait_queue_candle_count"] = 0
                                     state["wait_queue_start_time"] = time.time()
@@ -2774,7 +2959,8 @@ def main():
                                 # else: "PASS" — continue to execution
 
                             # Restore data for execution
-                            exc_signal = armed_dir
+                            # ★ v22: Use SMC-flipped direction if available
+                            exc_signal = smc_zone.get("smc_direction", armed_dir) if smc_zone else armed_dir
                             exc_data = state["armed_signal_data"]
                             if smc_zone: exc_data["smc_zone"] = smc_zone  # ★ Inject SMC mathematical SL geometry into execution data
                             exc_price = current_price  # Use latest price, not the one from 2 mins ago

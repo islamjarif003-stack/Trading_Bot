@@ -60,7 +60,6 @@ POINTS_LIQUIDITY_SWEEP = 6    # ★ v13: +6 (Smart Money: liq sweep/S&R rejectio
 POINTS_POC_REJECTION = 2
 POINTS_RSI_DIVERGENCE = 2
 POINTS_DOM_IMBALANCE = 2
-POINTS_WHALE_WALL = 2         # +2 points for Whale Wall (was 4, reduced to prevent inflation)
 
 # ─── WHALE TRACKING CONFIGURATION ───────────────────────────────────────────
 WHALE_THRESHOLDS = {
@@ -122,9 +121,9 @@ VOLUME_DELTA_STRONG_THRESH = 0.65 # 65% = STRONG alignment (extra bonus)
 
 # ─── ★★★ v16.0: DYNAMIC SCORE THRESHOLD (ATR-ADAPTIVE) ─────────────────────
 # Low volatility → lower threshold (more trades), High vol → higher (avoid fakeouts)
-DYNAMIC_THRESHOLD_LOW  = 10       # When ATR is very low (quiet market)
-DYNAMIC_THRESHOLD_MID  = 12       # Normal conditions (default)
-DYNAMIC_THRESHOLD_HIGH = 14       # When ATR spikes (high volatility = fakeout risk)
+DYNAMIC_THRESHOLD_LOW  = 15       # ★ v22: Raised from 10 → 15 (filter weak signals)
+DYNAMIC_THRESHOLD_MID  = 17       # ★ v22: Raised from 12 → 17 (normal conditions)
+DYNAMIC_THRESHOLD_HIGH = 19       # ★ v22: Raised from 14 → 19 (high volatility)
 ATR_PERCENTILE_LOW     = 30       # Below 30th percentile = low volatility
 ATR_PERCENTILE_HIGH    = 70       # Above 70th percentile = high volatility
 
