@@ -11,10 +11,21 @@
 """
 
 import os
+import io
 import time
 import math
 import logging
+import threading
 from datetime import datetime, timezone
+
+# ★ v28: SMC Image Engine — headless matplotlib for VPS
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend (no display needed)
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
+import pandas as pd
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -266,6 +277,227 @@ def send_telegram_alert(message: str):
         requests.post(url, json=payload, timeout=3)
     except Exception as e:
         log.warning(f"⚠  Telegram alert failed: {e}")
+
+
+def send_telegram_photo(image_stream: io.BytesIO, caption: str = ""):
+    """★ v28: Send an image (BytesIO stream) to Telegram with optional caption."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+    image_stream.seek(0)
+    files = {"photo": ("smc_chart.png", image_stream, "image/png")}
+    data = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "caption": caption[:1024],  # Telegram photo caption limit
+        "parse_mode": "HTML"
+    }
+    try:
+        resp = requests.post(url, files=files, data=data, timeout=10)
+        if resp.status_code != 200:
+            log.warning(f"⚠  Telegram photo send failed: {resp.status_code} {resp.text[:200]}")
+    except Exception as e:
+        log.warning(f"⚠  Telegram photo send failed: {e}")
+
+
+def generate_smc_chart(client: Client, symbol: str, signal: str, avg_entry: float,
+                       sl_price: float, tp_price: float, signal_data: dict) -> io.BytesIO:
+    """
+    ★ v28: SMC Image Engine — Generate institutional-grade TA chart.
+    
+    Features:
+      - Dark theme candlestick chart (5m timeframe)
+      - Order Block zone (faded blue box)
+      - Entry / SL / TP horizontal lines with shaded risk/reward zones
+      - BOS/CHOCH structure annotations
+      - Score & confluence info overlay
+    
+    Returns: io.BytesIO PNG image stream (no disk writes)
+    """
+    try:
+        # ── Fetch 100 candles of 5m data ──
+        raw_klines = client.futures_klines(symbol=symbol, interval='5m', limit=100)
+        if not raw_klines or len(raw_klines) < 20:
+            log.warning(f"⚠ [{symbol}] SMC Chart: Not enough data ({len(raw_klines) if raw_klines else 0} candles)")
+            return None
+        
+        # ── Build DataFrame ──
+        df = pd.DataFrame(raw_klines, columns=[
+            'timestamp', 'open', 'high', 'low', 'close', 'volume',
+            'close_time', 'quote_vol', 'trades', 'taker_buy_base',
+            'taker_buy_quote', 'ignore'
+        ])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('timestamp', inplace=True)
+        for col in ['open', 'high', 'low', 'close', 'volume']:
+            df[col] = df[col].astype(float)
+        
+        # ── Dark Theme Setup ──
+        fig, ax = plt.subplots(1, 1, figsize=(14, 7), facecolor='#0d1117')
+        ax.set_facecolor('#0d1117')
+        ax.tick_params(colors='#8b949e', labelsize=8)
+        ax.spines['top'].set_color('#21262d')
+        ax.spines['bottom'].set_color('#21262d')
+        ax.spines['left'].set_color('#21262d')
+        ax.spines['right'].set_color('#21262d')
+        ax.yaxis.label.set_color('#c9d1d9')
+        ax.xaxis.label.set_color('#c9d1d9')
+        ax.grid(True, alpha=0.1, color='#30363d')
+        
+        # ── Draw Candlesticks ──
+        n = len(df)
+        x_indices = range(n)
+        
+        for i in x_indices:
+            o, h, l, c = df['open'].iloc[i], df['high'].iloc[i], df['low'].iloc[i], df['close'].iloc[i]
+            color = '#26a69a' if c >= o else '#ef5350'  # Green / Red
+            
+            # Wick
+            ax.plot([i, i], [l, h], color=color, linewidth=0.8, alpha=0.8)
+            # Body
+            body_bottom = min(o, c)
+            body_height = abs(c - o)
+            if body_height == 0:
+                body_height = (h - l) * 0.01  # Doji
+            rect = mpatches.FancyBboxPatch(
+                (i - 0.35, body_bottom), 0.7, body_height,
+                boxstyle="round,pad=0.02", facecolor=color, edgecolor=color, alpha=0.9
+            )
+            ax.add_patch(rect)
+        
+        # ── Order Block Zone (Faded Blue Box) ──
+        smc_zone = signal_data.get('smc_zone') if signal_data else None
+        if smc_zone and smc_zone.get('zone_high') and smc_zone.get('zone_low'):
+            zone_high = float(smc_zone['zone_high'])
+            zone_low = float(smc_zone['zone_low'])
+            zone_type = smc_zone.get('zone_type', 'OB')
+            ob_rect = mpatches.Rectangle(
+                (0, zone_low), n, zone_high - zone_low,
+                facecolor='#1f6feb', alpha=0.15, edgecolor='#58a6ff',
+                linewidth=1.0, linestyle='--', label=f'{zone_type} Zone'
+            )
+            ax.add_patch(ob_rect)
+            ax.text(2, zone_high + (zone_high - zone_low) * 0.1,
+                    f'📦 {zone_type}', color='#58a6ff', fontsize=8,
+                    fontweight='bold', alpha=0.9)
+        
+        # ── Entry Line (White) ──
+        ax.axhline(y=avg_entry, color='#e6edf3', linewidth=1.5, linestyle='-', alpha=0.9)
+        ax.text(n - 1, avg_entry, f' Entry ${avg_entry:.2f}', color='#e6edf3',
+                fontsize=8, fontweight='bold', va='bottom',
+                bbox=dict(boxstyle='round,pad=0.2', facecolor='#0d1117', edgecolor='#e6edf3', alpha=0.8))
+        
+        # ── SL Line (Red) + Shaded Risk Zone ──
+        ax.axhline(y=sl_price, color='#f85149', linewidth=1.5, linestyle='-', alpha=0.9)
+        ax.text(n - 1, sl_price, f' SL ${sl_price:.2f}', color='#f85149',
+                fontsize=8, fontweight='bold', va='top',
+                bbox=dict(boxstyle='round,pad=0.2', facecolor='#0d1117', edgecolor='#f85149', alpha=0.8))
+        # Red shaded zone (Entry → SL)
+        sl_bottom = min(avg_entry, sl_price)
+        sl_top = max(avg_entry, sl_price)
+        ax.axhspan(sl_bottom, sl_top, facecolor='#f85149', alpha=0.08)
+        
+        # ── TP Line (Green) + Shaded Reward Zone ──
+        if tp_price and tp_price > 0:
+            ax.axhline(y=tp_price, color='#3fb950', linewidth=1.5, linestyle='-', alpha=0.9)
+            ax.text(n - 1, tp_price, f' TP ${tp_price:.2f}', color='#3fb950',
+                    fontsize=8, fontweight='bold',
+                    va='bottom' if signal == 'BUY' else 'top',
+                    bbox=dict(boxstyle='round,pad=0.2', facecolor='#0d1117', edgecolor='#3fb950', alpha=0.8))
+            # Green shaded zone (Entry → TP)
+            tp_bottom = min(avg_entry, tp_price)
+            tp_top = max(avg_entry, tp_price)
+            ax.axhspan(tp_bottom, tp_top, facecolor='#3fb950', alpha=0.08)
+        
+        # ── BOS / CHOCH Structure Annotations ──
+        if smc_zone and smc_zone.get('structure'):
+            struct_type = smc_zone['structure']
+            struct_color = '#3fb950' if 'BULL' in struct_type else '#f85149'
+            struct_label = struct_type.replace('_', ' ')
+            # Place annotation near last 1/3 of chart
+            ann_x = int(n * 0.65)
+            ann_y = df['high'].iloc[ann_x] if ann_x < n else df['high'].max()
+            ax.annotate(
+                f'⚡ {struct_label}', xy=(ann_x, ann_y),
+                xytext=(ann_x + 3, ann_y + (df['high'].max() - df['low'].min()) * 0.05),
+                fontsize=9, fontweight='bold', color=struct_color,
+                arrowprops=dict(arrowstyle='->', color=struct_color, lw=1.5),
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='#0d1117',
+                          edgecolor=struct_color, alpha=0.9)
+            )
+        
+        # ── Title & Info Overlay ──
+        score = signal_data.get('score', 0) if signal_data else 0
+        signal_emoji = '🟢 LONG' if signal == 'BUY' else '🔴 SHORT'
+        title_text = f'{symbol} │ {signal_emoji} │ Score: {score}'
+        ax.set_title(title_text, color='#e6edf3', fontsize=13, fontweight='bold', pad=12)
+        
+        # ── Legend ──
+        legend_elements = [
+            Line2D([0], [0], color='#e6edf3', linewidth=2, label='Entry'),
+            Line2D([0], [0], color='#f85149', linewidth=2, label='Stop Loss'),
+            Line2D([0], [0], color='#3fb950', linewidth=2, label='Take Profit'),
+        ]
+        if smc_zone:
+            legend_elements.append(
+                mpatches.Patch(facecolor='#1f6feb', alpha=0.3, label='OB Zone')
+            )
+        ax.legend(handles=legend_elements, loc='upper left', fontsize=7,
+                  facecolor='#161b22', edgecolor='#30363d', labelcolor='#c9d1d9')
+        
+        # ── Watermark ──
+        fig.text(0.5, 0.01, '🧠 SMC Image Engine v28 │ Ultra-Quant Bot',
+                 ha='center', fontsize=8, color='#484f58', alpha=0.7)
+        
+        # ── X-axis formatting ──
+        ax.set_xlabel('Candles (5m)', fontsize=9, color='#8b949e')
+        ax.set_ylabel('Price ($)', fontsize=9, color='#8b949e')
+        
+        # ── Auto-scale Y with padding ──
+        prices_all = [avg_entry, sl_price]
+        if tp_price and tp_price > 0:
+            prices_all.append(tp_price)
+        price_range = max(df['high'].max(), max(prices_all)) - min(df['low'].min(), min(prices_all))
+        y_pad = price_range * 0.08
+        ax.set_ylim(
+            min(df['low'].min(), min(prices_all)) - y_pad,
+            max(df['high'].max(), max(prices_all)) + y_pad
+        )
+        
+        plt.tight_layout()
+        
+        # ── Save to BytesIO (no disk writes) ──
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=150, bbox_inches='tight',
+                    facecolor=fig.get_facecolor(), edgecolor='none')
+        plt.close(fig)  # Free memory
+        buf.seek(0)
+        
+        log.info(f"📸  [{symbol}] SMC Chart generated ({buf.getbuffer().nbytes / 1024:.0f} KB)")
+        return buf
+    
+    except Exception as e:
+        log.warning(f"⚠  [{symbol}] SMC Chart generation failed: {e}")
+        try:
+            plt.close('all')  # Clean up on error
+        except:
+            pass
+        return None
+
+
+def _send_chart_async(client, symbol, signal, avg_entry, sl_price, tp_price, signal_data, caption):
+    """★ v28: Non-blocking chart generation & send (runs in background thread)."""
+    try:
+        chart_buf = generate_smc_chart(client, symbol, signal, avg_entry, sl_price, tp_price, signal_data)
+        if chart_buf:
+            full_caption = caption + "\n\n🧠 SMC logic visualized!"
+            send_telegram_photo(chart_buf, full_caption)
+            log.info(f"📸  [{symbol}] SMC Chart sent to Telegram ✅")
+        else:
+            # Fallback: send text-only alert
+            send_telegram_alert(caption)
+    except Exception as e:
+        log.warning(f"⚠  [{symbol}] Chart send failed: {e}. Sending text alert.")
+        send_telegram_alert(caption)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -779,10 +1011,18 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             f"Est. SL: ${sl_price}\n"
             f"Est. TP: ${tp_price}"
         )
+        # ★ v28: SMC Image Engine — Generate chart + send as Telegram photo (non-blocking)
         try:
-            send_telegram_alert(alert_msg)
+            chart_thread = threading.Thread(
+                target=_send_chart_async,
+                args=(client, symbol, signal, avg_entry, sl_price, tp_price, signal_data, alert_msg),
+                daemon=True
+            )
+            chart_thread.start()
+            log.info(f"📸  [{symbol}] SMC Chart generation started (background thread)")
         except Exception as tel_err:
-            log.warning(f"⚠  [{symbol}] Telegram alert failed: {tel_err}")
+            log.warning(f"⚠  [{symbol}] Chart/Telegram failed: {tel_err}")
+            send_telegram_alert(alert_msg)  # Fallback text-only
 
         # Place STOP-LOSS order (use quantity+reduceOnly to avoid closePosition conflict)
         if DRY_RUN:
@@ -3581,7 +3821,10 @@ def main():
                                 if veto:
                                     log.warning(f"🚫  [{symbol}] {veto_reason}")
                                     visualizer.record_rejection(veto_reason)
-                                    # 🚫 DISABLING Telegram Spam for 4H VETO (too many notifications)
+                                    send_telegram_alert(
+                                        f"🚫 <b>4H HARD VETO</b>\nCoin: {symbol}\nSignal: {armed_dir}\n"
+                                        f"<i>{veto_reason}</i>"
+                                    )
                                     state["armed_signal"] = "NONE"
                                     state["armed_time"] = 0
                                     state["armed_signal_data"] = None
