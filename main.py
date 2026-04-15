@@ -3581,10 +3581,7 @@ def main():
                                 if veto:
                                     log.warning(f"🚫  [{symbol}] {veto_reason}")
                                     visualizer.record_rejection(veto_reason)
-                                    send_telegram_alert(
-                                        f"🚫 <b>4H HARD VETO</b>\nCoin: {symbol}\nSignal: {armed_dir}\n"
-                                        f"<i>{veto_reason}</i>"
-                                    )
+                                    # 🚫 DISABLING Telegram Spam for 4H VETO (too many notifications)
                                     state["armed_signal"] = "NONE"
                                     state["armed_time"] = 0
                                     state["armed_signal_data"] = None
