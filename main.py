@@ -3387,6 +3387,9 @@ def main():
             "pending_entry_zone": None,          # {zone_high, zone_low} for invalidation check
             "pending_entry_data": None,          # Signal data snapshot for post-fill SL/TP
             "pending_entry_price": 0.0,          # The limit price placed
+            # ★ v28.1: VETO COOLDOWN (prevents re-arming same direction after 4H veto)
+            "veto_cooldown_until": 0,             # Timestamp when cooldown expires
+            "veto_cooldown_dir": "NONE",          # Direction that was vetoed
         }
         visualizers[sym] = StateExporter(client, sym)
 
@@ -3720,10 +3723,20 @@ def main():
 
                 # ── ★ ARM the Signal instead of immediate execution ────────────
                 if signal in ("BUY", "SELL") and state["armed_signal"] == "NONE":
-                    log.info(f"🔫  [{symbol}] SIGNAL ARMED ({signal}) │ Waiting max 4 mins for Vol Burst...")
-                    state["armed_signal"] = signal
-                    state["armed_time"] = now
-                    state["armed_signal_data"] = signal_data
+                    # ★ v28.1: Check veto cooldown before arming
+                    if state["veto_cooldown_until"] > 0 and now < state["veto_cooldown_until"] and state["veto_cooldown_dir"] == signal:
+                        remaining_cd = int(state["veto_cooldown_until"] - now)
+                        if scan_count % 5 == 0:  # Log every 5th scan to reduce spam
+                            log.info(f"⏳  [{symbol}] VETO COOLDOWN: {signal} blocked for {remaining_cd}s (4H trend opposes)")
+                    else:
+                        # Clear expired cooldown
+                        if now >= state["veto_cooldown_until"]:
+                            state["veto_cooldown_until"] = 0
+                            state["veto_cooldown_dir"] = "NONE"
+                        log.info(f"🔫  [{symbol}] SIGNAL ARMED ({signal}) │ Waiting max 4 mins for Vol Burst...")
+                        state["armed_signal"] = signal
+                        state["armed_time"] = now
+                        state["armed_signal_data"] = signal_data
 
                 # ── Process Armed State (Wait for Micro-Momentum) ────────────
                 if state["armed_signal"] != "NONE":
@@ -3821,9 +3834,13 @@ def main():
                                 if veto:
                                     log.warning(f"🚫  [{symbol}] {veto_reason}")
                                     visualizer.record_rejection(veto_reason)
+                                    # ★ v28.1: Set 15-minute cooldown for this direction on this coin
+                                    state["veto_cooldown_until"] = time.time() + 900  # 15 min
+                                    state["veto_cooldown_dir"] = armed_dir
                                     send_telegram_alert(
                                         f"🚫 <b>4H HARD VETO</b>\nCoin: {symbol}\nSignal: {armed_dir}\n"
-                                        f"<i>{veto_reason}</i>"
+                                        f"<i>{veto_reason}</i>\n"
+                                        f"⏳ Cooldown: 15 min (won't retry this direction)"
                                     )
                                     state["armed_signal"] = "NONE"
                                     state["armed_time"] = 0
