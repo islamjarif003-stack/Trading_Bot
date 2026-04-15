@@ -174,6 +174,9 @@ def _save_dry_run_positions():
 
 dry_run_positions = _load_dry_run_positions()
 
+# ★ v22.2: Store last closed sim PnL so _determine_trade_outcome can use it
+dry_run_last_pnl = {}
+
 def calculate_kelly_risk_pct(win_rate: float, avg_rr: float) -> float:
     """
     ★ v22: Half-Kelly Criterion Calculator.
@@ -316,12 +319,14 @@ def _has_open_position(client: Client, symbol: str) -> dict:
             if sl_hit:
                 pnl = abs(sim["entry_price"] - sim["sl_price"]) * sim["qty"] * (-1)
                 log.info(f"🔻  [DRY RUN] [{symbol}] SL HIT @ ${current_price:.4f} (SL: ${sim['sl_price']:.4f}) | Sim PnL: ${pnl:.4f}")
+                dry_run_last_pnl[symbol] = pnl
                 del dry_run_positions[symbol]
                 _save_dry_run_positions()
                 return None  # Position closed
             elif tp_hit:
                 pnl = abs(sim["tp_price"] - sim["entry_price"]) * sim["qty"]
                 log.info(f"🎯  [DRY RUN] [{symbol}] TP HIT @ ${current_price:.4f} (TP: ${sim['tp_price']:.4f}) | Sim PnL: +${pnl:.4f}")
+                dry_run_last_pnl[symbol] = pnl
                 del dry_run_positions[symbol]
                 _save_dry_run_positions()
                 return None  # Position closed
@@ -3110,6 +3115,14 @@ def _determine_trade_outcome(client: Client, symbol: str) -> tuple:
     Returns (outcome, total_pnl).
     """
     try:
+        # ★ v22.2: DRY RUN — use simulated PnL instead of Binance API
+        if DRY_RUN:
+            sim_pnl = dry_run_last_pnl.pop(symbol, 0.0)
+            outcome = 1 if sim_pnl > 0 else 0
+            result_emoji = "✅" if outcome == 1 else "❌"
+            log.info(f"🤖  [{symbol}] Trade Result: {result_emoji} Sim PnL: ${sim_pnl:.4f} | Fees: $0.00 (DRY RUN)")
+            return outcome, sim_pnl
+
         # ★ Fetch last 10 realized PnL entries (enough to capture all partial fills)
         income = client.futures_income_history(
             symbol=symbol,
