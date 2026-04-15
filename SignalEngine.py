@@ -75,7 +75,7 @@ POINTS_VWAP_ZONE = 3              # ★ v13: Upgraded from +2 → +3 (VWAP+EMA a
 ADX_TREND_THRESHOLD = 18
 
 # ─── ★★★ v10.0: BRAIN UPGRADES ──────────────────────────────────────────────
-POINTS_TRAP_PENALTY = -2          # -2 PENALTY if trap detected (soft filter)
+POINTS_TRAP_PENALTY = -5          # ★ v27: -5 PENALTY if trap detected (was -2, too soft)
 POINTS_DELTA_DIVERGENCE = -1      # -1 PENALTY if CVD diverges (awareness, not blockade)
 POINTS_LIQ_HUNT = 3               # +3 for trading towards liquidation cluster
 
@@ -100,10 +100,10 @@ POINTS_EMA_TRIPLE = 3             # +3 for Triple EMA alignment (FULL=3, PARTIAL
 POINTS_HEIKIN_ASHI = 1            # ★ v13: Downgraded +2 → +1 (passive indicator)
 
 # ─── ★★ v8.0: ORDER FLOW SCORING ────────────────────────────────────────────
-POINTS_CVD_TREND = 3              # ★ v13: Upgraded +2 → +3 (Order Flow: real market intent)
-POINTS_TAKER_PRESSURE = 3         # ★ v13: Upgraded +2 → +3 (Order Flow: aggressive buying/selling)
-POINTS_WHALE_WALL = 3             # +3 for whale order wall detection
-POINTS_ABSORPTION = 3             # ★ v13: Upgraded +2 → +3 (Order Flow: absorption = institutional)
+POINTS_CVD_TREND = 5              # ★ v27: Upgraded +3 → +5 (Ultra-Quant: CVD is king of real money flow)
+POINTS_TAKER_PRESSURE = 5         # ★ v27: Upgraded +3 → +5 (Ultra-Quant: aggressive whale buying/selling)
+POINTS_WHALE_WALL = 5             # ★ v27: Upgraded +3 → +5 (Ultra-Quant: whale order wall = institutional)
+POINTS_ABSORPTION = 5             # ★ v27: Upgraded +3 → +5 (Ultra-Quant: absorption = breakout coming)
 
 # ─── ★ ML FILTER CONFIGURATION (v2 — XGBoost) ──────────────────────────────
 ML_MIN_SAMPLES = 10           # Block trades if < 10 samples
@@ -113,17 +113,17 @@ ML_WIN_THRESHOLD = 0.40       # 40% predicted win probability required
 PENALTY_PRICE_CONTRADICTION = 10  # -10 points if price is moving opposite to signal
 
 # ─── ★★★ v16.1: VOLUME DELTA SCORE (Enhanced with Opposing Penalty) ─────────
-POINTS_VOLUME_DELTA       = 3     # +3 for taker buy/sell delta aligning with signal
-POINTS_VOLUME_DELTA_STRONG = 4    # +4 for EXTREME alignment (≥65% in direction)
+POINTS_VOLUME_DELTA       = 4     # ★ v27: Upgraded +3 → +4 (real-time order flow data)
+POINTS_VOLUME_DELTA_STRONG = 6    # ★ v27: Upgraded +4 → +6 (EXTREME alignment = ultra conviction)
 PENALTY_VOLUME_DELTA_OPPOSE = -3  # -3 PENALTY when delta OPPOSES signal (buying into selling)
 VOLUME_DELTA_THRESHOLD    = 0.55  # 55% taker buy = bullish, <45% = bearish
 VOLUME_DELTA_STRONG_THRESH = 0.65 # 65% = STRONG alignment (extra bonus)
 
 # ─── ★★★ v16.0: DYNAMIC SCORE THRESHOLD (ATR-ADAPTIVE) ─────────────────────
 # Low volatility → lower threshold (more trades), High vol → higher (avoid fakeouts)
-DYNAMIC_THRESHOLD_LOW  = 15       # ★ v22: Raised from 10 → 15 (filter weak signals)
-DYNAMIC_THRESHOLD_MID  = 17       # ★ v22: Raised from 12 → 17 (normal conditions)
-DYNAMIC_THRESHOLD_HIGH = 19       # ★ v22: Raised from 14 → 19 (high volatility)
+DYNAMIC_THRESHOLD_LOW  = 13       # ★ v27: Lowered 15 → 13 (more trades, Order Flow Floor protects quality)
+DYNAMIC_THRESHOLD_MID  = 15       # ★ v27: Lowered 17 → 15 (balance frequency + quality)
+DYNAMIC_THRESHOLD_HIGH = 17       # ★ v27: Lowered 19 → 17 (high vol still needs good score)
 ATR_PERCENTILE_LOW     = 30       # Below 30th percentile = low volatility
 ATR_PERCENTILE_HIGH    = 70       # Above 70th percentile = high volatility
 
@@ -1322,6 +1322,26 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
             score_breakdown.append(
                 f"🚫 MARGIN FILTER: Score gap {score_diff} < {MIN_SCORE_MARGIN} "
                 f"(BUY:{buy_score} vs SELL:{sell_score}) — Signal too weak/confused"
+            )
+            signal = "NONE"
+
+    # ★★★ v27: ORDER FLOW FLOOR — At least 1 institutional signal MUST fire
+    # Without real money flow confirmation, no trade passes. This is the Ultra-Quant rule.
+    if signal in ("BUY", "SELL"):
+        has_order_flow = False
+        # Check if ANY order flow signal fired for the winning side
+        of_keywords = ["CVD", "Taker", "Whale", "Absorption", "Vol Delta BULLISH", "Vol Delta BEARISH", "Vol Delta STRONG"]
+        for item in score_breakdown:
+            for kw in of_keywords:
+                if kw in item and "OPPOSES" not in item and "NEUTRAL" not in item:
+                    has_order_flow = True
+                    break
+            if has_order_flow:
+                break
+        if not has_order_flow:
+            score_breakdown.append(
+                f"🚫 ORDER FLOW FLOOR: No CVD/Taker/Whale/Absorption/VolDelta signal — "
+                f"Ultra-Quant requires at least 1 institutional confirmation"
             )
             signal = "NONE"
 
