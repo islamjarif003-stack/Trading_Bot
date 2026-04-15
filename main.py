@@ -57,8 +57,8 @@ BLACKLIST_COINS = {
     "SOONUSDT", "TRADOORUSDT",
 }
 LEVERAGE        = 20                # ★ FIXED 20x leverage
-SL_ATR_MULT     = 2.5               # ★ v22: SL = 2.5 × ATR (was 1.5 — too tight, all trades SL'd on noise)
-TP_ATR_MULT     = 5.0               # ★ v22: TP = 5.0 × ATR (R:R = 1:2 maintained)
+SL_ATR_MULT     = 1.8               # ★ v26: SL = 1.8 × ATR (was 2.5 — too wide, massive losses per SL hit)
+TP_ATR_MULT     = 3.6               # ★ v26: TP = 3.6 × ATR (R:R = 1:2 maintained with SL=1.8)
 HARD_LOCKOUT_S  = 300               # ★ v22: 5-minute hard lockout after every trade (was 30m)
 LOOP_INTERVAL_S = 10                # Seconds between each scan cycle
 ENTRY_RISK_PCT  = 15.0              # ★ $50 Config: 15% of $50 ≈ $7.50 risk per trade
@@ -100,10 +100,10 @@ CORR_REDUCE_SIZE_PCT  = 50      # Reduce to 50% if CORR_ACTION == "REDUCE"
 # Note: These are RAW price % (Unleveraged). A 0.4% raw move = 8% on Binance at 20x leverage.
 # ★ v17: TRUE BREAK-EVEN — uses dynamic R:R, not static %. BE triggers at 1R profit.
 TRUE_BE_FEE_BUFFER_PCT   = 0.15   # ★ v17: Fee-adjusted BE — covers 0.05% entry + 0.05% exit + 0.05% safety
-TRAILING_ACTIVATION_RR   = 1.5    # ★ v17: Trailing ONLY activates after 1:1.5 R:R is achieved
+TRAILING_ACTIVATION_RR   = 1.0    # ★ v26: Trailing activates after 1:1.0 R:R (was 1.5 — too late, most trades reverse before reaching it)
 TRAILING_SL_DISTANCE_PCT = 0.70   # ★ v16.1: Trail SL 0.70% behind highest/lowest price (was 0.50% — giving more room)
 TTP_CHECK_INTERVAL       = 3      # Check every 3 cycles
-DISABLE_HARD_TP          = True    # ★ v12: NO fixed TP → let trailing SL manage exit
+DISABLE_HARD_TP          = False   # ★ v26: ENABLED fixed TP at 1:2 R:R (was True — trades never took profit, reversed to losses)
 SMART_REVERSAL_EXIT      = True    # ★ v12: Close if 5m MA25 cross-under/over detected
 STALE_TRADE_MIN_LOSS_PCT = -0.50   # ★ v17: Stale timeout only fires if PnL < -0.50% (prevents fee-draining flat closes)
 
@@ -541,13 +541,19 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         # ★ v21: Save 1m ATR for dynamic limit offset (before 1H override)
         atr_1m_for_offset = atr
 
-        # ★ FIX: Use 1-Hour ATR for SL/TP distances so they are large enough to breathe
+        # ★ v26: Use 15-Minute ATR for SL/TP (was 1H — way too wide, caused massive losses)
         try:
-            atr_1h = _get_current_atr(client, symbol)
-            if atr_1h > 0:
-                atr = atr_1h
+            raw_15m = client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_15MINUTE, limit=20)
+            if raw_15m and len(raw_15m) >= 15:
+                highs_15m = [float(k[2]) for k in raw_15m]
+                lows_15m = [float(k[3]) for k in raw_15m]
+                closes_15m = [float(k[4]) for k in raw_15m]
+                trs = [max(highs_15m[i] - lows_15m[i], abs(highs_15m[i] - closes_15m[i-1]), abs(lows_15m[i] - closes_15m[i-1])) for i in range(1, len(highs_15m))]
+                atr_15m = sum(trs[-14:]) / 14.0
+                if atr_15m > 0:
+                    atr = atr_15m
         except Exception as atr_err:
-            log.warning(f"⚠ [{symbol}] Could not fetch 1H ATR, using provided ATR: {atr_err}")
+            log.warning(f"⚠ [{symbol}] Could not fetch 15m ATR, using provided ATR: {atr_err}")
 
         # ★ v22: HALF-KELLY CRITERION POSITION SIZING
         try:
@@ -1319,7 +1325,7 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
         trade_open_time = bot_state.get("trade_open_time", 0)
         if trade_open_time > 0:
             trade_duration_s = now - trade_open_time
-            if trade_duration_s >= 2700 and pnl_pct <= STALE_TRADE_MIN_LOSS_PCT and bot_state.get("phase", "INITIAL") == "INITIAL":  # 45 mins, only if genuinely losing
+            if trade_duration_s >= 1800 and pnl_pct <= STALE_TRADE_MIN_LOSS_PCT and bot_state.get("phase", "INITIAL") == "INITIAL":  # ★ v26: 30 mins (was 45 — dead trades sit too long)
                 log.warning(f"⏳  [{symbol}] STALE TRADE: Open for {int(trade_duration_s/60)} mins with PnL {pnl_pct:.2f}% (genuine loss < {STALE_TRADE_MIN_LOSS_PCT}%). Closing early.")
                 if _force_market_close(client, symbol, side):
                     _reset_bot_state(bot_state)
@@ -1449,8 +1455,8 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
             bot_state["initial_risk_pct"] = initial_risk_pct
             log.info(f"📐  [{symbol}] Dynamic Risk Baseline: {initial_risk_pct:.3f}% (ATR: ${current_atr:.2f} × {SL_ATR_MULT})")
 
-        # BE triggers when profit reaches 0.75R (earlier Break-Even activation to lock safety)
-        dynamic_be_trigger = max(initial_risk_pct * 0.75, 0.30)  # Floor at 0.30% to avoid micro-triggers
+        # ★ v26: BE triggers when profit reaches 0.50R (was 0.75R — too late, trades reversed before reaching it)
+        dynamic_be_trigger = max(initial_risk_pct * 0.50, 0.20)  # Floor at 0.20% for faster BE activation
 
         if bot_state["phase"] == "INITIAL" and pnl_pct >= dynamic_be_trigger:
             # ★ v17: TRUE BREAK-EVEN — hardcoded 0.15% fee buffer (covers entry + exit taker fees)
