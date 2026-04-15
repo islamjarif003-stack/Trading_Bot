@@ -2188,7 +2188,7 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
 
 MTFA_ENABLED = True           # ★ v25: RE-ENABLED with proper MTDC system
 MTDC_MIN_CONFIDENCE = 0.50    # ★ v26: Lowered from 70% → 50% (was blocking ALL trades, 4H Hard Veto still protects)
-MTDC_4H_HARD_VETO = False     # ★ v28.3: Disabled temporarily for testing (4H blocks counter-trend 5m scalps)
+MTDC_4H_HARD_VETO = True      # ★ v25: 4H trend MUST agree, otherwise instant kill
 
 # ── Weights for confidence sources (excluding 4H which is Hard Veto) ──
 MTDC_WEIGHT_1H     = 0.35     # 1H EMA trend alignment (35%)
@@ -2425,7 +2425,7 @@ def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
 
 import numpy as np
 
-ENTRY_VALIDATION_ENABLED = False   # ★ v28.8: Disabled to override WAIT queue and force instant execution
+ENTRY_VALIDATION_ENABLED = True    # ★ v20: Master switch for SMC entry validation
 WAIT_QUEUE_MAX_CANDLES   = 8       # ★ WAIT queue: max candles before expiry
 SMC_SWING_LOOKBACK       = 3       # ★ Swing detection: ±3 bar window
 SMC_SWEEP_TOLERANCE_ATR  = 0.15    # ★ Sweep: wick must exceed level by at least 0.15× ATR
@@ -3788,7 +3788,7 @@ def main():
                                     prev_close = float(closed_klines[-2][4])
                                     
                                     if armed_dir == "BUY":
-                                        has_momentum = True  # curr_close > prev_close
+                                        has_momentum = curr_close > prev_close
                                         if not has_momentum:
                                             log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but body did not close above previous body (close {curr_close} <= close {prev_close}).")
                                             visualizer.record_rejection(f"MOMENTUM: Body not broken for BUY")
@@ -3797,7 +3797,7 @@ def main():
                                             state["armed_signal_data"] = None
                                             continue
                                     else:  # SELL
-                                        has_momentum = True  # curr_close < prev_close
+                                        has_momentum = curr_close < prev_close
                                         if not has_momentum:
                                             log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but body did not close below previous body (close {curr_close} >= close {prev_close}).")
                                             visualizer.record_rejection(f"MOMENTUM: Body not broken for SELL")
@@ -3805,7 +3805,7 @@ def main():
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
                                             continue
-                                    log.info(f"✅  [{symbol}] SMC MOMENTUM CHECK BYPASSED FOR TESTING ✔")
+                                    log.info(f"✅  [{symbol}] SMC MICRO-REVERSAL CONFIRMED ✔")
                             except Exception as mom_err:
                                 log.warning(f"⚠  [{symbol}] Momentum check failed: {mom_err} — Proceeding anyway.")
                             
