@@ -46,15 +46,24 @@ ENABLE_DYNAMIC_WATCHLIST = True # ★ Fetch Top 50 Volatile USDT pairs dynamical
 ENABLE_MICRO_SCALPING = False   # ★ v12: DISABLED — Pre-flight fail = NO TRADE (no more weak entries)
 SYMBOLS         = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
 
-# ★ v15: BLACKLIST — Dead coins (Price $0.0) + consistent losers from audit
+# ★ v26: BLACKLIST — Dead coins + Meme/Low-cap + Consistent losers + Manipulated pairs
 BLACKLIST_COINS = {
-    # Dead coins (Price $0.0 on testnet)
+    # Dead coins (Price $0.0 on testnet/mainnet)
     "OMNIUSDT", "ALPHAUSDT", "BSWUSDT", "HIFIUSDT", "NEIROETHUSDT",
     "A2ZUSDT", "TANSSIUSDT", "NKNUSDT", "BDXNUSDT", "LITUSDT", "BAKEUSDT",
+    "UXLINKUSDT", "VIDTUSDT", "SXPUSDT", "AGIXUSDT", "PORT3USDT",
     # Consistent losers from audit (0% win rate, heavy losses)
     "MAGMAUSDT", "BULLAUSDT", "TNSRUSDT", "SIRENUSDT",
-    # v15: Near-liquidation risk — SOONUSDT hit -50% / 61% margin ratio
+    # Near-liquidation risk
     "SOONUSDT", "TRADOORUSDT",
+    # ★ v26: Meme coins — pump & dump, no real price action, SL gets hunted
+    "GIGGLEUSDT", "MEMEFIUSDT", "RAVEUSDT", "BLESSUSDT",
+    "FARTCOINUSDT", "1000PEPEUSDT", "DOGEUSDT",
+    # ★ v26: Low-cap/micro-cap — extremely thin orderbook, easy to manipulate
+    "INUSDT", "BRUSDT", "BZUSDT", "CLUSDT", "BIOUSDT",
+    "APRUSDT", "MYXUSDT", "RIVERUSDT", "WLFIUSDT",
+    "BASEDUSDT", "ALPACAUSDT", "LINAUSDT", "BNXUSDT",
+    "ARIAUSDT", "ENAUSDT", "WETUSDT",
 }
 LEVERAGE        = 20                # ★ FIXED 20x leverage
 SL_ATR_MULT     = 1.8               # ★ v26: SL = 1.8 × ATR (was 2.5 — too wide, massive losses per SL hit)
