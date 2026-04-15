@@ -114,18 +114,65 @@ KELLY_DEFAULT_AVG_RR   = 2.0      # Baseline assumption: 1:2 Reward-to-Risk
 KELLY_MAX_RISK_PCT     = 0.10     # Hard cap: never risk more than 10% of balance
 KELLY_MIN_TRADES_FOR_LIVE = 10    # Use live stats only after 10+ trades
 
-# Global Kelly performance tracker (shared across all symbols)
-kelly_state = {
-    "total_wins": 0,
-    "total_losses": 0,
-    "total_win_pnl": 0.0,    # Sum of all winning trade PnLs
-    "total_loss_pnl": 0.0,   # Sum of all losing trade PnLs (absolute value)
-}
+import json as _json
 
-# ★ v22: DRY RUN Position Simulator
+# Global Kelly performance tracker (shared across all symbols) — FILE-PERSISTENT
+KELLY_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kelly_state.json")
+
+def _load_kelly_state() -> dict:
+    """Load Kelly performance data from disk."""
+    default = {
+        "total_wins": 0,
+        "total_losses": 0,
+        "total_win_pnl": 0.0,
+        "total_loss_pnl": 0.0,
+    }
+    try:
+        if os.path.exists(KELLY_STATE_FILE):
+            with open(KELLY_STATE_FILE, "r") as f:
+                data = _json.load(f)
+                log.info(f"📂  [KELLY] Loaded state: W={data.get('total_wins',0)} L={data.get('total_losses',0)} | Win$={data.get('total_win_pnl',0):.2f} Loss$={data.get('total_loss_pnl',0):.2f}")
+                return {**default, **data}
+    except Exception as e:
+        log.warning(f"⚠  [KELLY] Failed to load state file: {e}")
+    return default
+
+def _save_kelly_state():
+    """Save Kelly performance data to disk."""
+    try:
+        with open(KELLY_STATE_FILE, "w") as f:
+            _json.dump(kelly_state, f, indent=2)
+    except Exception as e:
+        log.warning(f"⚠  [KELLY] Failed to save state file: {e}")
+
+kelly_state = _load_kelly_state()
+
+# ★ v22.1: DRY RUN Position Simulator (FILE-PERSISTENT)
 # Tracks simulated positions so the bot doesn't think trades are closed immediately
-# Each entry: {symbol: {"side": "BUY"/"SELL", "qty": float, "entry_price": float, "sl_price": float, "tp_price": float}}
-dry_run_positions = {}
+# Persisted to JSON file so positions survive PM2 restarts
+DRY_RUN_POSITIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dry_run_positions.json")
+
+def _load_dry_run_positions() -> dict:
+    """Load simulated positions from disk."""
+    try:
+        if os.path.exists(DRY_RUN_POSITIONS_FILE):
+            with open(DRY_RUN_POSITIONS_FILE, "r") as f:
+                data = _json.load(f)
+                log.info(f"📂  [DRY RUN] Loaded {len(data)} simulated positions from disk.")
+                return data
+    except Exception as e:
+        log.warning(f"⚠  [DRY RUN] Failed to load positions file: {e}")
+    return {}
+
+def _save_dry_run_positions():
+    """Save simulated positions to disk."""
+    try:
+        with open(DRY_RUN_POSITIONS_FILE, "w") as f:
+            _json.dump(dry_run_positions, f, indent=2)
+    except Exception as e:
+        log.warning(f"⚠  [DRY RUN] Failed to save positions file: {e}")
+
+dry_run_positions = _load_dry_run_positions()
 
 def calculate_kelly_risk_pct(win_rate: float, avg_rr: float) -> float:
     """
@@ -270,11 +317,13 @@ def _has_open_position(client: Client, symbol: str) -> dict:
                 pnl = abs(sim["entry_price"] - sim["sl_price"]) * sim["qty"] * (-1)
                 log.info(f"🔻  [DRY RUN] [{symbol}] SL HIT @ ${current_price:.4f} (SL: ${sim['sl_price']:.4f}) | Sim PnL: ${pnl:.4f}")
                 del dry_run_positions[symbol]
+                _save_dry_run_positions()
                 return None  # Position closed
             elif tp_hit:
                 pnl = abs(sim["tp_price"] - sim["entry_price"]) * sim["qty"]
                 log.info(f"🎯  [DRY RUN] [{symbol}] TP HIT @ ${current_price:.4f} (TP: ${sim['tp_price']:.4f}) | Sim PnL: +${pnl:.4f}")
                 del dry_run_positions[symbol]
+                _save_dry_run_positions()
                 return None  # Position closed
             else:
                 # Position still open
@@ -285,6 +334,7 @@ def _has_open_position(client: Client, symbol: str) -> dict:
                     "side": sim["side"],
                     "qty": sim["qty"],
                     "entry_price": sim["entry_price"],
+                    "mark_price": current_price,
                     "unrealized_pnl": unrealized,
                 }
         except Exception:
@@ -293,6 +343,7 @@ def _has_open_position(client: Client, symbol: str) -> dict:
                 "side": sim["side"],
                 "qty": sim["qty"],
                 "entry_price": sim["entry_price"],
+                "mark_price": sim["entry_price"],
                 "unrealized_pnl": 0.0,
             }
     elif DRY_RUN:
@@ -727,6 +778,7 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
                 "sl_price": sl_price,
                 "tp_price": tp_price if not DISABLE_HARD_TP else 0.0,
             }
+            _save_dry_run_positions()
             log.info(f"📍  [DRY RUN] [{symbol}] Position registered: {signal} @ ${avg_entry} | SL: ${sl_price} | TP: ${tp_price}")
 
         return True, actual_qty
@@ -2672,12 +2724,14 @@ def main():
                             # ★ v22: Feed Kelly tracker
                             kelly_state["total_wins"] += 1
                             kelly_state["total_win_pnl"] += abs(pnl)
+                            _save_kelly_state()
                         else:
                             state["consec_losses"] += 1
                             daily_losses += 1
                             # ★ v22: Feed Kelly tracker
                             kelly_state["total_losses"] += 1
                             kelly_state["total_loss_pnl"] += abs(pnl)
+                            _save_kelly_state()
                             if state["consec_losses"] >= MAX_CONSEC_LOSSES:
                                 state["loss_cooldown_until"] = time.time() + LOSS_COOLDOWN_S
                                 log.warning(f"🧊  [{symbol}] {MAX_CONSEC_LOSSES} CONSECUTIVE LOSSES → Extra {LOSS_COOLDOWN_S}s cooldown activated.")
