@@ -2425,7 +2425,7 @@ def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
 
 import numpy as np
 
-ENTRY_VALIDATION_ENABLED = True    # ★ v20: Master switch for SMC entry validation
+ENTRY_VALIDATION_ENABLED = False   # ★ v28.8: Disabled to override WAIT queue and force instant execution
 WAIT_QUEUE_MAX_CANDLES   = 8       # ★ WAIT queue: max candles before expiry
 SMC_SWING_LOOKBACK       = 3       # ★ Swing detection: ±3 bar window
 SMC_SWEEP_TOLERANCE_ATR  = 0.15    # ★ Sweep: wick must exceed level by at least 0.15× ATR
