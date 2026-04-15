@@ -3788,7 +3788,7 @@ def main():
                                     prev_close = float(closed_klines[-2][4])
                                     
                                     if armed_dir == "BUY":
-                                        has_momentum = curr_close > prev_close
+                                        has_momentum = True  # curr_close > prev_close
                                         if not has_momentum:
                                             log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but body did not close above previous body (close {curr_close} <= close {prev_close}).")
                                             visualizer.record_rejection(f"MOMENTUM: Body not broken for BUY")
@@ -3797,7 +3797,7 @@ def main():
                                             state["armed_signal_data"] = None
                                             continue
                                     else:  # SELL
-                                        has_momentum = curr_close < prev_close
+                                        has_momentum = True  # curr_close < prev_close
                                         if not has_momentum:
                                             log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but body did not close below previous body (close {curr_close} >= close {prev_close}).")
                                             visualizer.record_rejection(f"MOMENTUM: Body not broken for SELL")
@@ -3805,7 +3805,7 @@ def main():
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
                                             continue
-                                    log.info(f"✅  [{symbol}] SMC MICRO-REVERSAL CONFIRMED ✔")
+                                    log.info(f"✅  [{symbol}] SMC MOMENTUM CHECK BYPASSED FOR TESTING ✔")
                             except Exception as mom_err:
                                 log.warning(f"⚠  [{symbol}] Momentum check failed: {mom_err} — Proceeding anyway.")
                             
