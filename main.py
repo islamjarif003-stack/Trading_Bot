@@ -2554,11 +2554,12 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
                 valid_structure = False
         
         if not valid_structure:
-            # ★ v22: FAIL-OPEN — No structure detected means market is ranging/quiet.
-            # Let SignalEngine's score (already ≥12) handle it. Don't block.
-            reason = f"SMC PASS (No Structure): 5m has no clear BOS/CHOCH ({struct_type}). Passing on SignalEngine confidence."
-            log.info(f"    [{symbol}] ✅ {reason}")
-            return "PASS", reason, None
+            # ★ v27.1: WAIT instead of PASS when no structure found.
+            # Without SMC structure, there's no institutional level to trade from.
+            # Wait for a structure break to appear rather than entering blind.
+            reason = f"SMC WAIT (No Structure): 5m has no clear BOS/CHOCH ({struct_type}). Waiting for structural setup."
+            log.info(f"    [{symbol}] ⏳ {reason}")
+            return "WAIT", reason, None
         
         # ★ v22: Auto-flip direction to match 5m SMC structure
         smc_direction = "BUY" if struct_type in ("CHOCH_BULL", "BOS_BULL") else "SELL"
@@ -3518,6 +3519,37 @@ def main():
                                     
                             if not is_micro_scalp:
                                 log.info(f"✅  [{symbol}] PRE-FLIGHT PASSED. Executing {armed_dir}...")
+                            
+                            # ★★★ v27.1: MOMENTUM CONFIRMATION FILTER
+                            # Only enter if the last 3 candles show momentum in our direction.
+                            # BUY: last 3 candles must have higher lows (building support)
+                            # SELL: last 3 candles must have lower highs (building resistance)
+                            try:
+                                m5_momentum = client.futures_klines(symbol=symbol, interval='5m', limit=5)
+                                if m5_momentum and len(m5_momentum) >= 4:
+                                    lows_3 = [float(k[3]) for k in m5_momentum[-4:-1]]  # Last 3 closed candles
+                                    highs_3 = [float(k[2]) for k in m5_momentum[-4:-1]]
+                                    if armed_dir == "BUY":
+                                        has_momentum = lows_3[-1] >= lows_3[-2] and lows_3[-2] >= lows_3[-3]
+                                        if not has_momentum:
+                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but lows NOT rising ({lows_3}) — Price still falling, bad entry.")
+                                            visualizer.record_rejection(f"MOMENTUM: Lows not rising for BUY")
+                                            state["armed_signal"] = "NONE"
+                                            state["armed_time"] = 0
+                                            state["armed_signal_data"] = None
+                                            continue
+                                    else:  # SELL
+                                        has_momentum = highs_3[-1] <= highs_3[-2] and highs_3[-2] <= highs_3[-3]
+                                        if not has_momentum:
+                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but highs NOT falling ({highs_3}) — Price still rising, bad entry.")
+                                            visualizer.record_rejection(f"MOMENTUM: Highs not falling for SELL")
+                                            state["armed_signal"] = "NONE"
+                                            state["armed_time"] = 0
+                                            state["armed_signal_data"] = None
+                                            continue
+                                    log.info(f"✅  [{symbol}] MOMENTUM CONFIRMED: {'Higher Lows' if armed_dir == 'BUY' else 'Lower Highs'} ✔")
+                            except Exception as mom_err:
+                                log.warning(f"⚠  [{symbol}] Momentum check failed: {mom_err} — Proceeding anyway.")
                             
                             # ── ★ v11.1: ANTI-FOMO GATE (Final Entry Filter) ──
                             # Legacy anti-fomo gate commented out. Master Logic (AdvancedExecutionValidator) now handles all Anti-FOMO rules.
