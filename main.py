@@ -1938,7 +1938,7 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
 # ═════════════════════════════════════════════════════════════════════════════
 
 MTFA_ENABLED = True           # ★ v25: RE-ENABLED with proper MTDC system
-MTDC_MIN_CONFIDENCE = 0.70    # ★ v25: 70% minimum directional confidence to enter
+MTDC_MIN_CONFIDENCE = 0.50    # ★ v26: Lowered from 70% → 50% (was blocking ALL trades, 4H Hard Veto still protects)
 MTDC_4H_HARD_VETO = True      # ★ v25: 4H trend MUST agree, otherwise instant kill
 
 # ── Weights for confidence sources (excluding 4H which is Hard Veto) ──
