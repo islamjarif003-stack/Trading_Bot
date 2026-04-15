@@ -2539,6 +2539,20 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
         # flip the trade direction to follow Smart Money instead of blocking.
         valid_structure = struct_type in ("CHOCH_BULL", "BOS_BULL", "CHOCH_BEAR", "BOS_BEAR")
         
+        # ── ★ v26.3 UPGRADE 3: DISPLACEMENT CANDLE QUALITY CHECK ────────
+        # Only trust structure breaks backed by strong institutional candles.
+        # Weak breaks (small body, no momentum) are often fake breakouts.
+        if valid_structure and break_idx > 0 and break_idx < len(close):
+            brk_body = abs(close[break_idx] - opn[break_idx])
+            brk_range = high[break_idx] - low[break_idx]
+            body_pct = brk_body / brk_range if brk_range > 0 else 0
+            is_strong = body_pct >= 0.50 and brk_body >= 0.5 * atr14
+            if is_strong:
+                log.info(f"    [{symbol}] 💪 Displacement: STRONG (body {body_pct*100:.0f}%, {brk_body/atr14:.1f}x ATR)")
+            else:
+                log.info(f"    [{symbol}] ⚠️ Displacement: WEAK (body {body_pct*100:.0f}%, {brk_body/atr14:.1f}x ATR) → No structure claim")
+                valid_structure = False
+        
         if not valid_structure:
             # ★ v22: FAIL-OPEN — No structure detected means market is ranging/quiet.
             # Let SignalEngine's score (already ≥12) handle it. Don't block.
@@ -2551,7 +2565,31 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
         if smc_direction != direction:
             log.info(f"    [{symbol}] 🔄 SMC FLIP: Signal was {direction} but 5m structure is {struct_type} → Flipping to {smc_direction}")
             direction = smc_direction
-            
+        
+        # ── ★ v26.3 UPGRADE 2: 15m HIGHER-TIMEFRAME CONFLUENCE (STRICT VETO) ──
+        # If 15m structure opposes 5m direction, SKIP trade entirely.
+        # DO NOT flip — a BUY OB cannot be traded as SELL (SL math breaks).
+        try:
+            m15 = client.futures_klines(symbol=symbol, interval="15m", limit=100)
+            if m15 and len(m15) >= 40:
+                h15 = np.array([float(k[2]) for k in m15])
+                l15 = np.array([float(k[3]) for k in m15])
+                c15 = np.array([float(k[4]) for k in m15])
+                sh15, sl15 = _detect_swing_points(h15, l15, SMC_SWING_LOOKBACK)
+                if len(sh15) >= 2 and len(sl15) >= 2:
+                    struct15, _, _, detail15 = _detect_market_structure(h15, l15, c15, sh15, sl15)
+                    htf_dir = "BUY" if struct15 in ("CHOCH_BULL", "BOS_BULL") else "SELL" if struct15 in ("CHOCH_BEAR", "BOS_BEAR") else "NONE"
+                    if htf_dir != "NONE" and htf_dir != direction:
+                        reason = f"⚠ VETO: 15m HTF Mismatch — 5m wants {direction} but 15m is {struct15}. Trade SKIPPED."
+                        log.warning(f"    [{symbol}] {reason}")
+                        return "NEUTRAL", reason, None
+                    elif htf_dir == direction:
+                        log.info(f"    [{symbol}] 🔗 15m Confluence: ALIGNED ({struct15}) ✅")
+                    else:
+                        log.info(f"    [{symbol}] 🔗 15m Confluence: NEUTRAL (no 15m structure) — Passing on 5m alone.")
+        except Exception as e15:
+            log.warning(f"    [{symbol}] ⚠ 15m HTF check failed: {e15} — Continuing on 5m.")
+        
         # ── Step 4: Inducement Detection ──────────────────────────────────
         inducement_found = _detect_inducement(
             high, low, close, opn, break_idx, sweep_extreme if swept else 0.0, direction
@@ -2568,6 +2606,24 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
             return "NEUTRAL", reason, None
         
         log.info(f"    [{symbol}] SMC Zone: {zone_type} @ ${zone_low:.4f}–${zone_high:.4f}")
+        
+        # ── ★ v26.3 UPGRADE 1: PREMIUM/DISCOUNT ZONE FILTER ──────────────
+        # Institutional traders BUY in Discount (below 50%), SELL in Premium (above 50%).
+        if len(swing_highs) >= 2 and len(swing_lows) >= 2:
+            pd_range_high = max(sh[1] for sh in swing_highs[-4:])
+            pd_range_low = min(sl[1] for sl in swing_lows[-4:])
+            equilibrium = (pd_range_high + pd_range_low) / 2.0
+            if direction == "BUY" and current_price > equilibrium:
+                reason = f"P/D REJECT: BUY in PREMIUM (price ${current_price:.4f} > EQ ${equilibrium:.4f}). Institutions buy DISCOUNT."
+                log.warning(f"    [{symbol}] {reason}")
+                return "NEUTRAL", reason, None
+            elif direction == "SELL" and current_price < equilibrium:
+                reason = f"P/D REJECT: SELL in DISCOUNT (price ${current_price:.4f} < EQ ${equilibrium:.4f}). Institutions sell PREMIUM."
+                log.warning(f"    [{symbol}] {reason}")
+                return "NEUTRAL", reason, None
+            else:
+                pd_label = "DISCOUNT" if current_price < equilibrium else "PREMIUM"
+                log.info(f"    [{symbol}] P/D Zone: {pd_label} OK (EQ: ${equilibrium:.4f})")
         
         zone_data = {
             "zone_type": zone_type,
