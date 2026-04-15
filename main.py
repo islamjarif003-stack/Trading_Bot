@@ -3778,30 +3778,29 @@ def main():
                             
                             # ★★★ SMC MICRO-REVERSAL (SWEEP) CONFIRMATION
                             # SMC entry requires micro-structure break to confirm rejection:
-                            # BUY: Latest closed candle must close ABOVE the high of the previous sweep candle.
-                            # SELL: Latest closed candle must close BELOW the low of the previous sweep candle.
+                            # BUY: Latest closed body must close ABOVE the previous closed body.
+                            # SELL: Latest closed body must close BELOW the previous closed body.
                             try:
                                 m5_momentum = client.futures_klines(symbol=symbol, interval='5m', limit=4)
                                 if m5_momentum and len(m5_momentum) >= 3:
                                     closed_klines = m5_momentum[:-1]  # Exclude unfinished live candle
                                     curr_close = float(closed_klines[-1][4])
-                                    prev_high = float(closed_klines[-2][2])
-                                    prev_low = float(closed_klines[-2][3])
+                                    prev_close = float(closed_klines[-2][4])
                                     
                                     if armed_dir == "BUY":
-                                        has_momentum = curr_close > prev_high
+                                        has_momentum = curr_close > prev_close
                                         if not has_momentum:
-                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but micro-structure not broken upwards (close {curr_close} <= high {prev_high}).")
-                                            visualizer.record_rejection(f"MOMENTUM: Micro-structure not broken for BUY")
+                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but body did not close above previous body (close {curr_close} <= close {prev_close}).")
+                                            visualizer.record_rejection(f"MOMENTUM: Body not broken for BUY")
                                             state["armed_signal"] = "NONE"
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
                                             continue
                                     else:  # SELL
-                                        has_momentum = curr_close < prev_low
+                                        has_momentum = curr_close < prev_close
                                         if not has_momentum:
-                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but micro-structure not broken downwards (close {curr_close} >= low {prev_low}).")
-                                            visualizer.record_rejection(f"MOMENTUM: Micro-structure not broken for SELL")
+                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but body did not close below previous body (close {curr_close} >= close {prev_close}).")
+                                            visualizer.record_rejection(f"MOMENTUM: Body not broken for SELL")
                                             state["armed_signal"] = "NONE"
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
