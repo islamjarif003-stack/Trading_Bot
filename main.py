@@ -2794,12 +2794,13 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
                 valid_structure = False
         
         if not valid_structure:
-            # ★ v27.1: WAIT instead of PASS when no structure found.
-            # Without SMC structure, there's no institutional level to trade from.
-            # Wait for a structure break to appear rather than entering blind.
-            reason = f"SMC WAIT (No Structure): 5m has no clear BOS/CHOCH ({struct_type}). Waiting for structural setup."
-            log.info(f"    [{symbol}] ⏳ {reason}")
-            return "WAIT", reason, None
+            # ★ v29.2: PASS instead of WAIT when no structure found.
+            # No structure simply means market hasn't broken yet — not a reason to block.
+            # The scoring engine + MTDC already validated this trade. Let it execute.
+            # WAIT queue is reserved for when we FIND a valid OB/FVG but price hasn't retested it yet.
+            reason = f"SMC PASS (No Structure): 5m has no clear BOS/CHOCH ({struct_type}). Passing on score+MTDC confluence."
+            log.info(f"    [{symbol}] ✅ {reason}")
+            return "PASS", reason, None
         
         # ★ v22: Auto-flip direction to match 5m SMC structure
         smc_direction = "BUY" if struct_type in ("CHOCH_BULL", "BOS_BULL") else "SELL"
