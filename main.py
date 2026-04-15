@@ -2849,22 +2849,25 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
         log.info(f"    [{symbol}] SMC Zone: {zone_type} @ ${zone_low:.4f}–${zone_high:.4f}")
         
         # ── ★ v26.3 UPGRADE 1: PREMIUM/DISCOUNT ZONE FILTER ──────────────
-        # Institutional traders BUY in Discount (below 50%), SELL in Premium (above 50%).
+        # SMC Refactor: Only block extreme entries (top 25% for BUY, bottom 25% for SELL)
         if len(swing_highs) >= 2 and len(swing_lows) >= 2:
             pd_range_high = max(sh[1] for sh in swing_highs[-4:])
             pd_range_low = min(sl[1] for sl in swing_lows[-4:])
-            equilibrium = (pd_range_high + pd_range_low) / 2.0
-            if direction == "BUY" and current_price > equilibrium:
-                reason = f"P/D REJECT: BUY in PREMIUM (price ${current_price:.4f} > EQ ${equilibrium:.4f}). Institutions buy DISCOUNT."
+            range_size = pd_range_high - pd_range_low
+            
+            extreme_premium = pd_range_high - (range_size * 0.25)  # Top 25%
+            extreme_discount = pd_range_low + (range_size * 0.25)  # Bottom 25%
+            
+            if direction == "BUY" and current_price > extreme_premium:
+                reason = f"P/D REJECT: BUY in EXTREME PREMIUM (price ${current_price:.4f} > top 25% ${extreme_premium:.4f})."
                 log.warning(f"    [{symbol}] {reason}")
                 return "NEUTRAL", reason, None
-            elif direction == "SELL" and current_price < equilibrium:
-                reason = f"P/D REJECT: SELL in DISCOUNT (price ${current_price:.4f} < EQ ${equilibrium:.4f}). Institutions sell PREMIUM."
+            elif direction == "SELL" and current_price < extreme_discount:
+                reason = f"P/D REJECT: SELL in EXTREME DISCOUNT (price ${current_price:.4f} < bottom 25% ${extreme_discount:.4f})."
                 log.warning(f"    [{symbol}] {reason}")
                 return "NEUTRAL", reason, None
             else:
-                pd_label = "DISCOUNT" if current_price < equilibrium else "PREMIUM"
-                log.info(f"    [{symbol}] P/D Zone: {pd_label} OK (EQ: ${equilibrium:.4f})")
+                log.info(f"    [{symbol}] P/D Zone: OK (Not in extreme boundaries)")
         
         zone_data = {
             "zone_type": zone_type,
@@ -3773,34 +3776,37 @@ def main():
                             if not is_micro_scalp:
                                 log.info(f"✅  [{symbol}] PRE-FLIGHT PASSED. Executing {armed_dir}...")
                             
-                            # ★★★ v27.1: MOMENTUM CONFIRMATION FILTER
-                            # Only enter if the last 3 candles show momentum in our direction.
-                            # BUY: last 3 candles must have higher lows (building support)
-                            # SELL: last 3 candles must have lower highs (building resistance)
+                            # ★★★ SMC MICRO-REVERSAL (SWEEP) CONFIRMATION
+                            # SMC entry requires micro-structure break to confirm rejection:
+                            # BUY: Latest closed candle must close ABOVE the high of the previous sweep candle.
+                            # SELL: Latest closed candle must close BELOW the low of the previous sweep candle.
                             try:
-                                m5_momentum = client.futures_klines(symbol=symbol, interval='5m', limit=5)
-                                if m5_momentum and len(m5_momentum) >= 4:
-                                    lows_3 = [float(k[3]) for k in m5_momentum[-4:-1]]  # Last 3 closed candles
-                                    highs_3 = [float(k[2]) for k in m5_momentum[-4:-1]]
+                                m5_momentum = client.futures_klines(symbol=symbol, interval='5m', limit=4)
+                                if m5_momentum and len(m5_momentum) >= 3:
+                                    closed_klines = m5_momentum[:-1]  # Exclude unfinished live candle
+                                    curr_close = float(closed_klines[-1][4])
+                                    prev_high = float(closed_klines[-2][2])
+                                    prev_low = float(closed_klines[-2][3])
+                                    
                                     if armed_dir == "BUY":
-                                        has_momentum = lows_3[-1] >= lows_3[-2] and lows_3[-2] >= lows_3[-3]
+                                        has_momentum = curr_close > prev_high
                                         if not has_momentum:
-                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but lows NOT rising ({lows_3}) — Price still falling, bad entry.")
-                                            visualizer.record_rejection(f"MOMENTUM: Lows not rising for BUY")
+                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but micro-structure not broken upwards (close {curr_close} <= high {prev_high}).")
+                                            visualizer.record_rejection(f"MOMENTUM: Micro-structure not broken for BUY")
                                             state["armed_signal"] = "NONE"
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
                                             continue
                                     else:  # SELL
-                                        has_momentum = highs_3[-1] <= highs_3[-2] and highs_3[-2] <= highs_3[-3]
+                                        has_momentum = curr_close < prev_low
                                         if not has_momentum:
-                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but highs NOT falling ({highs_3}) — Price still rising, bad entry.")
-                                            visualizer.record_rejection(f"MOMENTUM: Highs not falling for SELL")
+                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but micro-structure not broken downwards (close {curr_close} >= low {prev_low}).")
+                                            visualizer.record_rejection(f"MOMENTUM: Micro-structure not broken for SELL")
                                             state["armed_signal"] = "NONE"
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
                                             continue
-                                    log.info(f"✅  [{symbol}] MOMENTUM CONFIRMED: {'Higher Lows' if armed_dir == 'BUY' else 'Lower Highs'} ✔")
+                                    log.info(f"✅  [{symbol}] SMC MICRO-REVERSAL CONFIRMED ✔")
                             except Exception as mom_err:
                                 log.warning(f"⚠  [{symbol}] Momentum check failed: {mom_err} — Proceeding anyway.")
                             
