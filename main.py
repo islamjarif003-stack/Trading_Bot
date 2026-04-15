@@ -3863,6 +3863,7 @@ def main():
                                     log.info(f"🧭  [{symbol}] MTDC PASS: {confidence*100:.0f}% │ {' │ '.join(conf_breakdown)}")
 
                             # ── ★ v20: SMC ENTRY VALIDATION GATE ──
+                            smc_zone = None  # ★ Fix UnboundLocalError when validation bypass is used
                             if ENTRY_VALIDATION_ENABLED:
                                 smc_result, smc_reason, smc_zone = _smc_entry_validate(client, symbol, armed_dir)
                                 log.info(f"📊  [{symbol}] SMC Result: {smc_result} | {smc_reason}")
