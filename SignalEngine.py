@@ -81,10 +81,10 @@ POINTS_LIQ_HUNT = 3               # +3 for trading towards liquidation cluster
 
 # ─── ★★★ v11.0: SMART MONEY BRAIN UPGRADE ────────────────────────────────────
 POINTS_FOMO_PENALTY = -4           # -4 PENALTY if price over-extended from baseline (buying the top)
-POINTS_EXHAUSTION_PENALTY = -3     # -3 PENALTY if volume declining on pump/dump (momentum dying)
+POINTS_EXHAUSTION_PENALTY = -2     # ★ v28.5: Lowered -3 → -2 (was too aggressive, blocking normal pullback entries)
 POINTS_SNIPER_ZONE = 3             # +3 BONUS for pullback entry to dynamic S/R (mean reversion)
 FOMO_OVEREXT_ATR_MULT = 1.5        # Distance threshold: > 1.5× ATR from EMA9 = over-extended
-EXHAUSTION_VOL_RATIO = 0.60        # Volume < 60% of previous candle = exhaustion
+EXHAUSTION_VOL_RATIO = 0.40        # ★ v28.5: Lowered 0.60 → 0.40 (only fire on truly dead volume, not normal retraces)
 
 # ─── ★ DERIVATIVE DATA THRESHOLDS ───────────────────────────────────────────
 POINTS_DERIVATIVE_SQUEEZE = 3       # +3 points for squeeze setup
@@ -110,7 +110,7 @@ ML_MIN_SAMPLES = 10           # Block trades if < 10 samples
 ML_WIN_THRESHOLD = 0.40       # 40% predicted win probability required
 
 # ─── ★ STRICT FILTERS ─────────────────────────────────────────────────────────
-PENALTY_PRICE_CONTRADICTION = 10  # -10 points if price is moving opposite to signal
+PENALTY_PRICE_CONTRADICTION = 3   # ★ v28.5: Lowered 10 → 3 (a -10 penalty blocks literally everything in a 15-point passing system)
 
 # ─── ★★★ v16.1: VOLUME DELTA SCORE (Enhanced with Opposing Penalty) ─────────
 POINTS_VOLUME_DELTA       = 4     # ★ v27: Upgraded +3 → +4 (real-time order flow data)
@@ -1357,13 +1357,13 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
         candle_is_red = last_closed["close"] < last_closed["open"]
 
         if signal == "BUY" and not candle_is_green:
-            final_score = max(0, final_score - 2)
-            score_breakdown.append("★ Candle NOT green (−2)")
+            final_score = max(0, final_score - 1)  # ★ v28.5: -2 → -1 (candle color is secondary to SMC structure)
+            score_breakdown.append("★ Candle NOT green (−1)")
             if final_score < dynamic_threshold:
                 signal = "NONE"
         elif signal == "SELL" and not candle_is_red:
-            final_score = max(0, final_score - 2)
-            score_breakdown.append("★ Candle NOT red (−2)")
+            final_score = max(0, final_score - 1)  # ★ v28.5: -2 → -1
+            score_breakdown.append("★ Candle NOT red (−1)")
             if final_score < dynamic_threshold:
                 signal = "NONE"
 
