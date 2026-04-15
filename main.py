@@ -2188,7 +2188,7 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
 
 MTFA_ENABLED = True           # ★ v25: RE-ENABLED with proper MTDC system
 MTDC_MIN_CONFIDENCE = 0.50    # ★ v26: Lowered from 70% → 50% (was blocking ALL trades, 4H Hard Veto still protects)
-MTDC_4H_HARD_VETO = True      # ★ v25: 4H trend MUST agree, otherwise instant kill
+MTDC_4H_HARD_VETO = False     # ★ v29.1: Disabled per user request to allow 5m counter-trend scalps
 
 # ── Weights for confidence sources (excluding 4H which is Hard Veto) ──
 MTDC_WEIGHT_1H     = 0.35     # 1H EMA trend alignment (35%)
