@@ -33,9 +33,9 @@ from MLModelV2 import MLFilterV2, build_feature_vector
 log = logging.getLogger("InstitutionalBot")
 
 # ─── CONFIGURATION ───────────────────────────────────────────────────────────
-KLINE_INTERVAL = Client.KLINE_INTERVAL_1MINUTE   # ★ v21 TESTING MODE: 1m for rapid signal generation (revert to 5MINUTE for production)
-KLINE_LIMIT = 200                                  # ★ v21: Increased from 100 — 200×1m ≈ 3.3 hours of data
-H1_KLINE_INTERVAL = Client.KLINE_INTERVAL_1HOUR
+KLINE_INTERVAL = Client.KLINE_INTERVAL_5MINUTE    # ★ v23: Production mode — 5m entries for cleaner signals, less noise
+KLINE_LIMIT = 200                                  # ★ v23: 200×5m ≈ 16.6 hours of data
+H1_KLINE_INTERVAL = Client.KLINE_INTERVAL_15MINUTE  # ★ v23: 15m trend/flow (was 1H — now more responsive)
 H1_KLINE_LIMIT = 250
 ORDER_BOOK_DEPTH = 20
 NUM_BINS = 50
@@ -397,8 +397,8 @@ def _check_volume_guard(klines_df: pd.DataFrame, sma_period: int = VOLUME_SMA_PE
         return {"volume_ok": False, "current_vol": 0.0, "vol_sma": 0.0}
     vol_sma = klines_df["volume"].iloc[-(sma_period + 1):-1].mean()
     current_vol = klines_df["volume"].iloc[-1]
-    # ★ v21: Dynamic Rolling Volume Baseline — require 1.5× SMA (adapts to weekend vs weekday)
-    return {"volume_ok": current_vol > (vol_sma * 1.5), "current_vol": round(float(current_vol), 2), "vol_sma": round(float(vol_sma), 2)}
+    # ★ v23: Volume Gate raised to 2.0× SMA — only enter on solid institutional volume
+    return {"volume_ok": current_vol > (vol_sma * 2.0), "current_vol": round(float(current_vol), 2), "vol_sma": round(float(vol_sma), 2)}
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1415,13 +1415,11 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
     if signal in ("BUY", "SELL"):
         ml_win_prob = ml_filter.predict_win_probability(ml_features)
         
-        # ★ ML PENALTY RE-ENABLED
+        # ★ ML PENALTY DISABLED (As per user request)
         if len(ml_filter.memory) >= ML_MIN_SAMPLES:
             if ml_win_prob < ML_WIN_THRESHOLD:
-                final_score -= 10
-                score_breakdown.append(f"🚨 ML Low Confidence (WR:{ml_win_prob*100:.1f}% vs Req:{ML_WIN_THRESHOLD*100:.0f}%): -10")
-                if final_score < dynamic_threshold:
-                    signal = "NONE"
+                # We log it in breakdown but DO NOT deduct points anymore
+                score_breakdown.append(f"⚠️ ML Low Confidence (WR:{ml_win_prob*100:.1f}%) — [Penalty Disabled]")
             log.info(f"🤖  ML V2 Info │ Win Prob: {ml_win_prob*100:.1f}% │ Memory: {len(ml_filter.memory)} trades")
         else:
             log.info(f"🤖  ML V2 Filter: LEARNING ({len(ml_filter.memory)}/{ML_MIN_SAMPLES} samples) │ Win Prob: {ml_win_prob*100:.1f}%")

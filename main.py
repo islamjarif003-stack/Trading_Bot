@@ -114,6 +114,18 @@ KELLY_DEFAULT_AVG_RR   = 2.0      # Baseline assumption: 1:2 Reward-to-Risk
 KELLY_MAX_RISK_PCT     = 0.10     # Hard cap: never risk more than 10% of balance
 KELLY_MIN_TRADES_FOR_LIVE = 10    # Use live stats only after 10+ trades
 
+# ─── LOGGING ────────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s │ %(levelname)-8s │ %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("trading_bot.log", encoding="utf-8"),
+    ],
+)
+log = logging.getLogger("InstitutionalBot")
+
 import json as _json
 
 # Global Kelly performance tracker (shared across all symbols) — FILE-PERSISTENT
@@ -228,17 +240,7 @@ def _get_kelly_params() -> tuple:
         return KELLY_DEFAULT_WIN_RATE, KELLY_DEFAULT_AVG_RR
 
 
-# ─── LOGGING ────────────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s │ %(levelname)-8s │ %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("trading_bot.log", encoding="utf-8"),
-    ],
-)
-log = logging.getLogger("InstitutionalBot")
+
 
 # ─── TELEGRAM HELPER ─────────────────────────────────────────────────────────
 def send_telegram_alert(message: str):
@@ -573,30 +575,8 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         raw_qty = position_value_usd / current_price
         quantity = _round_qty(raw_qty * size_multiplier, symbol)  # ★ FIX: Apply correlation size_multiplier
 
-        # ATR-based SL/TP distances (fallback) with 4% safety cap
-        sl_distance = atr * SL_ATR_MULT   # 1.5 × ATR
-        sl_distance = min(sl_distance, current_price * 0.04)  # ★ FIX: Cap ATR fallback SL at 4% of price
-        tp_distance = sl_distance * (TP_ATR_MULT / SL_ATR_MULT)  # Maintain R:R ratio from capped SL
-        
-        # ★ v20 SMC Override: Use deeply calculated structural SL behind Liquidity Sweep
-        if signal_data and signal_data.get("smc_zone") and signal_data["smc_zone"].get("sl_distance", 0) > 0:
-            sl_distance = signal_data["smc_zone"]["sl_distance"]
-            tp_distance = sl_distance * 2.0  # Mathematically strict 1:2 R:R based on Structure
-            
+        # SL calculation will happen below after limit_price is determined.
         risk_amount = dynamic_margin        # For logging only
-        
-        if is_micro_scalp:
-            # Overwrite standard ATR with tight Micro-Scalp static targets
-            tp_distance = current_price * 0.0025  # 0.25% raw target
-            sl_distance = current_price * 0.0050  # 0.50% raw Stop Loss
-            log.warning(f"⚡  [{symbol}] MICRO-SCALP Override Active! TP: 0.25% │ SL: 0.50%")
-
-        if sl_distance <= 0:
-            log.warning("⚠  ATR is zero. Cannot calculate SL/TP. Skipping.")
-            return False, 0.0
-
-        log.info(f"   ★ KELLY SIZING: {half_kelly_pct*100:.2f}% of ${total_balance:.2f} = ${dynamic_margin:.2f} margin × {LEVERAGE}x = ${position_value_usd:.2f} notional → qty: {quantity}")
-        log.info(f"   ★ KELLY PARAMS ({kelly_source}): WR={kelly_wr*100:.1f}% | Avg R:R={kelly_rr:.2f} | Trades={kelly_trades}")
 
         if quantity <= 0:
             log.warning("⚠  Calculated quantity is 0.")
@@ -617,18 +597,69 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
 
         size_note = f" (REDUCED {size_multiplier*100:.0f}%)" if size_multiplier < 1.0 else ""
 
-        # ★ v21: Dynamic ATR-Based Limit Offset (replaces static LIMIT_OFFSET_PCT)
-        # Uses 1m ATR × 0.10 — adapts to current market volatility automatically
-        dynamic_offset = atr_1m_for_offset * 0.10
-        offset = max(dynamic_offset, current_price * 0.00001)  # Floor to prevent zero offset
-        if signal == "BUY":
-            limit_price = _round_price(current_price - offset, symbol)  # Slightly below ask
+        # ★ v24: 50% EQUILIBRIUM ORDER BLOCK LIMIT ENTRY
+        # Instead of a tiny ATR offset, we target the OB midpoint for better fill & less drawdown
+        smc_zone = signal_data.get("smc_zone") if signal_data else None
+        ob_entry_used = False
+        if smc_zone and smc_zone.get("zone_high") and smc_zone.get("zone_low"):
+            zone_high = float(smc_zone["zone_high"])
+            zone_low = float(smc_zone["zone_low"])
+            equilibrium_price = (zone_high + zone_low) / 2.0
+            if signal == "BUY":
+                # Safety: If price already pulled back below equilibrium, use current price (better fill)
+                limit_price = _round_price(min(equilibrium_price, current_price), symbol)
+            else:
+                # Safety: If price already rallied above equilibrium, use current price (better fill)
+                limit_price = _round_price(max(equilibrium_price, current_price), symbol)
+            ob_entry_used = True
+            log.info(f"   🧱 OB Equilibrium: zone ${zone_low:.4f}–${zone_high:.4f} → 50% = ${equilibrium_price:.4f}")
         else:
-            limit_price = _round_price(current_price + offset, symbol)  # Slightly above bid
+            # Fallback: Dynamic ATR offset (original logic for non-OB setups)
+            dynamic_offset = atr_1m_for_offset * 0.10
+            offset = max(dynamic_offset, current_price * 0.00001)
+            if signal == "BUY":
+                limit_price = _round_price(current_price - offset, symbol)
+            else:
+                limit_price = _round_price(current_price + offset, symbol)
 
+        # ════════════════════════════════════════════════════════════════
+        #  ★ v25: STRUCTURAL OB SL (Zone-Based Stop Loss)
+        # ════════════════════════════════════════════════════════════════
+        if ob_entry_used:
+            buffer = atr_1m_for_offset * 0.20
+            if signal == "BUY":
+                sl_distance = limit_price - (zone_low - buffer)
+            else:
+                sl_distance = (zone_high + buffer) - limit_price
+            
+            # Constraints
+            sl_distance = max(sl_distance, current_price * 0.002) # Min 0.2%
+            sl_distance = min(sl_distance, current_price * 0.04)  # Max 4.0%
+            tp_distance = sl_distance * 2.0  # Maintain 1:2 strict R:R
+        else:
+            # ATR-based SL/TP distances (fallback) with 4% safety cap
+            sl_distance = atr * SL_ATR_MULT   # 1.5 × ATR
+            sl_distance = min(sl_distance, current_price * 0.04)
+            tp_distance = sl_distance * (TP_ATR_MULT / SL_ATR_MULT)
+            
+            # SMC Override fallback
+            if signal_data and signal_data.get("smc_zone") and signal_data["smc_zone"].get("sl_distance", 0) > 0:
+                sl_distance = signal_data["smc_zone"]["sl_distance"]
+                tp_distance = sl_distance * 2.0
+                
+        if is_micro_scalp:
+            tp_distance = current_price * 0.0025
+            sl_distance = current_price * 0.0050
+            log.warning(f"⚡  [{symbol}] MICRO-SCALP Override Active! TP: 0.25% │ SL: 0.50%")
+
+        if sl_distance <= 0:
+            log.warning("⚠  SL Distance is <= 0. Cannot compute. Skipping.")
+            return False, 0.0
+
+        entry_method = "50% OB Equilibrium" if ob_entry_used else "ATR Offset"
         log.info("═" * 70)
         log.info(f"🚀  [{symbol}] EXECUTING {signal} │ Risk: ${dynamic_margin:.2f} Dynamic Margin{size_note} │ Score: {score}")
-        log.info(f"   ★ LIMIT Entry : ${limit_price} (Maker Fee — Dynamic ATR Offset ${offset:.4f})")
+        log.info(f"   ★ LIMIT Entry : ${limit_price} ({entry_method})")
         log.info(f"   Market Price  : ${current_price}")
         log.info(f"   Quantity      : {quantity}")
         log.info(f"   ★ Risk Amt    : ${risk_amount:.2f} ({ENTRY_RISK_PCT}%{size_note})")
@@ -639,7 +670,7 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         log.info(f"   Confluence    : {' | '.join(breakdown)}")
         log.info("═" * 70)
 
-        # ★ v20.1: DRY-RUN or GTX POST-ONLY ENTRY
+        # ★ v24: DRY-RUN or GTC LIMIT ENTRY (50% OB Equilibrium)
         if DRY_RUN:
             # ★ DRY RUN: Simulate entry — no API call
             notional = dynamic_margin * LEVERAGE
@@ -649,49 +680,55 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             avg_entry = limit_price  # Use limit price as simulated fill
             actual_qty = quantity
         else:
-            # ★ LIVE: GTX (Post-Only) Limit Order — ZERO taker fee tolerance
+            # ★ v24 LIVE: GTC Limit Order at OB 50% Equilibrium (or ATR offset fallback)
             try:
                 entry_order = client.futures_create_order(
                     symbol=symbol, side=side,
                     type=ORDER_TYPE_LIMIT,
                     price=str(limit_price),
                     quantity=quantity,
-                    timeInForce='GTX',  # ★ Post-Only: Rejected if would be taker
+                    timeInForce='GTC',  # ★ v24: GTC — order rests until filled or cancelled
                 )
                 e_id = entry_order.get('orderId', entry_order.get('order_id', 'UNKNOWN'))
-                log.info(f"📋  [{symbol}] GTX POST-ONLY PLACED — ${limit_price} │ OrderID: {e_id}")
+                log.info(f"📋  [{symbol}] GTC LIMIT PLACED — ${limit_price} ({entry_method}) │ OrderID: {e_id}")
 
-                # Wait for fill (up to 30 seconds, check every 2s)
+                # ★ v24: Quick fill check (5 seconds) — if already at price, fills instantly
                 filled = False
-                for _wait in range(15):  # 15 × 2s = 30s max
-                    time.sleep(2)
-                    try:
-                        order_status = client.futures_get_order(symbol=symbol, orderId=e_id)
-                        status = order_status.get('status', '')
-                        if status == 'FILLED':
-                            log.info(f"✅  [{symbol}] GTX FILLED (Maker Fee!) — OrderID: {e_id}")
-                            filled = True
-                            break
-                        elif status in ('CANCELED', 'EXPIRED', 'REJECTED'):
-                            log.warning(f"🚫  [{symbol}] GTX {status} — Would have been taker. Trade SKIPPED.")
-                            return False, 0.0
-                    except Exception:
-                        pass
+                time.sleep(5)
+                try:
+                    order_status = client.futures_get_order(symbol=symbol, orderId=e_id)
+                    status = order_status.get('status', '')
+                    if status == 'FILLED':
+                        log.info(f"✅  [{symbol}] GTC FILLED instantly! (Maker Fee) — OrderID: {e_id}")
+                        filled = True
+                    elif status in ('CANCELED', 'EXPIRED', 'REJECTED'):
+                        log.warning(f"🚫  [{symbol}] GTC {status} by exchange. Trade SKIPPED.")
+                        return False, 0.0
+                except Exception:
+                    pass
 
                 if not filled:
-                    # Cancel unfilled GTX — NO market fallback!
-                    try:
-                        client.futures_cancel_order(symbol=symbol, orderId=e_id)
-                    except Exception:
-                        pass
-                    log.warning(f"⏳  [{symbol}] GTX not filled in 30s. Trade SKIPPED. No taker fallback.")
-                    return False, 0.0
+                    # ★ v24: Order is PENDING — return entry info for auto-cancel manager
+                    # Store pending order data so main loop can monitor & cancel
+                    pending_info = {
+                        "order_id": e_id,
+                        "side": signal,
+                        "limit_price": limit_price,
+                        "quantity": quantity,
+                        "placed_time": time.time(),
+                        "zone": {"zone_high": smc_zone["zone_high"], "zone_low": smc_zone["zone_low"]} if smc_zone else None,
+                        "signal_data": signal_data,
+                        "sl_distance": sl_distance,
+                        "tp_distance": tp_distance,
+                    }
+                    log.info(f"⏳  [{symbol}] GTC PENDING — Waiting for pullback to ${limit_price}. Auto-cancel in 12 candles (1h).")
+                    return "PENDING", pending_info  # ★ New return type for pending orders
 
             except BinanceAPIException as gtx_err:
                 if gtx_err.code == -5022 or 'post only' in str(gtx_err.message).lower() or 'would immediately' in str(gtx_err.message).lower():
-                    log.warning(f"🚫  [{symbol}] GTX REJECTED — Spread too tight. Trade SKIPPED (saved taker fee!)")
+                    log.warning(f"🚫  [{symbol}] LIMIT REJECTED — {gtx_err.message}. Trade SKIPPED.")
                 else:
-                    log.error(f"❌  [{symbol}] GTX order error: {gtx_err.message}")
+                    log.error(f"❌  [{symbol}] Limit order error: {gtx_err.message}")
                 return False, 0.0
 
         # Fetch actual entry price from position (skip in DRY RUN — already set above)
@@ -1890,61 +1927,239 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# ██  ★ v18: MULTI-TIMEFRAME ANALYSIS (MTFA) — 1H Trend Filter            ██
+# ██  ★ v25: MULTI-TIMEFRAME DIRECTIONAL CONFLUENCE (MTDC)                 ██
+# ██  4H = HARD VETO │ 1H + 15m + OI + FR = Confidence Score               ██
 # ═════════════════════════════════════════════════════════════════════════════
 
-MTFA_ENABLED = False         # ★ v22: Disabled MTFA to allow aggressive 1m testing and SMC pullbacks
-MTFA_EMA_PERIOD = 50         # ★ v18: 50-period EMA on the 1H chart
+MTFA_ENABLED = True           # ★ v25: RE-ENABLED with proper MTDC system
+MTDC_MIN_CONFIDENCE = 0.70    # ★ v25: 70% minimum directional confidence to enter
+MTDC_4H_HARD_VETO = True      # ★ v25: 4H trend MUST agree, otherwise instant kill
 
-def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
+# ── Weights for confidence sources (excluding 4H which is Hard Veto) ──
+MTDC_WEIGHT_1H     = 0.35     # 1H EMA trend alignment (35%)
+MTDC_WEIGHT_15M    = 0.30     # 15m structure break (30%)
+MTDC_WEIGHT_OI     = 0.20     # OI + Price divergence (20%)
+MTDC_WEIGHT_FR     = 0.15     # Funding rate sentiment (15%)
+
+
+def _numpy_ema(data, period):
+    """Pure NumPy EMA calculation."""
+    import numpy as np
+    alpha = 2.0 / (period + 1)
+    ema = np.zeros_like(data, dtype=float)
+    ema[0] = data[0]
+    for i in range(1, len(data)):
+        ema[i] = alpha * data[i] + (1.0 - alpha) * ema[i - 1]
+    return ema
+
+
+def _calculate_directional_confidence(client: Client, symbol: str, direction: str, signal_data: dict = None) -> tuple:
     """
-    ★ v18: Multi-Timeframe Analysis — 1H 50 EMA Trend Filter.
+    ★ v25: Multi-Timeframe Directional Confluence (MTDC) System.
     
-    Fetches 1H klines, calculates 50 EMA using pure NumPy.
-    Returns (aligned: bool, reason: str).
-      - LONG only if 1H Price > 1H 50 EMA (macro uptrend)
-      - SHORT only if 1H Price < 1H 50 EMA (macro downtrend)
+    Aggregates 5 independent directional signals to determine if the market
+    is truly heading in the proposed trade direction with high confidence.
+    
+    4H EMA Trend = HARD VETO (instant kill if opposing).
+    1H + 15m + OI + Funding Rate = Weighted confidence score (0-100%).
+    
+    Returns:
+        (confidence: float, breakdown: list, veto: bool, veto_reason: str)
+        confidence → 0.0 to 1.0
+        breakdown  → Human-readable list of each source
+        veto       → True if 4H Hard Veto triggered
+        veto_reason → Explanation if vetoed
     """
+    import numpy as np
+    
+    confidence = 0.0
+    breakdown = []
+    
+    # ════════════════════════════════════════════════════════════════
+    #  SOURCE 1: 4H EMA TREND — HARD VETO (Pass/Kill)
+    #  If 4H trend opposes the signal → trade is DEAD. No exceptions.
+    # ════════════════════════════════════════════════════════════════
     try:
-        import numpy as np
-        
-        h1 = client.futures_klines(
-            symbol=symbol,
-            interval=Client.KLINE_INTERVAL_1HOUR,
-            limit=60,  # 60 candles gives plenty of data for 50 EMA
-        )
-        if not h1 or len(h1) < MTFA_EMA_PERIOD:
-            return True, "MTFA SKIP: Not enough 1H data"  # Allow on insufficient data
-        
-        # Extract close prices as numpy array
-        close_1h = np.array([float(k[4]) for k in h1])
-        
-        # Calculate 50 EMA using pure NumPy
-        alpha = 2.0 / (MTFA_EMA_PERIOD + 1)
-        ema_50 = np.zeros_like(close_1h)
-        ema_50[0] = close_1h[0]
-        for i in range(1, len(close_1h)):
-            ema_50[i] = alpha * close_1h[i] + (1.0 - alpha) * ema_50[i - 1]
-        
-        current_price_1h = close_1h[-1]
-        current_ema_50 = ema_50[-1]
-        trend = "UP" if current_price_1h > current_ema_50 else "DOWN"
-        dist_pct = ((current_price_1h - current_ema_50) / current_ema_50) * 100.0
-        
-        # Alignment check
-        if direction == "BUY" and trend == "UP":
-            return True, f"MTFA ALIGNED: 1H Trend UP (Price ${current_price_1h:.4f} > EMA50 ${current_ema_50:.4f}, +{dist_pct:.2f}%)"
-        elif direction == "SELL" and trend == "DOWN":
-            return True, f"MTFA ALIGNED: 1H Trend DOWN (Price ${current_price_1h:.4f} < EMA50 ${current_ema_50:.4f}, {dist_pct:.2f}%)"
+        h4 = client.futures_klines(symbol=symbol, interval="4h", limit=60)
+        if h4 and len(h4) >= 50:
+            h4_closes = np.array([float(k[4]) for k in h4])
+            h4_ema50 = _numpy_ema(h4_closes, 50)
+            h4_ema21 = _numpy_ema(h4_closes, 21)
+            
+            h4_price = h4_closes[-1]
+            h4_ema50_val = h4_ema50[-1]
+            h4_ema21_val = h4_ema21[-1]
+            
+            # 4H is BULLISH if: Price > EMA21 > EMA50 (perfect uptrend stack)
+            # 4H is BEARISH if: Price < EMA21 < EMA50 (perfect downtrend stack)
+            # Mixed = NEUTRAL (still allows trades but no bonus)
+            h4_bull = h4_price > h4_ema21_val and h4_ema21_val > h4_ema50_val
+            h4_bear = h4_price < h4_ema21_val and h4_ema21_val < h4_ema50_val
+            
+            dist_pct = ((h4_price - h4_ema50_val) / h4_ema50_val) * 100.0
+            
+            if direction == "BUY":
+                if h4_bear and MTDC_4H_HARD_VETO:
+                    veto_reason = (
+                        f"🚫 4H HARD VETO: BUY signal killed! 4H is BEARISH "
+                        f"(Price ${h4_price:.2f} < EMA21 ${h4_ema21_val:.2f} < EMA50 ${h4_ema50_val:.2f}, {dist_pct:+.2f}%)"
+                    )
+                    return 0.0, [veto_reason], True, veto_reason
+                elif h4_bull:
+                    breakdown.append(f"✅ 4H: BULLISH (Price > EMA21 > EMA50, {dist_pct:+.2f}%)")
+                else:
+                    breakdown.append(f"⚠️ 4H: NEUTRAL (mixed EMAs, {dist_pct:+.2f}%)")
+            else:  # SELL
+                if h4_bull and MTDC_4H_HARD_VETO:
+                    veto_reason = (
+                        f"🚫 4H HARD VETO: SELL signal killed! 4H is BULLISH "
+                        f"(Price ${h4_price:.2f} > EMA21 ${h4_ema21_val:.2f} > EMA50 ${h4_ema50_val:.2f}, {dist_pct:+.2f}%)"
+                    )
+                    return 0.0, [veto_reason], True, veto_reason
+                elif h4_bear:
+                    breakdown.append(f"✅ 4H: BEARISH (Price < EMA21 < EMA50, {dist_pct:+.2f}%)")
+                else:
+                    breakdown.append(f"⚠️ 4H: NEUTRAL (mixed EMAs, {dist_pct:+.2f}%)")
         else:
-            return False, (
-                f"Signal Rejected: MTFA 1H Trend mismatch. "
-                f"Signal={direction} but 1H Trend={trend} "
-                f"(Price ${current_price_1h:.4f} vs EMA50 ${current_ema_50:.4f}, {dist_pct:+.2f}%)"
-            )
+            breakdown.append("⚠️ 4H: SKIP (insufficient data)")
     except Exception as e:
-        log.warning(f"⚠  [{symbol}] MTFA check failed: {e}")
-        return True, f"MTFA SKIP: Error ({e})"  # Allow on error (fail-open)
+        log.warning(f"⚠  [{symbol}] MTDC 4H check failed: {e}")
+        breakdown.append(f"⚠️ 4H: ERROR ({e})")
+    
+    # ════════════════════════════════════════════════════════════════
+    #  SOURCE 2: 1H EMA TREND (35% weight)
+    # ════════════════════════════════════════════════════════════════
+    try:
+        h1 = client.futures_klines(symbol=symbol, interval="1h", limit=60)
+        if h1 and len(h1) >= 50:
+            h1_closes = np.array([float(k[4]) for k in h1])
+            h1_ema21 = _numpy_ema(h1_closes, 21)
+            h1_ema50 = _numpy_ema(h1_closes, 50)
+            
+            h1_price = h1_closes[-1]
+            h1_bull = h1_price > h1_ema21[-1] and h1_ema21[-1] > h1_ema50[-1]
+            h1_bear = h1_price < h1_ema21[-1] and h1_ema21[-1] < h1_ema50[-1]
+            
+            if (direction == "BUY" and h1_bull) or (direction == "SELL" and h1_bear):
+                confidence += MTDC_WEIGHT_1H
+                breakdown.append(f"✅ 1H: ALIGNED (+{MTDC_WEIGHT_1H*100:.0f}%)")
+            elif (direction == "BUY" and h1_bear) or (direction == "SELL" and h1_bull):
+                breakdown.append(f"❌ 1H: OPPOSING (0%)")
+            else:
+                confidence += MTDC_WEIGHT_1H * 0.5  # Half credit for neutral
+                breakdown.append(f"⚠️ 1H: NEUTRAL (+{MTDC_WEIGHT_1H*50:.0f}%)")
+        else:
+            confidence += MTDC_WEIGHT_1H * 0.5
+            breakdown.append("⚠️ 1H: SKIP (insufficient data, +half)")
+    except Exception as e:
+        log.warning(f"⚠  [{symbol}] MTDC 1H check failed: {e}")
+        confidence += MTDC_WEIGHT_1H * 0.5
+        breakdown.append(f"⚠️ 1H: ERROR (+half)")
+    
+    # ════════════════════════════════════════════════════════════════
+    #  SOURCE 3: 15m MARKET STRUCTURE — BOS/CHOCH (30% weight)
+    # ════════════════════════════════════════════════════════════════
+    try:
+        m15 = client.futures_klines(symbol=symbol, interval="15m", limit=100)
+        if m15 and len(m15) >= 30:
+            m15_high = np.array([float(k[2]) for k in m15])
+            m15_low = np.array([float(k[3]) for k in m15])
+            m15_close = np.array([float(k[4]) for k in m15])
+            
+            # Simple structure: Higher Highs + Higher Lows = BULL
+            #                   Lower Highs + Lower Lows = BEAR
+            recent_highs = m15_high[-10:]
+            recent_lows = m15_low[-10:]
+            
+            hh = recent_highs[-1] > recent_highs[-5] and recent_highs[-5] > recent_highs[-9]  # Higher Highs
+            hl = recent_lows[-1] > recent_lows[-5] and recent_lows[-5] > recent_lows[-9]     # Higher Lows
+            lh = recent_highs[-1] < recent_highs[-5] and recent_highs[-5] < recent_highs[-9]  # Lower Highs
+            ll = recent_lows[-1] < recent_lows[-5] and recent_lows[-5] < recent_lows[-9]     # Lower Lows
+            
+            m15_bull = hh and hl
+            m15_bear = lh and ll
+            
+            if (direction == "BUY" and m15_bull) or (direction == "SELL" and m15_bear):
+                confidence += MTDC_WEIGHT_15M
+                breakdown.append(f"✅ 15m: STRUCTURE ALIGNED (+{MTDC_WEIGHT_15M*100:.0f}%)")
+            elif (direction == "BUY" and m15_bear) or (direction == "SELL" and m15_bull):
+                breakdown.append(f"❌ 15m: STRUCTURE OPPOSING (0%)")
+            else:
+                confidence += MTDC_WEIGHT_15M * 0.5
+                breakdown.append(f"⚠️ 15m: RANGING (+{MTDC_WEIGHT_15M*50:.0f}%)")
+        else:
+            confidence += MTDC_WEIGHT_15M * 0.5
+            breakdown.append("⚠️ 15m: SKIP (insufficient data, +half)")
+    except Exception as e:
+        log.warning(f"⚠  [{symbol}] MTDC 15m check failed: {e}")
+        confidence += MTDC_WEIGHT_15M * 0.5
+        breakdown.append(f"⚠️ 15m: ERROR (+half)")
+    
+    # ════════════════════════════════════════════════════════════════
+    #  SOURCE 4: OI + PRICE DIVERGENCE (20% weight)
+    #  OI Rising + Price Rising = Strong Bullish (accumulation)
+    #  OI Rising + Price Falling = Short Squeeze incoming (bullish)
+    #  OI Falling + Price Rising = Distribution (bearish warning)
+    #  OI Falling + Price Falling = Capitulation (bearish)
+    # ════════════════════════════════════════════════════════════════
+    try:
+        oi_trend = signal_data.get("oi_trend", "FLAT") if signal_data else "FLAT"
+        price_trend = signal_data.get("price_trend", "FLAT") if signal_data else "FLAT"
+        
+        oi_bullish = (oi_trend == "RISING" and price_trend == "RISING") or \
+                     (oi_trend == "RISING" and price_trend == "DROPPING")  # squeeze
+        oi_bearish = (oi_trend == "FALLING" and price_trend == "RISING") or \
+                     (oi_trend == "FALLING" and price_trend == "DROPPING")  # capitulation
+        
+        if (direction == "BUY" and oi_bullish) or (direction == "SELL" and oi_bearish):
+            confidence += MTDC_WEIGHT_OI
+            breakdown.append(f"✅ OI: {oi_trend}+Price {price_trend} = ALIGNED (+{MTDC_WEIGHT_OI*100:.0f}%)")
+        elif (direction == "BUY" and oi_bearish) or (direction == "SELL" and oi_bullish):
+            breakdown.append(f"❌ OI: {oi_trend}+Price {price_trend} = OPPOSING (0%)")
+        else:
+            confidence += MTDC_WEIGHT_OI * 0.5
+            breakdown.append(f"⚠️ OI: {oi_trend} (NEUTRAL, +{MTDC_WEIGHT_OI*50:.0f}%)")
+    except Exception:
+        confidence += MTDC_WEIGHT_OI * 0.5
+        breakdown.append("⚠️ OI: ERROR (+half)")
+    
+    # ════════════════════════════════════════════════════════════════
+    #  SOURCE 5: FUNDING RATE SENTIMENT (15% weight)
+    #  Negative FR = market overshorted → bullish bias
+    #  Positive FR = market overlonged → bearish bias
+    # ════════════════════════════════════════════════════════════════
+    try:
+        fr = signal_data.get("funding_rate", 0.0) if signal_data else 0.0
+        
+        fr_bullish = fr < -0.0001   # Negative = shorts paying longs = bullish
+        fr_bearish = fr > 0.0003    # Strongly positive = longs paying shorts = bearish
+        
+        if (direction == "BUY" and fr_bullish) or (direction == "SELL" and fr_bearish):
+            confidence += MTDC_WEIGHT_FR
+            breakdown.append(f"✅ FR: {fr*100:.4f}% = ALIGNED (+{MTDC_WEIGHT_FR*100:.0f}%)")
+        elif (direction == "BUY" and fr_bearish) or (direction == "SELL" and fr_bullish):
+            breakdown.append(f"❌ FR: {fr*100:.4f}% = OPPOSING (0%)")
+        else:
+            confidence += MTDC_WEIGHT_FR * 0.5  # Neutral funding
+            breakdown.append(f"⚠️ FR: {fr*100:.4f}% (NEUTRAL, +{MTDC_WEIGHT_FR*50:.0f}%)")
+    except Exception:
+        confidence += MTDC_WEIGHT_FR * 0.5
+        breakdown.append("⚠️ FR: ERROR (+half)")
+    
+    return confidence, breakdown, False, ""
+
+
+# ★ v25: Wrapper for backward compatibility (replaces old _check_1h_trend_ema50)
+def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
+    """Backward-compatible wrapper. Now uses full MTDC system."""
+    confidence, breakdown, veto, veto_reason = _calculate_directional_confidence(
+        client, symbol, direction
+    )
+    if veto:
+        return False, veto_reason
+    if confidence >= MTDC_MIN_CONFIDENCE:
+        return True, f"MTDC PASS: {confidence*100:.0f}% confidence │ {' │ '.join(breakdown)}"
+    return False, f"MTDC LOW CONFIDENCE: {confidence*100:.0f}% < {MTDC_MIN_CONFIDENCE*100:.0f}% │ {' │ '.join(breakdown)}"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -2417,6 +2632,7 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
             f"R:R = {rr_ratio:.2f}"
         )
         zone_data["sl_distance"] = sl_distance  # ★ v20 SMC SL Integration: Pass mathematical SL distance down pipe
+        zone_data["has_sweep"] = swept          # ★ v25: Liquidity Sweep Premium Flag
         log.info(f"    [{symbol}] {final_reason}")
         return "PASS", final_reason, zone_data
     
@@ -2534,6 +2750,258 @@ def initialize_client() -> Client:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# ██  ★ v24: PENDING LIMIT ORDER AUTO-CANCEL MANAGER                       ██
+# ═════════════════════════════════════════════════════════════════════════════
+
+PENDING_ENTRY_MAX_CANDLES = 12   # Cancel unfilled limit after 12 × 5m = 1 hour
+PENDING_ENTRY_CANDLE_S    = 300  # 5-minute candle in seconds
+
+def _check_pending_entry_order(client: Client, symbol: str, state: dict, current_price: float) -> str:
+    """
+    ★ v24: Auto-Cancel Manager for unfilled GTC Limit Entry orders.
+    
+    Rules:
+      1. TIME EXPIRY: If unfilled for > 12 candles (1 hour on 5m), cancel.
+      2. OB INVALIDATION: If price breaks below zone_low (BUY) or above zone_high (SELL), cancel.
+      3. FILLED CHECK: If order was filled while we were scanning other coins, register the position.
+    
+    Returns:
+      "FILLED"    — Order was filled, position is active.
+      "PENDING"   — Still waiting for fill, order is alive.
+      "CANCELLED" — Order was cancelled (expired or invalidated).
+      "NONE"      — No pending order for this symbol.
+    """
+    order_id = state.get("pending_entry_order_id")
+    if not order_id:
+        return "NONE"
+    
+    placed_time = state.get("pending_entry_time", 0)
+    entry_side = state.get("pending_entry_side", "NONE")
+    zone = state.get("pending_entry_zone")
+    limit_price = state.get("pending_entry_price", 0.0)
+    
+    elapsed_s = time.time() - placed_time
+    elapsed_candles = int(elapsed_s / PENDING_ENTRY_CANDLE_S)
+    
+    # ── Rule 1: Check if order was FILLED while we were busy ──
+    if not DRY_RUN:
+        try:
+            order_status = client.futures_get_order(symbol=symbol, orderId=order_id)
+            status = order_status.get('status', '')
+            if status == 'FILLED':
+                log.info(f"✅  [{symbol}] PENDING LIMIT FILLED! (Maker Fee) — ${limit_price} │ OrderID: {order_id}")
+                
+                # Place SL and TP orders now
+                pending_data = state.get("pending_entry_data", {})
+                sl_dist = pending_data.get("sl_distance", 0)
+                tp_dist = pending_data.get("tp_distance", 0)
+                
+                if sl_dist > 0:
+                    close_side = SIDE_SELL if entry_side == "BUY" else SIDE_BUY
+                    if entry_side == "BUY":
+                        sl_price = _round_price(limit_price - sl_dist, symbol)
+                        tp_price = _round_price(limit_price + tp_dist, symbol)
+                    else:
+                        sl_price = _round_price(limit_price + sl_dist, symbol)
+                        tp_price = _round_price(limit_price - tp_dist, symbol)
+                    
+                    # Place SL
+                    try:
+                        pos = _has_open_position(client, symbol)
+                        qty = pos["qty"] if pos else pending_data.get("quantity", 0)
+                        client.futures_create_order(
+                            symbol=symbol, side=close_side,
+                            type=FUTURE_ORDER_TYPE_STOP_MARKET,
+                            stopPrice=str(sl_price),
+                            quantity=qty,
+                            reduceOnly="true",
+                            timeInForce=TIME_IN_FORCE_GTC,
+                            workingType="MARK_PRICE",
+                        )
+                        log.info(f"🛡  [{symbol}] POST-FILL SL — ${sl_price}")
+                    except Exception as sl_e:
+                        log.error(f"🚨  [{symbol}] Post-fill SL failed: {sl_e}")
+                    
+                    # Place TP (if enabled)
+                    if not DISABLE_HARD_TP:
+                        try:
+                            client.futures_create_order(
+                                symbol=symbol, side=close_side,
+                                type="TAKE_PROFIT_MARKET",
+                                stopPrice=str(tp_price),
+                                closePosition="true",
+                                timeInForce=TIME_IN_FORCE_GTC,
+                                workingType="MARK_PRICE",
+                            )
+                            log.info(f"🎯  [{symbol}] POST-FILL TP — ${tp_price}")
+                        except Exception as tp_e:
+                            log.warning(f"⚠  [{symbol}] Post-fill TP failed: {tp_e}")
+                
+                # Telegram alert
+                try:
+                    send_telegram_alert(
+                        f"✅ <b>LIMIT FILLED</b>\n"
+                        f"Coin: {symbol}\nSide: {entry_side}\n"
+                        f"Entry: ${limit_price}\n"
+                        f"Method: 50% OB Equilibrium"
+                    )
+                except Exception:
+                    pass
+                
+                # Clear pending state
+                state["pending_entry_order_id"] = None
+                state["pending_entry_time"] = 0
+                state["pending_entry_side"] = "NONE"
+                state["pending_entry_zone"] = None
+                state["pending_entry_data"] = None
+                state["pending_entry_price"] = 0.0
+                return "FILLED"
+            
+            elif status in ('CANCELED', 'EXPIRED', 'REJECTED'):
+                log.info(f"ℹ️  [{symbol}] Pending order already {status} by exchange.")
+                state["pending_entry_order_id"] = None
+                state["pending_entry_time"] = 0
+                state["pending_entry_side"] = "NONE"
+                state["pending_entry_zone"] = None
+                state["pending_entry_data"] = None
+                state["pending_entry_price"] = 0.0
+                return "CANCELLED"
+                
+        except Exception as e:
+            log.warning(f"⚠  [{symbol}] Pending order status check failed: {e}")
+    else:
+        # DRY RUN: Simulate fill check — if current price hits limit, simulate fill
+        if entry_side == "BUY" and current_price <= limit_price:
+            log.info(f"✅  [DRY RUN] [{symbol}] PENDING LIMIT FILLED! Price ${current_price} ≤ Limit ${limit_price}")
+            pending_data = state.get("pending_entry_data", {})
+            sl_dist = pending_data.get("sl_distance", 0)
+            tp_dist = pending_data.get("tp_distance", 0)
+            qty = pending_data.get("quantity", 0)
+            
+            if entry_side == "BUY":
+                sl_price = _round_price(limit_price - sl_dist, symbol) if sl_dist > 0 else 0.0
+                tp_price = _round_price(limit_price + tp_dist, symbol) if tp_dist > 0 else 0.0
+            else:
+                sl_price = _round_price(limit_price + sl_dist, symbol) if sl_dist > 0 else 0.0
+                tp_price = _round_price(limit_price - tp_dist, symbol) if tp_dist > 0 else 0.0
+            
+            dry_run_positions[symbol] = {
+                "side": entry_side,
+                "qty": qty,
+                "entry_price": limit_price,
+                "sl_price": sl_price,
+                "tp_price": tp_price if not DISABLE_HARD_TP else 0.0,
+            }
+            _save_dry_run_positions()
+            log.info(f"📍  [DRY RUN] [{symbol}] Position registered: {entry_side} @ ${limit_price} | SL: ${sl_price} | TP: ${tp_price}")
+            
+            state["pending_entry_order_id"] = None
+            state["pending_entry_time"] = 0
+            state["pending_entry_side"] = "NONE"
+            state["pending_entry_zone"] = None
+            state["pending_entry_data"] = None
+            state["pending_entry_price"] = 0.0
+            return "FILLED"
+        
+        elif entry_side == "SELL" and current_price >= limit_price:
+            log.info(f"✅  [DRY RUN] [{symbol}] PENDING LIMIT FILLED! Price ${current_price} ≥ Limit ${limit_price}")
+            pending_data = state.get("pending_entry_data", {})
+            sl_dist = pending_data.get("sl_distance", 0)
+            tp_dist = pending_data.get("tp_distance", 0)
+            qty = pending_data.get("quantity", 0)
+            
+            sl_price = _round_price(limit_price + sl_dist, symbol) if sl_dist > 0 else 0.0
+            tp_price = _round_price(limit_price - tp_dist, symbol) if tp_dist > 0 else 0.0
+            
+            dry_run_positions[symbol] = {
+                "side": entry_side,
+                "qty": qty,
+                "entry_price": limit_price,
+                "sl_price": sl_price,
+                "tp_price": tp_price if not DISABLE_HARD_TP else 0.0,
+            }
+            _save_dry_run_positions()
+            log.info(f"📍  [DRY RUN] [{symbol}] Position registered: {entry_side} @ ${limit_price} | SL: ${sl_price} | TP: ${tp_price}")
+            
+            state["pending_entry_order_id"] = None
+            state["pending_entry_time"] = 0
+            state["pending_entry_side"] = "NONE"
+            state["pending_entry_zone"] = None
+            state["pending_entry_data"] = None
+            state["pending_entry_price"] = 0.0
+            return "FILLED"
+    
+    # ── Rule 2: TIME EXPIRY — Cancel if > 12 candles (1 hour) ──
+    if elapsed_candles >= PENDING_ENTRY_MAX_CANDLES:
+        log.warning(f"⏰  [{symbol}] PENDING LIMIT EXPIRED — {elapsed_candles} candles ({elapsed_s/60:.0f}min). Cancelling.")
+        if not DRY_RUN:
+            try:
+                client.futures_cancel_order(symbol=symbol, orderId=order_id)
+            except Exception as e:
+                log.warning(f"⚠  [{symbol}] Cancel failed (may be already filled): {e}")
+        try:
+            send_telegram_alert(f"⏰ <b>LIMIT EXPIRED</b>\nCoin: {symbol}\nSide: {entry_side}\nWaited: {elapsed_candles} candles")
+        except Exception:
+            pass
+        state["pending_entry_order_id"] = None
+        state["pending_entry_time"] = 0
+        state["pending_entry_side"] = "NONE"
+        state["pending_entry_zone"] = None
+        state["pending_entry_data"] = None
+        state["pending_entry_price"] = 0.0
+        return "CANCELLED"
+    
+    # ── Rule 3: OB INVALIDATION — Price broke the zone boundary ──
+    if zone:
+        zone_low = float(zone.get("zone_low", 0))
+        zone_high = float(zone.get("zone_high", 0))
+        
+        if entry_side == "BUY" and current_price < zone_low:
+            log.warning(f"🚫  [{symbol}] OB INVALIDATED — Price ${current_price:.4f} broke below zone_low ${zone_low:.4f}. Cancelling BUY limit.")
+            if not DRY_RUN:
+                try:
+                    client.futures_cancel_order(symbol=symbol, orderId=order_id)
+                except Exception as e:
+                    log.warning(f"⚠  [{symbol}] Cancel failed: {e}")
+            try:
+                send_telegram_alert(f"🚫 <b>OB INVALIDATED</b>\nCoin: {symbol}\nPrice ${current_price:.4f} < Zone Low ${zone_low:.4f}")
+            except Exception:
+                pass
+            state["pending_entry_order_id"] = None
+            state["pending_entry_time"] = 0
+            state["pending_entry_side"] = "NONE"
+            state["pending_entry_zone"] = None
+            state["pending_entry_data"] = None
+            state["pending_entry_price"] = 0.0
+            return "CANCELLED"
+        
+        elif entry_side == "SELL" and current_price > zone_high:
+            log.warning(f"🚫  [{symbol}] OB INVALIDATED — Price ${current_price:.4f} broke above zone_high ${zone_high:.4f}. Cancelling SELL limit.")
+            if not DRY_RUN:
+                try:
+                    client.futures_cancel_order(symbol=symbol, orderId=order_id)
+                except Exception as e:
+                    log.warning(f"⚠  [{symbol}] Cancel failed: {e}")
+            try:
+                send_telegram_alert(f"🚫 <b>OB INVALIDATED</b>\nCoin: {symbol}\nPrice ${current_price:.4f} > Zone High ${zone_high:.4f}")
+            except Exception:
+                pass
+            state["pending_entry_order_id"] = None
+            state["pending_entry_time"] = 0
+            state["pending_entry_side"] = "NONE"
+            state["pending_entry_zone"] = None
+            state["pending_entry_data"] = None
+            state["pending_entry_price"] = 0.0
+            return "CANCELLED"
+    
+    # Still pending, log status
+    if elapsed_candles % 3 == 0:  # Log every 3 candles to avoid spam
+        log.info(f"⏳  [{symbol}] PENDING LIMIT: ${limit_price} ({entry_side}) │ {elapsed_candles}/12 candles │ {elapsed_s/60:.0f}min")
+    
+    return "PENDING"
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 # ██  MAIN EXECUTION LOOP                                                   ██
 # ═════════════════════════════════════════════════════════════════════════════
 
@@ -2600,6 +3068,13 @@ def main():
             "wait_queue_candle_count": 0,        # Candles elapsed since WAIT
             "wait_queue_start_time": 0,          # When WAIT started
             "wait_queue_zone": None,             # ★ v20: OB/FVG zone data for retest
+            # ★ v24: Pending Limit Entry Tracking (50% OB Equilibrium)
+            "pending_entry_order_id": None,      # Binance orderId for unfilled limit entry
+            "pending_entry_time": 0,             # Timestamp when limit order was placed
+            "pending_entry_side": "NONE",        # BUY or SELL
+            "pending_entry_zone": None,          # {zone_high, zone_low} for invalidation check
+            "pending_entry_data": None,          # Signal data snapshot for post-fill SL/TP
+            "pending_entry_price": 0.0,          # The limit price placed
         }
         visualizers[sym] = StateExporter(client, sym)
 
@@ -2835,6 +3310,26 @@ def main():
                 current_adx = signal_data.get("adx", 0)
                 fr_val = signal_data.get("funding_rate", 0.0)
 
+                # ★ v24: CHECK PENDING LIMIT ENTRY ORDERS (Auto-Cancel Manager)
+                pending_result = _check_pending_entry_order(client, symbol, state, current_price)
+                if pending_result == "PENDING":
+                    # Still waiting for pullback fill — skip all other logic for this coin
+                    continue
+                elif pending_result == "FILLED":
+                    # Order just filled! Set up trade management state
+                    pending_data = state.get("pending_entry_data") or {}
+                    state["last_signal_data"] = pending_data.get("signal_data")
+                    state["last_side"] = pending_data.get("side", "UNKNOWN")
+                    state["_trade_logged"] = False
+                    state["original_qty"] = pending_data.get("quantity", 0)
+                    state["phase"] = "INITIAL"
+                    state["best_price"] = 0.0
+                    state["current_trail_sl"] = 0.0
+                    state["trade_open_time"] = time.time()
+                    log.info(f"🟢  [{symbol}] PENDING → ACTIVE — Trade management engaged.")
+                    continue
+                # elif "CANCELLED" or "NONE" — proceed normally
+
                 # ── ★ FUNDING RATE ENTRY GATE ──
                 # If BUY and funding is strongly positive (> 0.03%), skip (costly to hold long)
                 if signal == "BUY" and fr_val > 0.0003:
@@ -2974,18 +3469,33 @@ def main():
                             #     continue
                             log.info(f"✅  [{symbol}] S/R Gate: BYPASSED (v15 testnet mode)")
 
-                            # ── ★ v18: MULTI-TIMEFRAME ANALYSIS (MTFA) GATE ──
+                            # ── ★ v25: MULTI-TIMEFRAME DIRECTIONAL CONFLUENCE (MTDC) GATE ──
+                            # 4H = Hard Veto │ 1H + 15m + OI + FR = Confidence Score
                             if MTFA_ENABLED:
-                                mtfa_aligned, mtfa_reason = _check_1h_trend_ema50(client, symbol, armed_dir)
-                                if not mtfa_aligned:
-                                    log.warning(f"🚫  [{symbol}] {mtfa_reason}")
-                                    visualizer.record_rejection(mtfa_reason)
+                                confidence, conf_breakdown, veto, veto_reason = _calculate_directional_confidence(
+                                    client, symbol, armed_dir, state.get("armed_signal_data")
+                                )
+                                if veto:
+                                    log.warning(f"🚫  [{symbol}] {veto_reason}")
+                                    visualizer.record_rejection(veto_reason)
+                                    send_telegram_alert(
+                                        f"🚫 <b>4H HARD VETO</b>\nCoin: {symbol}\nSignal: {armed_dir}\n"
+                                        f"<i>{veto_reason}</i>"
+                                    )
+                                    state["armed_signal"] = "NONE"
+                                    state["armed_time"] = 0
+                                    state["armed_signal_data"] = None
+                                    continue
+                                elif confidence < MTDC_MIN_CONFIDENCE:
+                                    mtdc_reason = f"MTDC LOW: {confidence*100:.0f}% < {MTDC_MIN_CONFIDENCE*100:.0f}% │ {' │ '.join(conf_breakdown)}"
+                                    log.warning(f"🧭  [{symbol}] {mtdc_reason}")
+                                    visualizer.record_rejection(mtdc_reason)
                                     state["armed_signal"] = "NONE"
                                     state["armed_time"] = 0
                                     state["armed_signal_data"] = None
                                     continue
                                 else:
-                                    log.info(f"🌍  [{symbol}] {mtfa_reason}")
+                                    log.info(f"🧭  [{symbol}] MTDC PASS: {confidence*100:.0f}% │ {' │ '.join(conf_breakdown)}")
 
                             # ── ★ v20: SMC ENTRY VALIDATION GATE ──
                             if ENTRY_VALIDATION_ENABLED:
@@ -3020,8 +3530,13 @@ def main():
                             # Restore data for execution
                             # ★ v22: Use SMC-flipped direction if available
                             exc_signal = smc_zone.get("smc_direction", armed_dir) if smc_zone else armed_dir
-                            exc_data = state["armed_signal_data"]
-                            if smc_zone: exc_data["smc_zone"] = smc_zone  # ★ Inject SMC mathematical SL geometry into execution data
+                            exc_data = state["armed_signal_data"].copy()
+                            if smc_zone: 
+                                exc_data["smc_zone"] = smc_zone  # ★ Inject SMC mathematical SL geometry into execution data
+                                # ★ v25: Liquidity Sweep Premium (+5 points)
+                                if smc_zone.get("has_sweep"):
+                                    exc_data["score"] += 5
+                                    exc_data["score_breakdown"].append("💧 LIQ SWEEP Premium: +5")
                             exc_price = current_price  # Use latest price, not the one from 2 mins ago
                             exc_atr = exc_data["atr"]
                             
@@ -3049,7 +3564,18 @@ def main():
                                 client, symbol, exc_signal, exc_price, exc_atr, exc_data,
                                 size_multiplier=size_multiplier, is_micro_scalp=is_micro_scalp
                             )
-                            if success:
+                            
+                            # ★ v24: Handle PENDING return (GTC limit placed but not filled yet)
+                            if success == "PENDING" and isinstance(entry_qty, dict):
+                                pending_info = entry_qty  # entry_qty is actually the pending_info dict
+                                state["pending_entry_order_id"] = pending_info["order_id"]
+                                state["pending_entry_time"] = pending_info["placed_time"]
+                                state["pending_entry_side"] = pending_info["side"]
+                                state["pending_entry_zone"] = pending_info.get("zone")
+                                state["pending_entry_data"] = pending_info
+                                state["pending_entry_price"] = pending_info["limit_price"]
+                                log.info(f"📋  [{symbol}] PENDING ORDER REGISTERED — Monitoring for fill/cancel.")
+                            elif success:
                                 state["last_signal_data"] = exc_data
                                 state["last_side"] = exc_signal
                                 state["_trade_logged"] = False
