@@ -3461,13 +3461,13 @@ def main():
             scan_count += 1
             now = time.time()
             
-            # ★ v29.6: Evaluate Global Market Session (UTC)
+            # ★ v29.7: Evaluate Global Market Session (UTC)
             utc_hour = datetime.now(timezone.utc).hour
-            is_high_volume_session = 8 <= utc_hour < 22  # London (08-16) & NY (13-22). High Liquidity.
+            is_high_volume_session = 12 <= utc_hour < 21  # NY Open (12-21 UTC) = Peak Volume. BD Time: 6PM-3AM
             
             if scan_count % 30 == 0:  # Periodically log the session state
-                sess_desc = "HIGH LIQUIDITY (London/NY) | Strict SMC Rules Active" if is_high_volume_session else "LOW LIQUIDITY (Asian/Sydney) | Filters Relaxed"
-                log.info(f"🌍 [MARKET SESSION DETECTED] {sess_desc}")
+                sess_desc = "HIGH LIQUIDITY (NY+London Overlap) | Strict SMC Rules Active" if is_high_volume_session else "LOW LIQUIDITY (Asian/Early London) | Filters Relaxed"
+                log.info(f"🌍 [MARKET SESSION DETECTED] {sess_desc} | UTC Hour: {utc_hour}")
 
             for symbol in SYMBOLS:
                 state = bot_state[symbol]
