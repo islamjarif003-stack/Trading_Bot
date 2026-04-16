@@ -2512,14 +2512,13 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
         trend = "MIXED"
     
     # --- CHOCH Detection ---
-    # Look at the LAST FEW CANDLES (not historical) to find a live break
-    check_window = min(8, n)  # Check last 8 candles for a fresh break
+    # Look at ALL candles after the last swing point to see if structure broke during the pullback
     
     # Bullish CHOCH: Downtrend + price breaks above last swing high
     if trend in ("DOWN", "MIXED"):
         last_sh_idx, last_sh_price = recent_sh[-1]
-        # Check if any of the last `check_window` candles broke above the swing high
-        for i in range(n - check_window, n):
+        start_idx = max(0, last_sh_idx)
+        for i in range(start_idx, n):
             if closes[i] > last_sh_price and i > last_sh_idx:
                 detail = (
                     f"Bullish CHOCH: Trend was {trend}, price ${closes[i]:.4f} broke above "
@@ -2530,7 +2529,8 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
     # Bearish CHOCH: Uptrend + price breaks below last swing low
     if trend in ("UP", "MIXED"):
         last_sl_idx, last_sl_price = recent_sl[-1]
-        for i in range(n - check_window, n):
+        start_idx = max(0, last_sl_idx)
+        for i in range(start_idx, n):
             if closes[i] < last_sl_price and i > last_sl_idx:
                 detail = (
                     f"Bearish CHOCH: Trend was {trend}, price ${closes[i]:.4f} broke below "
@@ -2539,11 +2539,11 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
                 return "CHOCH_BEAR", i, last_sl_price, detail
     
     # --- BOS Detection ---
-    # Bullish BOS: Uptrend + new Higher High in last few candles
+    # Bullish BOS: Uptrend + new Higher High since last swing high
     if trend == "UP":
-        prev_sh_price = last_2_sh[-2][1]
         last_sh_idx = last_2_sh[-1][0]
-        for i in range(n - check_window, n):
+        start_idx = max(0, last_sh_idx)
+        for i in range(start_idx, n):
             if highs[i] > last_2_sh[-1][1] and i > last_sh_idx:
                 detail = (
                     f"Bullish BOS: Uptrend continuation. High ${highs[i]:.4f} broke "
@@ -2551,10 +2551,11 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
                 )
                 return "BOS_BULL", i, last_2_sh[-1][1], detail
     
-    # Bearish BOS: Downtrend + new Lower Low in last few candles
+    # Bearish BOS: Downtrend + new Lower Low since last swing low
     if trend == "DOWN":
         last_sl_idx = last_2_sl[-1][0]
-        for i in range(n - check_window, n):
+        start_idx = max(0, last_sl_idx)
+        for i in range(start_idx, n):
             if lows[i] < last_2_sl[-1][1] and i > last_sl_idx:
                 detail = (
                     f"Bearish BOS: Downtrend continuation. Low ${lows[i]:.4f} broke "
