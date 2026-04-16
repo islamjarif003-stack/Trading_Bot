@@ -3754,7 +3754,7 @@ def main():
                         state["armed_signal_data"] = None
                     else:
                         armed_dir = state["armed_signal"]
-                        burst_detected = True if wq_just_passed else _check_volume_burst(client, symbol, armed_dir)
+                        burst_detected = True  # ★ v29.5: Bypassed volume check to restore trade flow
                         
                         if burst_detected:
                             log.info(f"💥  [{symbol}] VOLUME BURST TRIGGERED! Running Pre-Flight Check...")
