@@ -77,8 +77,8 @@ BLACKLIST_COINS = {
     "ARIAUSDT", "ENAUSDT", "WETUSDT",
 }
 LEVERAGE        = 20                # ★ FIXED 20x leverage
-SL_ATR_MULT     = 1.8               # ★ v26: SL = 1.8 × ATR (was 2.5 — too wide, massive losses per SL hit)
-TP_ATR_MULT     = 3.6               # ★ v26: TP = 3.6 × ATR (R:R = 1:2 maintained with SL=1.8)
+SL_ATR_MULT     = 1.2               # ★ v29.8: SL = 1.2 × ATR (was 1.8 — suited for 5m precision)
+TP_ATR_MULT     = 2.4               # ★ v29.8: TP = 2.4 × ATR (R:R = 1:2 maintained with SL=1.2)
 HARD_LOCKOUT_S  = 300               # ★ v22: 5-minute hard lockout after every trade (was 30m)
 LOOP_INTERVAL_S = 10                # Seconds between each scan cycle
 ENTRY_RISK_PCT  = 15.0              # ★ $50 Config: 15% of $50 ≈ $7.50 risk per trade
@@ -783,18 +783,19 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         atr_1m_for_offset = atr
 
         # ★ v26: Use 15-Minute ATR for SL/TP (was 1H — way too wide, caused massive losses)
-        try:
-            raw_15m = client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_15MINUTE, limit=20)
-            if raw_15m and len(raw_15m) >= 15:
-                highs_15m = [float(k[2]) for k in raw_15m]
-                lows_15m = [float(k[3]) for k in raw_15m]
-                closes_15m = [float(k[4]) for k in raw_15m]
-                trs = [max(highs_15m[i] - lows_15m[i], abs(highs_15m[i] - closes_15m[i-1]), abs(lows_15m[i] - closes_15m[i-1])) for i in range(1, len(highs_15m))]
-                atr_15m = sum(trs[-14:]) / 14.0
-                if atr_15m > 0:
-                    atr = atr_15m
-        except Exception as atr_err:
-            log.warning(f"⚠ [{symbol}] Could not fetch 15m ATR, using provided ATR: {atr_err}")
+        # try:
+        #     raw_15m = client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_15MINUTE, limit=20)
+        #     if raw_15m and len(raw_15m) >= 15:
+        #         highs_15m = [float(k[2]) for k in raw_15m]
+        #         lows_15m = [float(k[3]) for k in raw_15m]
+        #         closes_15m = [float(k[4]) for k in raw_15m]
+        #         trs = [max(highs_15m[i] - lows_15m[i], abs(highs_15m[i] - closes_15m[i-1]), abs(lows_15m[i] - closes_15m[i-1])) for i in range(1, len(highs_15m))]
+        #         atr_15m = sum(trs[-14:]) / 14.0
+        #         if atr_15m > 0:
+        #             atr = atr_15m
+        # except Exception as atr_err:
+        #     log.warning(f"⚠ [{symbol}] Could not fetch 15m ATR, using provided ATR: {atr_err}")
+        # ★ v29.8: Disabled 15m override—using native 5m ATR provided directly by SMC engine for tighter precision.
 
         # ★ v22: HALF-KELLY CRITERION POSITION SIZING
         try:
@@ -2186,7 +2187,8 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
 # ██  4H = HARD VETO │ 1H + 15m + OI + FR = Confidence Score               ██
 # ═════════════════════════════════════════════════════════════════════════════
 
-MTFA_ENABLED = True           # ★ v25: RE-ENABLED with proper MTDC system
+MTFA_ENABLED = False          # ★ v29.8: MTDC confidence gate disabled (SMC naturally handles this)
+ANTI_FOMO_ENABLED = False     # ★ v29.8: Disabled (SMC naturally handles this)
 MTDC_MIN_CONFIDENCE = 0.50    # ★ v26: Lowered from 70% → 50% (was blocking ALL trades, 4H Hard Veto still protects)
 MTDC_4H_HARD_VETO = False     # ★ v29.1: Disabled per user request to allow 5m counter-trend scalps
 
@@ -2426,7 +2428,7 @@ def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
 import numpy as np
 
 ENTRY_VALIDATION_ENABLED = True    # ★ v20: Master switch for SMC entry validation
-WAIT_QUEUE_MAX_CANDLES   = 8       # ★ WAIT queue: max candles before expiry
+WAIT_QUEUE_MAX_CANDLES   = 16      # ★ WAIT queue: max candles before expiry (8 -> 16 / 40m -> 80m window)
 SMC_SWING_LOOKBACK       = 3       # ★ Swing detection: ±3 bar window
 SMC_SWEEP_TOLERANCE_ATR  = 0.15    # ★ Sweep: wick must exceed level by at least 0.15× ATR
 SMC_RR_MIN_RATIO         = 1.5     # ★ R:R floor for OB/FVG entries
@@ -3025,8 +3027,8 @@ def initialize_client() -> Client:
                 t for t in tickers 
                 if t['symbol'].endswith('USDT') 
                 and '_' not in t['symbol']
-                and float(t.get('lastPrice', 0)) > 0
-                and float(t.get('volume', 0)) > 0
+                and float(t.get('lastPrice', 0)) > 0.50             # ★ v29.8 min $0.50
+                and float(t.get('quoteVolume', 0)) > 30_000_000     # ★ v29.8 min $30M volume
             ]
             valid.sort(key=lambda x: float(x.get('quoteVolume', 0)), reverse=True)
             top_symbols = [t['symbol'] for t in valid[:50]]
