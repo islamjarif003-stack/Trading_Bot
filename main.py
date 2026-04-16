@@ -3460,6 +3460,14 @@ def main():
 
             scan_count += 1
             now = time.time()
+            
+            # ★ v29.6: Evaluate Global Market Session (UTC)
+            utc_hour = datetime.now(timezone.utc).hour
+            is_high_volume_session = 8 <= utc_hour < 22  # London (08-16) & NY (13-22). High Liquidity.
+            
+            if scan_count % 30 == 0:  # Periodically log the session state
+                sess_desc = "HIGH LIQUIDITY (London/NY) | Strict SMC Rules Active" if is_high_volume_session else "LOW LIQUIDITY (Asian/Sydney) | Filters Relaxed"
+                log.info(f"🌍 [MARKET SESSION DETECTED] {sess_desc}")
 
             for symbol in SYMBOLS:
                 state = bot_state[symbol]
@@ -3754,7 +3762,10 @@ def main():
                         state["armed_signal_data"] = None
                     else:
                         armed_dir = state["armed_signal"]
-                        burst_detected = True  # ★ v29.5: Bypassed volume check to restore trade flow
+                        if is_high_volume_session:
+                            burst_detected = True if wq_just_passed else _check_volume_burst(client, symbol, armed_dir)
+                        else:
+                            burst_detected = True  # ★ v29.6: Bypassed volume wait during low-liquidity Asian/Sydney sessions
                         
                         if burst_detected:
                             log.info(f"💥  [{symbol}] VOLUME BURST TRIGGERED! Running Pre-Flight Check...")
@@ -3790,7 +3801,7 @@ def main():
                                     prev_close = float(closed_klines[-2][4])
                                     
                                     if armed_dir == "BUY":
-                                        has_momentum = True  # curr_close > prev_close
+                                        has_momentum = (curr_close > prev_close) if is_high_volume_session else True
                                         if not has_momentum:
                                             log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but body did not close above previous body (close {curr_close} <= close {prev_close}).")
                                             visualizer.record_rejection(f"MOMENTUM: Body not broken for BUY")
@@ -3799,7 +3810,7 @@ def main():
                                             state["armed_signal_data"] = None
                                             continue
                                     else:  # SELL
-                                        has_momentum = True  # curr_close < prev_close
+                                        has_momentum = (curr_close < prev_close) if is_high_volume_session else True
                                         if not has_momentum:
                                             log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but body did not close below previous body (close {curr_close} >= close {prev_close}).")
                                             visualizer.record_rejection(f"MOMENTUM: Body not broken for SELL")
@@ -3807,7 +3818,10 @@ def main():
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
                                             continue
-                                    log.info(f"✅  [{symbol}] SMC MOMENTUM CHECK BYPASSED FOR TESTING ✔")
+                                    if is_high_volume_session:
+                                        log.info(f"✅  [{symbol}] SMC MICRO-REVERSAL CONFIRMED ✔")
+                                    else:
+                                        log.info(f"✅  [{symbol}] SMC MOMENTUM CHECK BYPASSED (Low Volatility Session) ✔")
                             except Exception as mom_err:
                                 log.warning(f"⚠  [{symbol}] Momentum check failed: {mom_err} — Proceeding anyway.")
                             
