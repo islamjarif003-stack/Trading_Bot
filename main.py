@@ -3898,7 +3898,7 @@ def main():
                                     # Move to WAIT queue (don't cancel, don't execute)
                                     log.info(f"⏳  [{symbol}] SMC WAIT — Signal queued for OB/FVG retest. {WAIT_QUEUE_MAX_CANDLES} candles max.")
                                     # ★ v22: Use SMC-flipped direction if available
-                                    smc_dir = smc_zone.get("smc_direction", armed_dir) if smc_zone else armed_dir
+                                    smc_dir = smc_zone.get("smc_direction", armed_dir) if isinstance(smc_zone, dict) else armed_dir
                                     state["wait_queue_signal"] = smc_dir
                                     state["wait_queue_data"] = state["armed_signal_data"]
                                     state["wait_queue_candle_count"] = 0
@@ -3913,12 +3913,17 @@ def main():
 
                             # Restore data for execution
                             # ★ v22: Use SMC-flipped direction if available
-                            exc_signal = smc_zone.get("smc_direction", armed_dir) if smc_zone else armed_dir
+                            exc_signal = smc_zone.get("smc_direction", armed_dir) if isinstance(smc_zone, dict) else armed_dir
+                            
+                            # Protect against "NONE" string being truthy
+                            if isinstance(smc_zone, str) and smc_zone == "NONE":
+                                smc_zone = None
+
                             exc_data = state["armed_signal_data"].copy()
                             if smc_zone: 
                                 exc_data["smc_zone"] = smc_zone  # ★ Inject SMC mathematical SL geometry into execution data
                                 # ★ v25: Liquidity Sweep Premium (+5 points)
-                                if smc_zone.get("has_sweep"):
+                                if isinstance(smc_zone, dict) and smc_zone.get("has_sweep"):
                                     exc_data["score"] += 5
                                     exc_data["score_breakdown"].append("💧 LIQ SWEEP Premium: +5")
                             exc_price = current_price  # Use latest price, not the one from 2 mins ago
