@@ -51,7 +51,7 @@ TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 
 # ─── TRADING CONFIGURATION ───────────────────────────────────────────────────
-DRY_RUN              = True     # ★ v20.1: True = simulate orders (no real API calls), False = LIVE TRADING
+DRY_RUN              = False    # 🚀 LIVE TRADING ACTIVATED
 USE_TESTNET          = False    # ★ v20.1: True = Binance Testnet, False = Binance Mainnet
 ENABLE_DYNAMIC_WATCHLIST = True # ★ Fetch Top 50 Volatile USDT pairs dynamically
 ENABLE_MICRO_SCALPING = False   # ★ v12: DISABLED — Pre-flight fail = NO TRADE (no more weak entries)
@@ -77,13 +77,13 @@ BLACKLIST_COINS = {
     "ARIAUSDT", "ENAUSDT", "WETUSDT",
 }
 LEVERAGE        = 20                # ★ FIXED 20x leverage
-SL_ATR_MULT     = 1.2               # ★ v29.8: SL = 1.2 × ATR (was 1.8 — suited for 5m precision)
-TP_ATR_MULT     = 2.4               # ★ v29.8: TP = 2.4 × ATR (R:R = 1:2 maintained with SL=1.2)
+SL_ATR_MULT     = 1.5               # ★ v25: SL = 1.5 × ATR (wider for MARKET order entries)
+TP_ATR_MULT     = 3.0               # ★ v25: TP = 3.0 × ATR (R:R = 1:2 maintained with SL=1.5)
 HARD_LOCKOUT_S  = 300               # ★ v22: 5-minute hard lockout after every trade (was 30m)
 LOOP_INTERVAL_S = 10                # Seconds between each scan cycle
 ENTRY_RISK_PCT  = 15.0              # ★ $50 Config: 15% of $50 ≈ $7.50 risk per trade
 MAX_MARGIN_PCT  = 30.0              # ★ $50 Config: Max 30% of balance as margin ($15 max)
-LIMIT_OFFSET_PCT = 0.005            # ★ FIX 2: 0.005% offset for limit order (ultra-tight fill)
+LIMIT_OFFSET_PCT = 0.05             # ★ Buffer (Tolerance Zone): 0.05% offset to ensure limit orders get filled
 ADX_ENTRY_MIN   = 5.0               # ★ v20: Lowered from 7.0 — SMC works in ranging markets, only filter dead markets
 SCAN_DELAY_S    = 1                 # ★ v7.2: Delay between each coin scan (API rate-limit safety)
 MAX_DAILY_LOSS_PCT = 10.0            # ★ $50 Config: 10% = $5 daily loss limit (2 SL trades)
@@ -98,7 +98,7 @@ ATR_SPIKE_MULT      = 2.0       # Skip entry if current ATR > 2× recent average
 # ─── ★ v11.1: ANTI-FOMO ENTRY GATE (Hard Blocker) ──────────────────────────
 ANTI_FOMO_EMA_DIST_PCT  = 0.30  # ★ v16.1: Widened to 0.30% to prevent blocking good setups (was 0.18%)
 ANTI_FOMO_CANDLE_BODY   = 0.60  # Block if candle body is >60% of total range (impulsive candle)
-ANTI_FOMO_ENABLED       = True  # Master switch for anti-FOMO gate
+# NOTE: ANTI_FOMO_ENABLED master switch is set below at L2289 (currently False, SMC handles this)
 
 # ─── ★ PER-SYMBOL PRECISION MAPPING ─────────────────────────────────────────
 SYMBOL_PRECISION = {
@@ -108,6 +108,19 @@ SYMBOL_PRECISION = {
     "BNBUSDT": {"price": 2, "qty": 2},
     "XRPUSDT": {"price": 4, "qty": 0},
 }
+
+# ─── ★ LIVE ACCOUNT SETUP (MICRO-PARAMETERS) ─────────────────────────────────
+VIRTUAL_ACCOUNT         = False    # IMPORTANT: False activates LIVE Binance Execution, True = Virtual Balance Mocks
+INITIAL_BALANCE         = 25.00    # Hard Account Balance Baseline
+PROFIT_TARGET           = 5.00     # Optional profit ceiling
+DAILY_LOSS_LIMIT        = 5.00     # 🚨 Global Hard Stop mechanism ($5)
+MAX_TOTAL_LOSS          = 5.00     # 🚨 Complete System Lockout at $5 cumulative loss
+
+# ─── ★ STRICT POSITION SIZING & RISK ─────────────────────────────────────────
+LEVERAGE                = 20       # 20x Leverage (Ensures Notional Value scales correctly)
+ENTRY_RISK_PCT          = 6.0      # 6% of $25 = $1.50 Margin per trade (prevents Binance notional limits)
+MAX_MARGIN_PCT          = 6.0      # Hard-caps max permitted margin to $1.50
+RISK_PER_TRADE_PERCENT  = 6.0      # Redundancy constraint for internal Kelly mappings
 DEFAULT_PRICE_PRECISION = 2
 DEFAULT_QTY_PRECISION   = 3
 
@@ -119,11 +132,11 @@ CORR_REDUCE_SIZE_PCT  = 50      # Reduce to 50% if CORR_ACTION == "REDUCE"
 # ─── ★ BREAK-EVEN & TRAILING STOP-LOSS ("Let Winners Run" Edition) ───────
 # Note: These are RAW price % (Unleveraged). A 0.4% raw move = 8% on Binance at 20x leverage.
 # ★ v17: TRUE BREAK-EVEN — uses dynamic R:R, not static %. BE triggers at 1R profit.
-TRUE_BE_FEE_BUFFER_PCT   = 0.15   # ★ v17: Fee-adjusted BE — covers 0.05% entry + 0.05% exit + 0.05% safety
-TRAILING_ACTIVATION_RR   = 1.0    # ★ v26: Trailing activates after 1:1.0 R:R (was 1.5 — too late, most trades reverse before reaching it)
-TRAILING_SL_DISTANCE_PCT = 0.70   # ★ v16.1: Trail SL 0.70% behind highest/lowest price (was 0.50% — giving more room)
+TRUE_BE_FEE_BUFFER_PCT   = 0.25   # ★ v37: Increased 0.15 → 0.25 to cover taker fees + slippage on BE exits
+TRAILING_ACTIVATION_RR   = 1.5    # ★ v37: BE triggers at 1.5R (was 1.0R — too early for 15m candles)
+TRAILING_SL_DISTANCE_PCT = 1.20   # ★ v37: Trail 1.2% behind best price (was 0.7% — 15m needs more room)
 TTP_CHECK_INTERVAL       = 3      # Check every 3 cycles
-DISABLE_HARD_TP          = False   # ★ v26: ENABLED fixed TP at 1:2 R:R (was True — trades never took profit, reversed to losses)
+DISABLE_HARD_TP          = True    # ★ v26: DISABLED fixed TP to allow dynamic Trailing SL for 'Let Winners Run' mode
 SMART_REVERSAL_EXIT      = True    # ★ v12: Close if 5m MA25 cross-under/over detected
 STALE_TRADE_MIN_LOSS_PCT = -0.50   # ★ v17: Stale timeout only fires if PnL < -0.50% (prevents fee-draining flat closes)
 
@@ -208,6 +221,72 @@ dry_run_positions = _load_dry_run_positions()
 
 # ★ v22.2: Store last closed sim PnL so _determine_trade_outcome can use it
 dry_run_last_pnl = {}
+
+# ─── ★ PROP STATE MANAGER ───────────────────────────────────────────────────
+PROP_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prop_state.json")
+
+def _load_prop_state() -> dict:
+    import datetime
+    today_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    default = {
+        "current_balance": INITIAL_BALANCE,
+        "today_start_balance": INITIAL_BALANCE,
+        "date_str": today_str
+    }
+    
+    if not VIRTUAL_ACCOUNT:
+        return default
+        
+    try:
+        if os.path.exists(PROP_STATE_FILE):
+            with open(PROP_STATE_FILE, "r") as f:
+                data = _json.load(f)
+                
+            # If UTC day flipped, reset the daily starting balance
+            if data.get("date_str") != today_str:
+                data["today_start_balance"] = data.get("current_balance", INITIAL_BALANCE)
+                data["date_str"] = today_str
+                log.info(f"🔄  [PROP] New UTC Day! Daily Reset. Starting Balance: ${data['today_start_balance']:.2f}")
+                
+            log.info(f"📂  [PROP] Loaded Virtual State: Balance=${data.get('current_balance', INITIAL_BALANCE):.2f}")
+            return {**default, **data}
+    except Exception as e:
+        log.warning(f"⚠  [PROP] Failed to load prop state: {e}")
+    return default
+
+def _save_prop_state():
+    if not VIRTUAL_ACCOUNT: return
+    try:
+        with open(PROP_STATE_FILE, "w") as f:
+            _json.dump(prop_state, f, indent=2)
+    except Exception as e:
+        log.warning(f"⚠  [PROP] Failed to save prop state: {e}")
+
+prop_state = _load_prop_state()
+
+def check_prop_rules():
+    """
+    Evaluates current balance against daily and max drawdown limits.
+    Returns True if trading is allowed, False if HALTED.
+    """
+    if not VIRTUAL_ACCOUNT:
+        return True
+        
+    daily_pnl = prop_state["current_balance"] - prop_state["today_start_balance"]
+    total_pnl = prop_state["current_balance"] - INITIAL_BALANCE
+    
+    if total_pnl <= -MAX_TOTAL_LOSS:
+        log.error(f"🚨🚨 [PROP] MAX DRAWDOWN REACHED! Virtual Account Failed. (${total_pnl:.2f})")
+        return False
+        
+    if daily_pnl <= -DAILY_LOSS_LIMIT:
+        log.error(f"🛡️  [PROP] DAILY LOSS LIMIT REACHED! Trading Halted for Today. (${daily_pnl:.2f})")
+        return False
+        
+    if total_pnl >= PROFIT_TARGET:
+        log.info(f"🏆  [PROP] VIRTUAL CHALLENGE PASSED! Target Reached: ${prop_state['current_balance']:.2f}")
+    
+    return True
 
 def calculate_kelly_risk_pct(win_rate: float, avg_rr: float) -> float:
     """
@@ -504,24 +583,62 @@ def _send_chart_async(client, symbol, signal, avg_entry, sl_price, tp_price, sig
 # ██  UTILITIES                                                             ██
 # ═════════════════════════════════════════════════════════════════════════════
 
+# ★ AUDIT FIX: Global cache for exchange info (avoids redundant API calls per symbol)
+_exchange_info_cache = None
+_exchange_info_cache_time = 0
+
 def _fetch_symbol_precision(client: Client, symbol: str):
-    """★ v12: Auto-fetch price and qty precision from Binance for any symbol."""
+    """★ v12: Auto-fetch price and qty precision from Binance for any symbol.
+    ★ v35 FIX: Also extracts tickSize from PRICE_FILTER for proper price rounding."""
+    global _exchange_info_cache, _exchange_info_cache_time
     try:
-        info = client.futures_exchange_info()
-        for s in info["symbols"]:
+        # Cache exchange info for 1 hour to avoid API spam
+        now = time.time()
+        if _exchange_info_cache is None or (now - _exchange_info_cache_time) > 3600:
+            _exchange_info_cache = client.futures_exchange_info()
+            _exchange_info_cache_time = now
+            log.info(f"📐  Exchange info cached ({len(_exchange_info_cache.get('symbols', []))} symbols)")
+        
+        for s in _exchange_info_cache["symbols"]:
             if s["symbol"] == symbol:
                 price_prec = s.get("pricePrecision", DEFAULT_PRICE_PRECISION)
                 qty_prec = s.get("quantityPrecision", DEFAULT_QTY_PRECISION)
-                SYMBOL_PRECISION[symbol] = {"price": price_prec, "qty": qty_prec}
-                log.info(f"📐  [{symbol}] Auto-precision: price={price_prec}, qty={qty_prec}")
+                
+                # ★ v35 FIX: Extract tickSize from PRICE_FILTER
+                tick_size = None
+                for f in s.get("filters", []):
+                    if f["filterType"] == "PRICE_FILTER":
+                        tick_size = float(f["tickSize"])
+                        break
+                
+                SYMBOL_PRECISION[symbol] = {
+                    "price": price_prec, 
+                    "qty": qty_prec,
+                    "tick_size": tick_size
+                }
+                log.info(f"📐  [{symbol}] Auto-precision: price={price_prec}, qty={qty_prec}, tickSize={tick_size}")
                 return
     except Exception as e:
         log.warning(f"⚠  [{symbol}] Failed to fetch precision: {e}")
 
 
 def _round_price(price: float, symbol: str = "BTCUSDT") -> float:
-    prec = SYMBOL_PRECISION.get(symbol, {}).get("price", DEFAULT_PRICE_PRECISION)
-    return round(price, prec)
+    """★ v35 FIX: Round price to valid tick size increment.
+    Uses tickSize from PRICE_FILTER (not just pricePrecision) to ensure
+    Binance accepts the order without 'Price not increased by tick size' error."""
+    sym_info = SYMBOL_PRECISION.get(symbol, {})
+    tick_size = sym_info.get("tick_size")
+    
+    if tick_size and tick_size > 0:
+        # Round DOWN to nearest tick size increment
+        rounded = round(round(price / tick_size) * tick_size, 10)
+        # Also apply decimal precision to avoid floating point artifacts
+        prec = sym_info.get("price", DEFAULT_PRICE_PRECISION)
+        return round(rounded, prec)
+    else:
+        # Fallback: use pricePrecision only
+        prec = sym_info.get("price", DEFAULT_PRICE_PRECISION)
+        return round(price, prec)
 
 
 def _round_qty(qty: float, symbol: str = "BTCUSDT") -> float:
@@ -560,14 +677,22 @@ def _has_open_position(client: Client, symbol: str) -> dict:
                 tp_hit = current_price <= sim["tp_price"] if sim["tp_price"] > 0 else False
             
             if sl_hit:
-                pnl = abs(sim["entry_price"] - sim["sl_price"]) * sim["qty"] * (-1)
+                # ★ v31.3 FIX: Do not hardcode * -1. Trailing SL hits can be in green!
+                if sim["side"] == "BUY":
+                    pnl = (sim["sl_price"] - sim["entry_price"]) * sim["qty"]
+                else:
+                    pnl = (sim["entry_price"] - sim["sl_price"]) * sim["qty"]
+                
                 log.info(f"🔻  [DRY RUN] [{symbol}] SL HIT @ ${current_price:.4f} (SL: ${sim['sl_price']:.4f}) | Sim PnL: ${pnl:.4f}")
                 dry_run_last_pnl[symbol] = pnl
                 del dry_run_positions[symbol]
                 _save_dry_run_positions()
                 return None  # Position closed
             elif tp_hit:
-                pnl = abs(sim["tp_price"] - sim["entry_price"]) * sim["qty"]
+                if sim["side"] == "BUY":
+                    pnl = (sim["tp_price"] - sim["entry_price"]) * sim["qty"]
+                else:
+                    pnl = (sim["entry_price"] - sim["tp_price"]) * sim["qty"]
                 log.info(f"🎯  [DRY RUN] [{symbol}] TP HIT @ ${current_price:.4f} (TP: ${sim['tp_price']:.4f}) | Sim PnL: +${pnl:.4f}")
                 dry_run_last_pnl[symbol] = pnl
                 del dry_run_positions[symbol]
@@ -756,6 +881,32 @@ def _print_score_dashboard(signal_data: dict, scan_count: int, symbol: str):
     log.info("─" * 70)
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+# ██  ★ v35: DYNAMIC SESSION MANAGER                                       ██
+# ═════════════════════════════════════════════════════════════════════════════
+
+def get_current_session() -> str:
+    """
+    ★ v35: Detect current trading session based on UTC time.
+    Returns: 'ASIA', 'LONDON', or 'NEW_YORK'
+    
+    Session Times (UTC):
+      - ASIA:     00:00 – 08:00 UTC  (BD: 06:00 – 14:00)
+      - LONDON:   08:00 – 13:00 UTC  (BD: 14:00 – 19:00)
+      - NEW_YORK: 13:00 – 22:00 UTC  (BD: 19:00 – 04:00)
+      - ASIA:     22:00 – 00:00 UTC  (BD: 04:00 – 06:00) — late night = Asia
+    """
+    utc_hour = datetime.now(timezone.utc).hour
+    
+    if 0 <= utc_hour < 8:
+        return "ASIA"
+    elif 8 <= utc_hour < 13:
+        return "LONDON"
+    elif 13 <= utc_hour < 22:
+        return "NEW_YORK"
+    else:  # 22-24
+        return "ASIA"
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ██  ORDER EXECUTION (★ V7.1: Limit Entry + ATR SL/TP with 1:2 R:R)       ██
@@ -779,23 +930,19 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         if symbol not in SYMBOL_PRECISION:
             _fetch_symbol_precision(client, symbol)
 
-        # ★ v21: Save 1m ATR for dynamic limit offset (before 1H override)
+        # ★ v21: Save 5m ATR for dynamic limit offset only
         atr_1m_for_offset = atr
 
-        # ★ v26: Use 15-Minute ATR for SL/TP (was 1H — way too wide, caused massive losses)
-        # try:
-        #     raw_15m = client.futures_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_15MINUTE, limit=20)
-        #     if raw_15m and len(raw_15m) >= 15:
-        #         highs_15m = [float(k[2]) for k in raw_15m]
-        #         lows_15m = [float(k[3]) for k in raw_15m]
-        #         closes_15m = [float(k[4]) for k in raw_15m]
-        #         trs = [max(highs_15m[i] - lows_15m[i], abs(highs_15m[i] - closes_15m[i-1]), abs(lows_15m[i] - closes_15m[i-1])) for i in range(1, len(highs_15m))]
-        #         atr_15m = sum(trs[-14:]) / 14.0
-        #         if atr_15m > 0:
-        #             atr = atr_15m
-        # except Exception as atr_err:
-        #     log.warning(f"⚠ [{symbol}] Could not fetch 15m ATR, using provided ATR: {atr_err}")
-        # ★ v29.8: Disabled 15m override—using native 5m ATR provided directly by SMC engine for tighter precision.
+        # ★ v36 FIX: Use 1H ATR for SL/TP — MUST match trailing manager's _get_current_atr()
+        # The 5m ATR from signal engine is too small (~$0.01) causing tiny SL that gets
+        # immediately replaced by Emergency SL (~7.8%). Using 1H ATR ensures consistency.
+        try:
+            atr_1h = _get_current_atr(client, symbol)
+            if atr_1h > 0:
+                log.info(f"   ★ ATR Sync: 5m={atr:.4f} → 1H={atr_1h:.4f} (using 1H for SL/TP)")
+                atr = atr_1h
+        except Exception as atr_err:
+            log.warning(f"⚠ [{symbol}] Could not fetch 1H ATR, using signal ATR: {atr_err}")
 
         # ★ v22: HALF-KELLY CRITERION POSITION SIZING
         try:
@@ -812,12 +959,14 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         kelly_source = "LIVE" if kelly_trades >= KELLY_MIN_TRADES_FOR_LIVE else "DEFAULT"
         
         if half_kelly_pct <= 0.0:
-            log.warning(f"🚨  [{symbol}] NEGATIVE KELLY: WR={kelly_wr*100:.1f}% RR={kelly_rr:.2f} → No statistical edge. ABORTING ENTRY.")
-            return False, 0.0
+            log.warning(f"🚨  [{symbol}] NEGATIVE KELLY: WR={kelly_wr*100:.1f}% RR={kelly_rr:.2f} → No statistical edge. Using Minimum Risk Floor.")
+            half_kelly_pct = 0.001  # Use a tiny fraction so floor_margin activates
+
         
-        # Apply Kelly sizing with $1 floor
+        # Apply Kelly sizing with $1 floor (or $10 for realistic DRY RUN)
         calc_margin = total_balance * half_kelly_pct
-        dynamic_margin = max(calc_margin, 1.00)  # Floor at $1.00
+        floor_margin = 10.00 if DRY_RUN else 2.00  # ★ v37: Raised from $1 → $2
+        dynamic_margin = max(calc_margin, floor_margin)
             
         position_value_usd = dynamic_margin * LEVERAGE
         raw_qty = position_value_usd / current_price
@@ -904,13 +1053,40 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             log.warning("⚠  SL Distance is <= 0. Cannot compute. Skipping.")
             return False, 0.0
 
+        # ★ PROP FIRM POSITION SIZING UPDATE ★
+        if VIRTUAL_ACCOUNT:
+            risk_usd = prop_state["current_balance"] * (RISK_PER_TRADE_PERCENT / 100.0)
+            
+            # ★ v34 FIX: Strict Dollar Risk Cap (The Hard Lock)
+            MAX_RISK_PER_TRADE_USD = 20.0
+            if risk_usd > MAX_RISK_PER_TRADE_USD:
+                log.info(f"🛡  [{symbol}] Capping risk_usd from ${risk_usd:.2f} to strict maximum ${MAX_RISK_PER_TRADE_USD:.2f}")
+                risk_usd = MAX_RISK_PER_TRADE_USD
+            raw_qty_prop = risk_usd / sl_distance
+            max_qty_allowed = (prop_state["current_balance"] * LEVERAGE_SIM) / current_price
+            if raw_qty_prop > max_qty_allowed:
+                log.warning(f"⚠  [{symbol}] Prop SL Sizing exceeds max {LEVERAGE_SIM}x leverage limit! Capping size.")
+                raw_qty_prop = max_qty_allowed
+            
+            quantity = _round_qty(raw_qty_prop * size_multiplier, symbol)
+            dynamic_margin = (quantity * current_price) / LEVERAGE_SIM
+            risk_amount = risk_usd
+            
+        if quantity <= 0:
+            log.warning("⚠  Calculated quantity is 0 after rounding.")
+            return False, 0.0
+
         entry_method = "50% OB Equilibrium" if ob_entry_used else "ATR Offset"
         log.info("═" * 70)
-        log.info(f"🚀  [{symbol}] EXECUTING {signal} │ Risk: ${dynamic_margin:.2f} Dynamic Margin{size_note} │ Score: {score}")
+        mode_str = "PROP CHALLENGE" if VIRTUAL_ACCOUNT else "REAL ACCOUNT"
+        log.info(f"🚀  [{symbol}] EXECUTING {signal} ({mode_str}) │ Score: {score}")
         log.info(f"   ★ LIMIT Entry : ${limit_price} ({entry_method})")
         log.info(f"   Market Price  : ${current_price}")
         log.info(f"   Quantity      : {quantity}")
-        log.info(f"   ★ Risk Amt    : ${risk_amount:.2f} ({ENTRY_RISK_PCT}%{size_note})")
+        if VIRTUAL_ACCOUNT:
+            log.info(f"   ★ Risk Amt    : ${risk_amount:.2f} ({RISK_PER_TRADE_PERCENT}% Fixed SL Risk){size_note}")
+        else:
+            log.info(f"   ★ Risk Margin : ${risk_amount:.2f} ({ENTRY_RISK_PCT}%){size_note}")
         log.info(f"   ★ ML Win Prob : {ml_prob*100:.1f}%")
         log.info(f"   ★ BTC Corr    : {btc_corr:+.4f}")
         log.info(f"   ★ SL Distance : ${sl_distance:.2f} ({SL_ATR_MULT}×ATR)")
@@ -928,20 +1104,33 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             avg_entry = limit_price  # Use limit price as simulated fill
             actual_qty = quantity
         else:
-            # ★ v24 LIVE: GTC Limit Order at OB 50% Equilibrium (or ATR offset fallback)
+            # ★ v25.2: Smart OB Zone Entry — only enter when price is inside/near OB zone
+            # ★ v25.3 FIX: Use ATR-based buffer (not zone-width) to avoid blocking breakout entries
+            if smc_zone and smc_zone.get("zone_high") and smc_zone.get("zone_low"):
+                zone_high = float(smc_zone["zone_high"])
+                zone_low = float(smc_zone["zone_low"])
+                # Use 1.0x ATR as buffer (v37: balanced — prevents XAUUSDT spam but allows nearby entries)
+                zone_buffer = atr * 1.0
+                if signal == "BUY" and current_price > zone_high + zone_buffer:
+                    log.warning(f"🚫  [{symbol}] OB SKIP — BUY ${current_price:.4f} above OB ${zone_low:.4f}-${zone_high:.4f} (buffer: ${zone_buffer:.4f})")
+                    return False, 0.0
+                elif signal == "SELL" and current_price < zone_low - zone_buffer:
+                    log.warning(f"🚫  [{symbol}] OB SKIP — SELL ${current_price:.4f} below OB ${zone_low:.4f}-${zone_high:.4f} (buffer: ${zone_buffer:.4f})")
+                    return False, 0.0
+                log.info(f"✅  [{symbol}] OB ZONE OK — ${current_price:.4f} near OB ${zone_low:.4f}-${zone_high:.4f} (buffer: ${zone_buffer:.4f})")
             try:
                 entry_order = client.futures_create_order(
                     symbol=symbol, side=side,
-                    type=ORDER_TYPE_LIMIT,
-                    price=str(limit_price),
+                    type='MARKET',
+                    # price=str(limit_price),  # v25: Not needed for MARKET
                     quantity=quantity,
-                    timeInForce='GTC',  # ★ v24: GTC — order rests until filled or cancelled
+                    # timeInForce='GTC',  # v25: Not needed for MARKET
                 )
                 e_id = entry_order.get('orderId', entry_order.get('order_id', 'UNKNOWN'))
-                log.info(f"📋  [{symbol}] GTC LIMIT PLACED — ${limit_price} ({entry_method}) │ OrderID: {e_id}")
+                log.info(f"🚀  [{symbol}] MARKET ORDER FILLED — Qty: {quantity} │ OrderID: {e_id}")
 
                 # ★ v24: Quick fill check (5 seconds) — if already at price, fills instantly
-                filled = False
+                filled = True  # v25: MARKET orders always fill instantly
                 time.sleep(5)
                 try:
                     order_status = client.futures_get_order(symbol=symbol, orderId=e_id)
@@ -970,6 +1159,13 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
                         "tp_distance": tp_distance,
                     }
                     log.info(f"⏳  [{symbol}] GTC PENDING — Waiting for pullback to ${limit_price}. Auto-cancel in 12 candles (1h).")
+                    send_telegram_alert(
+                        f"\u23f3 <b>PENDING LIMIT ORDER</b>\n"
+                        f"Coin: {symbol}\n"
+                        f"Side: {signal}\n"
+                        f"Target Entry: ${limit_price:.4f}\n"
+                        f"Status: Waiting for price pullback."
+                    )
                     return "PENDING", pending_info  # ★ New return type for pending orders
 
             except BinanceAPIException as gtx_err:
@@ -1316,6 +1512,9 @@ def _update_sl_order(client: Client, symbol: str, side: str, new_sl: float) -> b
     # ★ v20.1: DRY RUN — simulate SL update
     if DRY_RUN:
         log.info(f"🟢  [DRY RUN] SL UPDATE — ${new_sl} │ Side: {close_side} │ Qty: {qty}")
+        if symbol in dry_run_positions:
+            dry_run_positions[symbol]["sl_price"] = new_sl
+            _save_dry_run_positions()
         return True
     
     try:
@@ -1426,6 +1625,17 @@ def _force_market_close(client: Client, symbol: str, side: str) -> bool:
     try:
         if DRY_RUN:
             log.info(f"🟢  [DRY RUN] FORCE MARKET CLOSE — {symbol} │ Side: {close_side}")
+            if symbol in dry_run_positions:
+                try:
+                    # Calculate final PnL at close
+                    sim = dry_run_positions[symbol]
+                    cp = float(client.futures_symbol_ticker(symbol=symbol)["price"])
+                    pnl = (cp - sim["entry_price"]) * sim["qty"] if sim["side"] == "BUY" else (sim["entry_price"] - cp) * sim["qty"]
+                    dry_run_last_pnl[symbol] = pnl
+                    del dry_run_positions[symbol]
+                    _save_dry_run_positions()
+                except Exception as e:
+                    log.warning(f"Failed to calculate dry run PnL on force close: {e}")
             return True
         
         _cancel_all_open_orders(client, symbol)
@@ -1471,6 +1681,7 @@ def _reset_bot_state(bot_state: dict):
     bot_state["original_qty"] = 0.0
     bot_state["trade_open_time"] = 0.0  # Reset open time
     bot_state["initial_risk_pct"] = 0.0  # ★ v17: Reset dynamic R:R risk baseline
+    bot_state["close_reason_override"] = None
 
 
 def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=None):
@@ -1503,6 +1714,10 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
             if was_active:
                 log.info(f"📊  [{symbol}] Position closed (by SL/TP). Manager exiting.")
                 
+                # ★ AUDIT FIX: Set _trade_logged=True HERE so main loop does NOT
+                # call _determine_trade_outcome a second time (prevents double PnL + double Telegram)
+                bot_state["_trade_logged_by_manager"] = True
+                
                 # ★ v12: Enhanced Telegram with close REASON
                 try:
                     outcome, pnl = _determine_trade_outcome(client, symbol)
@@ -1518,11 +1733,15 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                             close_reason = f"🎯 Trailing SL Hit (Profit locked at ${trail_sl:.4f})"
                         elif phase == "BREAKEVEN":
                             close_reason = "🛡 Break-Even SL Hit (Zero loss exit)"
+                        elif phase == "MANUAL_CLOSE":
+                            close_reason = "🛡 Local SL or Stale Trigger (Profit Secured V2)"
                         else:
                             close_reason = "🎯 Exchange TP Hit"
                     else:
                         if phase in ("TRAILING", "BREAKEVEN"):
                             close_reason = f"🛡 Trailing SL Hit @ ${trail_sl:.4f}"
+                        elif phase == "MANUAL_CLOSE":
+                            close_reason = "🔻 Local SL or Stale Timeout Trigger (Loss)"
                         else:
                             close_reason = "🔻 Initial SL Hit (ATR-based)"
                     
@@ -1564,7 +1783,7 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
         else:
             pnl_str = f"🩸 {pnl_pct:.2f}% (${pnl_usdt:+.2f})"
 
-        import time
+        # (time already imported at module level)
         now = time.time()
 
         # ══════════════════════════════════════════════════════════════
@@ -1578,11 +1797,8 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
             if trade_duration_s >= 1800 and pnl_pct <= STALE_TRADE_MIN_LOSS_PCT and bot_state.get("phase", "INITIAL") == "INITIAL":  # ★ v26: 30 mins (was 45 — dead trades sit too long)
                 log.warning(f"⏳  [{symbol}] STALE TRADE: Open for {int(trade_duration_s/60)} mins with PnL {pnl_pct:.2f}% (genuine loss < {STALE_TRADE_MIN_LOSS_PCT}%). Closing early.")
                 if _force_market_close(client, symbol, side):
-                    _reset_bot_state(bot_state)
-                    send_telegram_alert(f"⏳ <b>Stale Trade Closed</b>\nCoin: {symbol}\nSide: {side}\nReason: No momentum after {int(trade_duration_s/60)} mins\nPnL: {pnl_pct:+.2f}%")
-                    if visualizer:
-                        visualizer.clear_position_data()
-                        visualizer.set_bot_status("SCANNING")
+                    bot_state["phase"] = "MANUAL_CLOSE"  # Let next cycle handle cleanup naturally
+                    bot_state["close_reason_override"] = f"⏳ Stale Trade: No momentum after {int(trade_duration_s/60)} mins"
                     return
 
         # ── ATR Refresh (every 10 cycles) ──
@@ -1601,7 +1817,7 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
         #    - Whale Reversal Counter-Attack (flip position)
         #    - 5-minute cooldown per coin
         # ══════════════════════════════════════════════════════════════
-        import time
+        # (time already imported at module level)
         now = time.time()
         if now - bot_state.get("last_dom_check", 0) >= 15:
             bot_state["last_dom_check"] = now
@@ -1634,8 +1850,8 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                         if max_sell_qty >= whale_cfg["qty"] or max_sell_usd >= whale_cfg["usd"]:
                             log.warning(f"🐋  [{symbol}] Dynamic TP! In Profit + Resistance. Exiting LONG.")
                             if _force_market_close(client, symbol, side):
-                                _reset_bot_state(bot_state)
-                                send_telegram_alert(f"🎯 <b>Dynamic TP! Resistance Wall ahead!</b>\nCoin: {symbol}\nSide: LONG\nPrice: ${mark_price}\nPnL: {pnl_pct:+.2f}% ✅")
+                                bot_state["phase"] = "MANUAL_CLOSE"
+                                bot_state["close_reason_override"] = "🎯 Dynamic TP! Resistance Wall ahead!"
                                 if visualizer: visualizer.clear_position_data(); visualizer.set_bot_status("SCANNING")
                                 return
 
@@ -1649,8 +1865,8 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                         if max_buy_qty >= whale_cfg["qty"] or max_buy_usd >= whale_cfg["usd"]:
                             log.warning(f"🐋  [{symbol}] Dynamic TP! In Profit + Support. Exiting SHORT.")
                             if _force_market_close(client, symbol, side):
-                                _reset_bot_state(bot_state)
-                                send_telegram_alert(f"🎯 <b>Dynamic TP! Support Wall ahead!</b>\nCoin: {symbol}\nSide: SHORT\nPrice: ${mark_price}\nPnL: {pnl_pct:+.2f}% ✅")
+                                bot_state["phase"] = "MANUAL_CLOSE"
+                                bot_state["close_reason_override"] = "🎯 Dynamic TP! Support Wall ahead!"
                                 if visualizer: visualizer.clear_position_data(); visualizer.set_bot_status("SCANNING")
                                 return
 
@@ -1672,13 +1888,9 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                 log.info(f"🚨  [{symbol}] ★ SL BREACHED (LOCAL) │ Mark: ${mark_price} vs SL: ${trail_sl_val}")
                 is_closed = _force_market_close(client, symbol, side)
                 
-                # ★ TRUE STATE SYNC: Only reset if confirmed closed
                 if is_closed:
-                    _reset_bot_state(bot_state)
-                    send_telegram_alert(f"🚨 <b>LOCAL SL TRIGGERED</b>\nCoin: {symbol}\nSide: {side}\nPrice: ${mark_price}\n<i>Position forcefully closed!</i>")
-                    if visualizer is not None:
-                        visualizer.clear_position_data()
-                        visualizer.set_bot_status("SCANNING")
+                    bot_state["phase"] = "MANUAL_CLOSE"  # So next cycle can classify it
+                    bot_state["close_reason_override"] = "🚨 LOCAL SL TRIGGERED"
                     return
                 else:
                     log.warning(f"⚠  [{symbol}] Local SL close unconfirmed. Will retry next cycle.")
@@ -1705,8 +1917,8 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
             bot_state["initial_risk_pct"] = initial_risk_pct
             log.info(f"📐  [{symbol}] Dynamic Risk Baseline: {initial_risk_pct:.3f}% (ATR: ${current_atr:.2f} × {SL_ATR_MULT})")
 
-        # ★ v26: BE triggers when profit reaches 0.50R (was 0.75R — too late, trades reversed before reaching it)
-        dynamic_be_trigger = max(initial_risk_pct * 0.50, 0.20)  # Floor at 0.20% for faster BE activation
+        # ★ v33 FIX: BE trigger capped at 0.75% — 1.5% cap was still too large (30% ROI at 20x leverage), wait time too long.
+        dynamic_be_trigger = min(max(initial_risk_pct * 0.50, 0.20), 0.75)  # Floor 0.20%, CAP 0.75%
 
         if bot_state["phase"] == "INITIAL" and pnl_pct >= dynamic_be_trigger:
             # ★ v17: TRUE BREAK-EVEN — hardcoded 0.15% fee buffer (covers entry + exit taker fees)
@@ -1715,18 +1927,12 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
             else:
                 be_sl = _round_price(entry_price * (1.0 - TRUE_BE_FEE_BUFFER_PCT / 100.0), symbol)
             
-            # ★ v15: GLOBAL nuclear clear — cancel ALL stop orders across ALL symbols
-            # Testnet has account-wide stop order limit, not per-symbol
+            # ★ AUDIT FIX: Cancel orders for THIS symbol only (was global nuclear cancel
+            # that stripped SL/TP from ALL other positions — dangerous on mainnet)
             try:
-                all_positions = client.futures_position_information()
-                for p in all_positions:
-                    if float(p.get('positionAmt', 0)) != 0:
-                        psym = p['symbol']
-                        try:
-                            client.futures_cancel_all_open_orders(symbol=psym)
-                        except Exception:
-                            pass
-                time.sleep(2.0)
+                client.futures_cancel_all_open_orders(symbol=symbol)
+                time.sleep(1.0)
+                log.info(f"🧹  [{symbol}] Cleared existing orders for BE SL placement")
             except Exception:
                 pass
             
@@ -1779,7 +1985,7 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
         #    Trail SL 0.5% behind highest/lowest price
         #    ONLY activates when PnL >= initial_risk * TRAILING_ACTIVATION_RR
         # ══════════════════════════════════════════════════════════════
-        trailing_activation_pct = max(initial_risk_pct * TRAILING_ACTIVATION_RR, 0.45)  # Floor 0.45%
+        trailing_activation_pct = min(max(initial_risk_pct * TRAILING_ACTIVATION_RR, 0.45), 1.20)  # Floor 0.45%, CAP 1.20%
         if bot_state["phase"] in ("BREAKEVEN", "TRAILING") and pnl_pct >= trailing_activation_pct:
             if bot_state["phase"] == "BREAKEVEN":
                 log.info(f"🚀  [{symbol}] ★ TRAILING UNLOCKED │ PnL {pnl_pct:.2f}% ≥ {TRAILING_ACTIVATION_RR}R ({trailing_activation_pct:.2f}%) │ Now trailing!")
@@ -1790,21 +1996,9 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                 reversal_exit, reversal_reason = _check_smart_reversal(client, symbol, side)
                 if reversal_exit:
                     log.warning(f"🔄  [{symbol}] {reversal_reason}")
-                    is_closed = _force_market_close(client, symbol, side)
-                    if is_closed:
-                        # Fetch final PnL
-                        try:
-                            outcome, pnl = _determine_trade_outcome(client, symbol)
-                            res_emoji = "✅ WIN" if pnl > 0 else "❌ LOSS"
-                            send_telegram_alert(
-                                f"🔄 <b>SMART REVERSAL EXIT</b>\n"
-                                f"Coin: {symbol}\nSide: {side}\n"
-                                f"{reversal_reason}\n"
-                                f"Realized PnL: ${pnl:.2f}"
-                            )
-                        except Exception:
-                            send_telegram_alert(f"🔄 <b>SMART REVERSAL EXIT</b>\nCoin: {symbol}\nSide: {side}\n{reversal_reason}")
-                        _reset_bot_state(bot_state)
+                    if _force_market_close(client, symbol, side):
+                        bot_state["phase"] = "MANUAL_CLOSE"
+                        bot_state["close_reason_override"] = f"🔄 SMART REVERSAL: {reversal_reason}"
                         if visualizer: visualizer.clear_position_data(); visualizer.set_bot_status("SCANNING")
                         return
             
@@ -1831,9 +2025,30 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                 success = _update_sl_order(client, symbol, side, new_trail_sl)
                 if success:
                     bot_state["current_trail_sl"] = new_trail_sl
+                    
+                    # ★ v31.2: Calculate locked profit if SL gets hit
+                    if side == "BUY":
+                        locked_pnl_pct = ((new_trail_sl - entry_price) / entry_price) * 100.0
+                    else:
+                        locked_pnl_pct = ((entry_price - new_trail_sl) / entry_price) * 100.0
+                    locked_pnl_usd = locked_pnl_pct / 100.0 * entry_price * current_qty * LEVERAGE / entry_price
+                    # Simpler: locked_pnl_usd ≈ (pnl_pct_at_sl / 100) * margin * leverage
+                    
                     log.info(
                         f"📈  [{symbol}] ★ TRAILING SL │ SL → ${new_trail_sl} │ "
                         f"Best: ${bot_state['best_price']} │ Trail: {TRAILING_SL_DISTANCE_PCT}% (${trail_distance:.2f}) │ {pnl_str}"
+                    )
+                    
+                    # ★ v31.2: Telegram SL Movement Alert
+                    send_telegram_alert(
+                        f"📈 <b>Trailing SL Moved</b>\n"
+                        f"Coin: {symbol}\n"
+                        f"Side: {side}\n"
+                        f"Entry: ${entry_price:.4f}\n"
+                        f"SL → ${new_trail_sl:.4f}\n"
+                        f"Best Price: ${bot_state['best_price']:.4f}\n"
+                        f"Current PnL: {pnl_str}\n"
+                        f"🔒 If SL hits: ~{locked_pnl_pct:+.2f}% locked"
                     )
                 else:
                     # ★ v15: FALLBACK FOR TRAILING SL (Testnet Bug Fix)
@@ -1860,12 +2075,15 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
             # Ensure we have a SL registered (recover from restart)
             if bot_state["current_trail_sl"] == 0.0:
                 try:
-                    _orders = client.futures_get_open_orders(symbol=symbol)
-                    for _ord in _orders:
-                        _otype = _ord.get("type", "") or _ord.get("origType", "")
-                        if "STOP" in _otype.upper() and "TAKE_PROFIT" not in _otype.upper():
-                            bot_state["current_trail_sl"] = float(_ord["stopPrice"])
-                            break
+                    if DRY_RUN and symbol in dry_run_positions:
+                        bot_state["current_trail_sl"] = dry_run_positions[symbol]["sl_price"]
+                    else:
+                        _orders = client.futures_get_open_orders(symbol=symbol)
+                        for _ord in _orders:
+                            _otype = _ord.get("type", "") or _ord.get("origType", "")
+                            if "STOP" in _otype.upper() and "TAKE_PROFIT" not in _otype.upper():
+                                bot_state["current_trail_sl"] = float(_ord["stopPrice"])
+                                break
                     
                     if bot_state["current_trail_sl"] == 0.0:
                         # Naked position — place emergency SL using 1H ATR
@@ -2164,7 +2382,7 @@ def _check_volume_burst(client: Client, symbol: str, direction: str) -> bool:
         
         # ★ v22: A burst is valid if either the LAST COMPLETED candle spiked, 
         # OR the CURRENT INCOMPLETE candle already spiked
-        vol_ok = last_closed_vol >= (avg_vol * 0.9) or current_vol >= (avg_vol * 0.9)
+        vol_ok = last_closed_vol >= (avg_vol * 0.7) or current_vol >= (avg_vol * 0.7)  # ★ v37 Tuning: 0.7x (was 0.9x)
         
         if vol_ok:
             # Soft direction check: allow flat candles too
@@ -2431,7 +2649,7 @@ ENTRY_VALIDATION_ENABLED = True    # ★ v20: Master switch for SMC entry valida
 WAIT_QUEUE_MAX_CANDLES   = 16      # ★ WAIT queue: max candles before expiry (8 -> 16 / 40m -> 80m window)
 SMC_SWING_LOOKBACK       = 3       # ★ Swing detection: ±3 bar window
 SMC_SWEEP_TOLERANCE_ATR  = 0.15    # ★ Sweep: wick must exceed level by at least 0.15× ATR
-SMC_RR_MIN_RATIO         = 1.5     # ★ R:R floor for OB/FVG entries
+SMC_RR_MIN_RATIO         = 1.2     # ★ v37 Tuning: R:R floor lowered (was 1.5) — allows 1.2R+ setups through
 SMC_SL_ATR_MULT          = 2.0     # ★ SL distance = 2.0× ATR beyond OB/FVG edge
 SMC_STRUCTURE_LOOKBACK   = 50      # ★ How many candles to scan for structure
 
@@ -2565,6 +2783,33 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
                 )
                 return "BOS_BEAR", i, last_2_sl[-1][1], detail
     
+    # ── ★ v38: NEAR-BOS Detection for Trending Markets ──────────────────
+    # In a clean uptrend/downtrend, price may be approaching the last swing
+    # without technically breaking it yet. If price is within 0.5× of the
+    # swing range, treat it as a valid "approaching BOS" to avoid blocking
+    # trades in strong trending conditions for hours.
+    if trend == "UP" and len(last_2_sh) >= 2:
+        last_sh_price = last_2_sh[-1][1]
+        swing_range = abs(last_2_sh[-1][1] - last_2_sh[-2][1]) if len(last_2_sh) >= 2 else 0
+        near_threshold = max(swing_range * 0.5, (last_sh_price * 0.003))  # 0.5× swing range or 0.3%
+        if current_price >= (last_sh_price - near_threshold):
+            detail = (
+                f"Near-BOS BULL: Uptrend, price ${current_price:.4f} approaching "
+                f"Swing High ${last_sh_price:.4f} (within ${near_threshold:.4f})"
+            )
+            return "BOS_BULL", n - 1, last_sh_price, detail
+    
+    if trend == "DOWN" and len(last_2_sl) >= 2:
+        last_sl_price = last_2_sl[-1][1]
+        swing_range = abs(last_2_sl[-1][1] - last_2_sl[-2][1]) if len(last_2_sl) >= 2 else 0
+        near_threshold = max(swing_range * 0.5, (last_sl_price * 0.003))  # 0.5× swing range or 0.3%
+        if current_price <= (last_sl_price + near_threshold):
+            detail = (
+                f"Near-BOS BEAR: Downtrend, price ${current_price:.4f} approaching "
+                f"Swing Low ${last_sl_price:.4f} (within ${near_threshold:.4f})"
+            )
+            return "BOS_BEAR", n - 1, last_sl_price, detail
+    
     return "NONE", -1, 0.0, f"No structure break detected (trend={trend})"
 
 
@@ -2576,7 +2821,7 @@ def _detect_liquidity_sweep(highs: np.ndarray, lows: np.ndarray, closes: np.ndar
     ★ v20 Advanced SMC: Detect Liquidity Sweeps with strict Volume & wick size markers.
     """
     n = len(closes)
-    min_sweep = atr * 0.5  # ★ Strict: wick must be at least 0.5x ATR
+    min_sweep = atr * 0.2  # ★ v35 FIX: Relaxed from 0.5x to 0.2x ATR (0.5x was rejecting valid minor sweeps)
     
     # Calculate Volume MA(20) for the last few candles
     vol_ma = np.mean(vols[-20:]) if len(vols) >= 20 else np.mean(vols)
@@ -2586,12 +2831,14 @@ def _detect_liquidity_sweep(highs: np.ndarray, lows: np.ndarray, closes: np.ndar
         for sh_idx, sh_price in reversed(swing_highs[-5:]):
             if sh_idx >= n - 2:
                 continue
-            for i in range(max(n - 4, sh_idx + 1), n):
+            # ★ v35 FIX: Check all candles since the swing high (was max(n-4, ...))
+            for i in range(sh_idx + 1, n):
                 wick_above = highs[i] - sh_price
-                if wick_above >= min_sweep and closes[i] < sh_price and vols[i] > 1.5 * vol_ma:
+                # ★ v25.2: Relaxed volume from 1.0x down to 0.7x (catch more valid sweeps)
+                if wick_above >= min_sweep and closes[i] < sh_price and vols[i] >= vol_ma * 0.7:
                     detail = (
                         f"Bearish Trap: Candle {i} swept high ${sh_price:.4f} (+${wick_above:.4f}), "
-                        f"vol {vols[i]:.1f} > 1.5x MA. Closed below at ${closes[i]:.4f}"
+                        f"vol {vols[i]:.1f} >= MA. Closed below at ${closes[i]:.4f}"
                     )
                     return True, sh_price, highs[i], detail
                     
@@ -2600,12 +2847,14 @@ def _detect_liquidity_sweep(highs: np.ndarray, lows: np.ndarray, closes: np.ndar
         for sl_idx, sl_price in reversed(swing_lows[-5:]):
             if sl_idx >= n - 2:
                 continue
-            for i in range(max(n - 4, sl_idx + 1), n):
+            # ★ v35 FIX: Check all candles since the swing low (was max(n-4, ...))
+            for i in range(sl_idx + 1, n):
                 wick_below = sl_price - lows[i]
-                if wick_below >= min_sweep and closes[i] > sl_price and vols[i] > 1.5 * vol_ma:
+                # ★ v25.2: Relaxed volume from 1.0x down to 0.5x (catch more valid sweeps)
+                if wick_below >= min_sweep and closes[i] > sl_price and vols[i] >= vol_ma * 0.5:
                     detail = (
                         f"Bullish Trap: Candle {i} swept low ${sl_price:.4f} (+${wick_below:.4f}), "
-                        f"vol {vols[i]:.1f} > 1.5x MA. Closed above at ${closes[i]:.4f}"
+                        f"vol {vols[i]:.1f} >= MA. Closed above at ${closes[i]:.4f}"
                     )
                     return True, sl_price, lows[i], detail
                     
@@ -2708,7 +2957,7 @@ def _detect_inducement(highs: np.ndarray, lows: np.ndarray, closes: np.ndarray, 
 
 
 # ─── SMC ENTRY ORCHESTRATOR (replaces _3layer_entry_validate) ────────────────
-def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
+def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int = 0) -> tuple:
     """
     ★ v20 SMC: Smart Money Concepts Entry Validation.
     
@@ -2727,9 +2976,9 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
       - "WAIT"    → Valid setup but price not in OB/FVG zone yet. Queue for retest.
     """
     try:
-        m5 = client.futures_klines(symbol=symbol, interval="5m", limit=200)  # ★ v22 PRODUCTION MODE: 5m
+        m5 = client.futures_klines(symbol=symbol, interval="15m", limit=200)  # ★ v37: Upgraded from 5m → 15m for stronger structure
         if not m5 or len(m5) < 40:
-            return "PASS", "SMC SKIP: Not enough M5 data", None
+            return "PASS", "SMC SKIP: Not enough M15 data", None
         
         high  = np.array([float(k[2]) for k in m5])
         low   = np.array([float(k[3]) for k in m5])
@@ -2770,6 +3019,9 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
             log.info(f"    [{symbol}] 💧 {sweep_detail}")
         else:
             log.info(f"    [{symbol}] SMC: {sweep_detail}")
+            # ★ v36: Sweep Confirmation is PREFERRED but not MANDATORY
+            # Allow entry without sweep IF structure (BOS/CHOCH) + OB zone is valid
+            log.info(f"    [{symbol}] ⚠ No Liquidity Sweep — Will require strong structure to compensate")
             
         # ── Step 3: Market Structure (BOS / CHOCH) ────────────────────────
         struct_type, break_idx, break_level, struct_detail = _detect_market_structure(
@@ -2789,7 +3041,7 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
             brk_body = abs(close[break_idx] - opn[break_idx])
             brk_range = high[break_idx] - low[break_idx]
             body_pct = brk_body / brk_range if brk_range > 0 else 0
-            is_strong = body_pct >= 0.50 and brk_body >= 0.5 * atr14
+            is_strong = body_pct >= 0.25 and brk_body >= 0.10 * atr14  # ★ v37: Relaxed further (25%/0.10x ATR) — allow more SMC setups through
             if is_strong:
                 log.info(f"    [{symbol}] 💪 Displacement: STRONG (body {body_pct*100:.0f}%, {brk_body/atr14:.1f}x ATR)")
             else:
@@ -2797,16 +3049,20 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
                 valid_structure = False
         
         if not valid_structure:
-            # ★ v29.2: PASS instead of WAIT when no structure found.
-            # No structure simply means market hasn't broken yet — not a reason to block.
-            # The scoring engine + MTDC already validated this trade. Let it execute.
-            # WAIT queue is reserved for when we FIND a valid OB/FVG but price hasn't retested it yet.
-            reason = f"SMC PASS (No Structure): 5m has no clear BOS/CHOCH ({struct_type}). Passing on score+MTDC confluence."
-            log.info(f"    [{symbol}] ✅ {reason}")
-            return "PASS", reason, None
+            if score >= 18:  # ★ v38: Lowered from 22 → 18 to avoid long dry spells in trending markets
+                log.info(f"    [{symbol}] 🚀 HIGH SCORE BYPASS: Score ({score}) >= 18. Bypassing 15m SMC structure requirement!")
+                struct_type = "BYPASS"
+            else:
+                reason = f"SMC NEUTRAL (No Valid Structure): 15m has no confirmed BOS/CHOCH ({struct_type}). Waiting for structure."
+                log.info(f"    [{symbol}] 🚫 {reason}")
+                return "NEUTRAL", reason, None
         
         # ★ v22: Auto-flip direction to match 5m SMC structure
-        smc_direction = "BUY" if struct_type in ("CHOCH_BULL", "BOS_BULL") else "SELL"
+        if struct_type == "BYPASS":
+            smc_direction = direction
+        else:
+            smc_direction = "BUY" if struct_type in ("CHOCH_BULL", "BOS_BULL") else "SELL"
+            
         if smc_direction != direction:
             log.info(f"    [{symbol}] 🔄 SMC FLIP: Signal was {direction} but 5m structure is {struct_type} → Flipping to {smc_direction}")
             direction = smc_direction
@@ -2815,7 +3071,7 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
         # If 15m structure opposes 5m direction, SKIP trade entirely.
         # DO NOT flip — a BUY OB cannot be traded as SELL (SL math breaks).
         try:
-            m15 = client.futures_klines(symbol=symbol, interval="15m", limit=100)
+            m15 = client.futures_klines(symbol=symbol, interval="1h", limit=100)  # ★ v37: Higher TF confluence now 1H (since main is 15m)
             if m15 and len(m15) >= 40:
                 h15 = np.array([float(k[2]) for k in m15])
                 l15 = np.array([float(k[3]) for k in m15])
@@ -2825,9 +3081,9 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
                     struct15, _, _, detail15 = _detect_market_structure(h15, l15, c15, sh15, sl15)
                     htf_dir = "BUY" if struct15 in ("CHOCH_BULL", "BOS_BULL") else "SELL" if struct15 in ("CHOCH_BEAR", "BOS_BEAR") else "NONE"
                     if htf_dir != "NONE" and htf_dir != direction:
-                        reason = f"⚠ VETO: 15m HTF Mismatch — 5m wants {direction} but 15m is {struct15}. Trade SKIPPED."
+                        reason = f"⚠ WARNING: 15m HTF Mismatch — 5m wants {direction} but 15m is {struct15}. Passing anyway as Micro-Scalp!"
                         log.warning(f"    [{symbol}] {reason}")
-                        return "NEUTRAL", reason, None
+                        # ★ v31: User wants instant execution, no HTF blocks!
                     elif htf_dir == direction:
                         log.info(f"    [{symbol}] 🔗 15m Confluence: ALIGNED ({struct15}) ✅")
                     else:
@@ -2847,10 +3103,79 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
         )
         
         if zone_type == "NONE":
-            reason = f"SMC NEUTRAL: Structure valid but no Strict OB/FVG zone found. {zone_detail}"
-            return "NEUTRAL", reason, None
+            reason = f"SMC PASS: Valid {struct_type} but no Strict OB/FVG zone found. Proceeding as Momentum Breakout!"
+            
+            # Form partial zone_data just for the CHOCH chart plotting
+            partial_data = {
+                "structure": struct_type, "smc_direction": direction,
+                "swept": swept, "sweep_level": sweep_level, 
+                "zone_type": "NONE"
+            }
+            return "PASS", reason, partial_data
         
         log.info(f"    [{symbol}] SMC Zone: {zone_type} @ ${zone_low:.4f}–${zone_high:.4f}")
+        
+        # ── ★ v37: OB QUALITY VALIDATION — Confirm OB is institutional-grade ──
+        # 3 confirmations: Displacement + Imbalance + Unmitigated
+        ob_quality_score = 0
+        ob_quality_details = []
+        
+        if zone_type == "OB" and ob_search_idx > 3:
+            # 1️⃣ DISPLACEMENT CHECK: Was the move away from OB strong?
+            # The candle(s) after the OB should have big body (≥ 1.0x ATR)
+            disp_start = min(ob_search_idx, n - 1)
+            disp_end = min(ob_search_idx + 3, n)
+            max_body = 0.0
+            for di in range(disp_start, disp_end):
+                body = abs(float(close[di]) - float(opn[di]))
+                if body > max_body:
+                    max_body = body
+            if max_body >= atr14 * 0.8:
+                ob_quality_score += 1
+                ob_quality_details.append(f"✅ Displacement: {max_body/atr14:.1f}x ATR (strong)")
+            else:
+                ob_quality_details.append(f"❌ Displacement: {max_body/atr14:.1f}x ATR (weak)")
+            
+            # 2️⃣ IMBALANCE CHECK: Is there a Fair Value Gap between OB and current price?
+            has_imbalance = False
+            scan_start = max(0, ob_search_idx - 2)
+            scan_end = min(ob_search_idx + 5, n - 1)
+            for fi in range(scan_start, scan_end):
+                if fi + 2 < n:
+                    if direction == "BUY" and float(high[fi]) < float(low[fi + 2]):
+                        has_imbalance = True
+                        break
+                    elif direction == "SELL" and float(low[fi]) > float(high[fi + 2]):
+                        has_imbalance = True
+                        break
+            if has_imbalance:
+                ob_quality_score += 1
+                ob_quality_details.append("✅ Imbalance: FVG found (price attracted)")
+            else:
+                ob_quality_details.append("⚠️ Imbalance: No FVG (weaker attraction)")
+            
+            # 3️⃣ UNMITIGATED CHECK: Has price retested OB zone already?
+            mitigated = False
+            for mi in range(ob_search_idx + 1, n):
+                if direction == "BUY" and float(low[mi]) <= zone_high:
+                    mitigated = True
+                    break
+                elif direction == "SELL" and float(high[mi]) >= zone_low:
+                    mitigated = True
+                    break
+            if not mitigated:
+                ob_quality_score += 1
+                ob_quality_details.append("✅ Unmitigated: OB is FRESH (never retested)")
+            else:
+                ob_quality_details.append("⚠️ Mitigated: OB already tested (weaker)")
+            
+            log.info(f"    [{symbol}] 🏆 OB Quality: {ob_quality_score}/3 │ {' │ '.join(ob_quality_details)}")
+            
+            # ★ v37: Block only zero-quality OBs (0/3). Mitigated check too strict for 15m.
+            if ob_quality_score < 1:
+                reason = f"SMC NEUTRAL: OB Quality zero ({ob_quality_score}/3). No confirmations at all."
+                log.warning(f"    [{symbol}] 🚫 {reason}")
+                return "NEUTRAL", reason, None
         
         # ── ★ v26.3 UPGRADE 1: PREMIUM/DISCOUNT ZONE FILTER ──────────────
         # SMC Refactor: Only block extreme entries (top 25% for BUY, bottom 25% for SELL)
@@ -2859,8 +3184,8 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
             pd_range_low = min(sl[1] for sl in swing_lows[-4:])
             range_size = pd_range_high - pd_range_low
             
-            extreme_premium = pd_range_high - (range_size * 0.25)  # Top 25%
-            extreme_discount = pd_range_low + (range_size * 0.25)  # Bottom 25%
+            extreme_premium = pd_range_high - (range_size * 0.15)  # ★ v37 Tuning: Top 15% (was 25%)
+            extreme_discount = pd_range_low + (range_size * 0.15)  # ★ v37 Tuning: Bottom 15% (was 25%)
             
             if direction == "BUY" and current_price > extreme_premium:
                 reason = f"P/D REJECT: BUY in EXTREME PREMIUM (price ${current_price:.4f} > top 25% ${extreme_premium:.4f})."
@@ -2884,12 +3209,18 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
             "smc_direction": direction,  # ★ v22: May be flipped from original signal
         }
         
-        # ── Step 6: Is price IN the zone now? ─────────────────────────────
+        # ── Step 6: Is price IN the zone now? (ATR-based Buffer) ──────────
         in_zone = False
+        # ★ v37: ATR-based buffer instead of %. Prevents XAUUSDT-type $23 buffer bug.
+        zone_buffer_abs = 1.0 * atr14  # 1.0 × ATR = balanced (close enough to OB)
         if direction == "BUY":
-            in_zone = current_price <= zone_high and current_price >= zone_low - (0.2 * atr14)
+            buy_upper_bound = zone_high + zone_buffer_abs
+            buy_lower_bound = zone_low - zone_buffer_abs
+            in_zone = current_price <= buy_upper_bound and current_price >= buy_lower_bound
         elif direction == "SELL":
-            in_zone = current_price >= zone_low and current_price <= zone_high + (0.2 * atr14)
+            sell_lower_bound = zone_low - zone_buffer_abs
+            sell_upper_bound = zone_high + zone_buffer_abs
+            in_zone = current_price >= sell_lower_bound and current_price <= sell_upper_bound
         
         if not in_zone:
             reason = (
@@ -2909,8 +3240,9 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str) -> tuple:
                 sl_distance = (sweep_extreme + (0.2 * atr14)) - current_price
                 
         # Fallback safeguard
-        if sl_distance <= 0:
-            sl_distance = SMC_SL_ATR_MULT * atr14
+        # ★ v35 FIX: Use SL_ATR_MULT (1.2) instead of SMC_SL_ATR_MULT (2.0)
+        # The actual trade uses 1.2×ATR for SL, so pre-flight must match
+        sl_distance = SL_ATR_MULT * atr14
             
         # ★ HARD REJECTION: Cap SL at 4.0% max raw move to protect against extreme volatility (Medium Tolerance)
         sl_pct = (sl_distance / current_price) * 100.0
@@ -2968,22 +3300,19 @@ class AdvancedExecutionValidator:
     The v17 Exit Engine is completely untouched.
     """
     @staticmethod
-    def validate(client: Client, symbol: str, direction: str) -> tuple[bool, str]:
+    def validate(client: Client, symbol: str, direction: str, score: int = 0) -> tuple[bool, str, dict]:
         """
         Thin wrapper over _smc_entry_validate for API compatibility.
-        The main loop calls .validate() → (passed: bool, reason: str).
-        SMC returns PASS/NEUTRAL/WAIT — here we map PASS → True, else False.
-        (WAIT is handled separately in the v19 entry gate section of the main loop.)
         """
-        result, reason, zone_data = _smc_entry_validate(client, symbol, direction)
+        result, reason, zone_data = _smc_entry_validate(client, symbol, direction, score)
         if result == "PASS":
-            return True, f"SMC Pre-Flight PASSED: {reason}"
+            return True, f"SMC Pre-Flight PASSED: {reason}", zone_data
         elif result == "WAIT":
             # ★ FIX: Let WAIT pass the pre-flight so the downstream gate can add it to the wait_queue
-            return True, f"SMC Pre-Flight WAIT (passing to queue): {reason}"
+            return True, f"SMC Pre-Flight WAIT (passing to queue): {reason}", zone_data
         else:
             # NEUTRAL blocks immediate execution
-            return False, f"SMC Pre-Flight BLOCKED ({result}): {reason}"
+            return False, f"SMC Pre-Flight BLOCKED ({result}): {reason}", zone_data  # ★ v36: Pass zone_data for debugging
 
 def initialize_client() -> Client:
     """Create and configure the Binance Futures client (Testnet or Mainnet)."""
@@ -2999,7 +3328,8 @@ def initialize_client() -> Client:
             log.warning("⚠️  LIVE TRADING MODE — Real orders WILL be placed!")
         client = Client(API_KEY, API_SECRET, testnet=False, ping=False)
 
-    log.info(f"    API Key: {API_KEY[:8]}...{API_KEY[-4:]} ({len(API_KEY)} chars)")
+    # ★ AUDIT FIX: Redact API key from logs (was exposing 12 chars)
+    log.info(f"    API Key: {API_KEY[:4]}****{API_KEY[-2:]} ({len(API_KEY)} chars)")
     log.info(f"    Mode: {'TESTNET' if USE_TESTNET else 'MAINNET'} │ DRY_RUN: {DRY_RUN}")
 
     # ★ AUTO TIME-SYNC: Fix "Timestamp ahead of server" errors (VPN latency)
@@ -3197,12 +3527,10 @@ def _check_pending_entry_order(client: Client, symbol: str, state: dict, current
             tp_dist = pending_data.get("tp_distance", 0)
             qty = pending_data.get("quantity", 0)
             
-            if entry_side == "BUY":
-                sl_price = _round_price(limit_price - sl_dist, symbol) if sl_dist > 0 else 0.0
-                tp_price = _round_price(limit_price + tp_dist, symbol) if tp_dist > 0 else 0.0
-            else:
-                sl_price = _round_price(limit_price + sl_dist, symbol) if sl_dist > 0 else 0.0
-                tp_price = _round_price(limit_price - tp_dist, symbol) if tp_dist > 0 else 0.0
+            # ★ AUDIT FIX: We're inside `if entry_side == "BUY"` block at L3290,
+            # so the else branch was dead code. Calculate SL/TP for BUY only here.
+            sl_price = _round_price(limit_price - sl_dist, symbol) if sl_dist > 0 else 0.0
+            tp_price = _round_price(limit_price + tp_dist, symbol) if tp_dist > 0 else 0.0
             
             dry_run_positions[symbol] = {
                 "side": entry_side,
@@ -3434,12 +3762,19 @@ def main():
                 if daily_wins + daily_losses > 0:
                     current_bal = _get_account_balance(client)
                     wr = (daily_wins / (daily_wins + daily_losses) * 100) if (daily_wins + daily_losses) > 0 else 0
+                    
+                    if VIRTUAL_ACCOUNT:
+                        current_bal = prop_state["current_balance"]
+                        daily_pnl_str = f"${(prop_state['current_balance'] - prop_state['today_start_balance']):+.2f}"
+                    else:
+                        daily_pnl_str = f"${daily_pnl:+.2f}"
+                        
                     send_telegram_alert(
                         f"📊 <b>DAILY REPORT — {daily_stats_date}</b>\n"
                         f"Trades: {daily_wins + daily_losses}\n"
                         f"Wins: {daily_wins} | Losses: {daily_losses}\n"
                         f"Win Rate: {wr:.1f}%\n"
-                        f"Net PnL: ${daily_pnl:+.2f}\n"
+                        f"Net PnL: {daily_pnl_str}\n"
                         f"Balance: ${current_bal:.2f}"
                     )
 
@@ -3459,6 +3794,10 @@ def main():
                 log.warning("⚠  KILL SWITCH ACTIVE. Trading suspended for today.")
                 time.sleep(60)
                 continue
+                
+            if not check_prop_rules():
+                time.sleep(60)
+                continue
 
             scan_count += 1
             now = time.time()
@@ -3470,6 +3809,21 @@ def main():
             if scan_count % 30 == 0:  # Periodically log the session state
                 sess_desc = "HIGH LIQUIDITY (NY+London Overlap) | Strict SMC Rules Active" if is_high_volume_session else "LOW LIQUIDITY (Asian/Early London) | Filters Relaxed"
                 log.info(f"🌍 [MARKET SESSION DETECTED] {sess_desc} | UTC Hour: {utc_hour}")
+
+            # ── ★ GLOBAL CONCURRENCY LIMITER (v37: Max 1 position) ──
+            global_open_trades_count = 0
+            global_pending_orders = 0
+            if DRY_RUN:
+                global_open_trades_count = sum(1 for s in SYMBOLS if s in dry_run_positions)
+            else:
+                try:
+                    all_pos = client.futures_position_information()
+                    global_open_trades_count = sum(1 for p in all_pos if float(p.get('positionAmt', 0)) != 0 and p['symbol'] in SYMBOLS)
+                    # ★ v37: Also count pending limit orders to prevent spam
+                    all_orders = client.futures_get_open_orders()
+                    global_pending_orders = len([o for o in all_orders if o['symbol'] in SYMBOLS])
+                except Exception as e:
+                    log.warning(f"Failed to fetch global positions: {e}")
 
             for symbol in SYMBOLS:
                 state = bot_state[symbol]
@@ -3486,13 +3840,14 @@ def main():
                     continue
 
                 # ── ★ v7.4: Consecutive Loss Cooldown ────────────────────────
-                if state["loss_cooldown_until"] > now:
+                # ★ v31.2 FIX: Cooldown must NOT skip position management!
+                # We set a flag here and block NEW entries later, but still manage open trades.
+                in_loss_cooldown = state["loss_cooldown_until"] > now
+                if in_loss_cooldown:
                     remaining = int(state["loss_cooldown_until"] - now)
                     if scan_count % 6 == 0:
-                        log.info(f"🧊  [{symbol}] LOSS STREAK COOLDOWN — {remaining}s remaining ({state['consec_losses']} consecutive losses).")
+                        log.info(f"🧊  [{symbol}] LOSS STREAK COOLDOWN — {remaining}s remaining ({state['consec_losses']} consecutive losses). Open positions still managed.")
                     visualizer.set_bot_status(f"LOSS COOL ({remaining}s)")
-                    visualizer.update()
-                    continue
 
                 # ── Position check → Manage Trailing TP ──────────────────────
                 pos = _has_open_position(client, symbol)
@@ -3500,6 +3855,7 @@ def main():
                     # Mark trade as ready to log outcome upon exit
                     if state["_trade_logged"]:
                         log.info(f"📊  [{symbol}] Open {pos['side']} position detected.")
+                        state["last_side"] = pos["side"]  # Always track side
                         if state["last_signal_data"] is None:
                             state["_trade_logged"] = False
                             # Set original_qty for partial close math on reconnect
@@ -3522,23 +3878,35 @@ def main():
                     continue
                 
                 # ── Trade Closure check ──────────────────────────────────────
+                # ★ AUDIT FIX: Skip if manage_trailing_tp already handled this closure
+                if state.get("_trade_logged_by_manager"):
+                    state["_trade_logged_by_manager"] = False  # Reset flag
+                    state["_trade_logged"] = True
+                    log.info(f"📊  [{symbol}] Closure already handled by trailing manager. Skipping duplicate.")
+                    continue
                 if not state["_trade_logged"]:
                     try:
                         outcome, pnl = _determine_trade_outcome(client, symbol)
                         daily_pnl += pnl
 
-                        # ★ v7.4: Track consecutive losses per coin
+                        # ★ v31.2: Track consecutive losses per coin
+                        # Break-even / scratch trades (tiny PnL near zero) should NOT count as losses
+                        phase = state.get("phase", "INITIAL")
+                        is_scratch = (abs(pnl) <= 1.0 and phase in ("BREAKEVEN", "TRAILING", "MANUAL_CLOSE"))
+                        
                         if pnl > 0:
                             state["consec_losses"] = 0
                             daily_wins += 1
-                            # ★ v22: Feed Kelly tracker
                             kelly_state["total_wins"] += 1
                             kelly_state["total_win_pnl"] += abs(pnl)
                             _save_kelly_state()
+                        elif is_scratch:
+                            # ★ v31.2: SCRATCH — Break-even exit, don't pollute Kelly stats
+                            state["consec_losses"] = 0  # Reset streak (it wasn't a real loss)
+                            log.info(f"🛡️  [{symbol}] SCRATCH EXIT (PnL ${pnl:.2f}, Phase: {phase}) — Not counted as win or loss.")
                         else:
                             state["consec_losses"] += 1
                             daily_losses += 1
-                            # ★ v22: Feed Kelly tracker
                             kelly_state["total_losses"] += 1
                             kelly_state["total_loss_pnl"] += abs(pnl)
                             _save_kelly_state()
@@ -3548,14 +3916,33 @@ def main():
                         
                         # ── TELEGRAM ALERT: Trade Exit (with REASON) ──
                         streak_info = f"\nLoss Streak: {state['consec_losses']}/{MAX_CONSEC_LOSSES}" if state["consec_losses"] > 0 else ""
-                        res_emoji = "✅ WIN" if pnl > 0 else "❌ LOSS"
+                        
+                        phase = state.get("phase", "INITIAL")
+                        
+                        # ★ PROP: Deduct virtual fees for scratch trades before saving
+                        if VIRTUAL_ACCOUNT and pnl <= 0.0 and pnl >= -1.0 and phase in ("BREAKEVEN", "TRAILING", "MANUAL_CLOSE"):
+                            pnl = -0.05  # Flat 5 cents virtual fee for scratches
+                            log.info(f"🛡️  [PROP] Applied -$0.05 virtual fee for SCRATCH exit.")
+                            
+                        # Update prop state directly
+                        if VIRTUAL_ACCOUNT:
+                            prop_state["current_balance"] += pnl
+                            _save_prop_state()
+                        
+                        # ★ If PnL is extremely small negative (fees), but phase is BreakEven/Trailing, classify as Scratch (Neutral)
+                        if pnl <= 0.0 and pnl >= -1.0 and phase in ("BREAKEVEN", "TRAILING", "MANUAL_CLOSE"):
+                            res_emoji = "🛡 SCRATCH"
+                        else:
+                            res_emoji = "✅ WIN" if pnl > 0 else "❌ LOSS"
                         
                         # ★ v12: Determine close reason from state
-                        phase = state.get("phase", "INITIAL")
                         trail_sl = state.get("current_trail_sl", 0.0)
                         last_side = state.get("last_side", "UNKNOWN")
+                        override_reason = state.get("close_reason_override")
                         
-                        if pnl > 0:
+                        if override_reason:
+                            close_reason = override_reason
+                        elif pnl > 0:
                             if phase == "TRAILING":
                                 close_reason = f"🎯 Trailing SL Hit (Profit locked)"
                             elif phase == "BREAKEVEN":
@@ -3568,14 +3955,30 @@ def main():
                             else:
                                 close_reason = "🔻 Initial SL Hit (ATR-based)"
                         
+                        if VIRTUAL_ACCOUNT:
+                            progress_pct = ((prop_state['current_balance'] - INITIAL_BALANCE) / PROFIT_TARGET) * 100
+                            daily_rem = DAILY_LOSS_LIMIT + (prop_state['current_balance'] - prop_state['today_start_balance'])
+                            status_str = "✅ HEALTHY" if prop_state['current_balance'] > INITIAL_BALANCE else "⚠️ DRAWDOWN"
+                            
+                            prop_msg = (
+                                f"\n\n📊 <b>Prop Challenge Update:</b>\n"
+                                f"Current Balance: ${prop_state['current_balance']:.2f}\n"
+                                f"Target Progress: ${(prop_state['current_balance'] - INITIAL_BALANCE):.2f} / ${PROFIT_TARGET:.2f} ({progress_pct:.1f}%)\n"
+                                f"Today's PnL: ${prop_state['current_balance'] - prop_state['today_start_balance']:+.2f}\n"
+                                f"Daily Limit Remaining: ${daily_rem:.2f}\n"
+                                f"Status: {status_str}"
+                            )
+                        else:
+                            prop_msg = f"\nToday's Net PnL: ${daily_pnl:.2f}{streak_info}"
+
                         send_telegram_alert(
                             f"{res_emoji} <b>Trade Closed</b>\n"
                             f"Coin: {symbol}\n"
                             f"Side: {last_side}\n"
                             f"Close Reason: {close_reason}\n"
                             f"Phase: {phase}\n"
-                            f"Realized PnL: ${pnl:.2f}\n"
-                            f"Today's Net PnL: ${daily_pnl:.2f}{streak_info}"
+                            f"Realized PnL: ${pnl:.2f}"
+                            f"{prop_msg}"
                         )
 
                         # ── KILL SWITCH EVALUATION ──
@@ -3618,6 +4021,16 @@ def main():
                         log.warning(f"⚠  [{symbol}] ML outcome logging failed: {e}")
                     
                     continue  # Skip right into lockout
+
+                # ★ GLOBAL TRADE CAP: Max 5 positions + pending orders
+                total_active = global_open_trades_count + global_pending_orders
+                if total_active >= 5:
+                    if scan_count % 6 == 0:
+                        log.info(f"⚓  [{symbol}] Global Cap Reached ({global_open_trades_count} pos + {global_pending_orders} orders = {total_active}/5). Skipping.")
+                    visualizer.set_bot_status("CAP PAUSE")
+                    visualizer.update()
+                    time.sleep(1)  # small delay before moving to next symbol
+                    continue
 
                 # ── Fetch signal (forced refresh) ────────────────────────────
                 try:
@@ -3696,7 +4109,7 @@ def main():
                 if state["wait_queue_signal"] != "NONE":
                     signal = "WAIT"  # Prevent new indicators from overwriting our wait setup
                     
-                if state["wait_queue_signal"] != "NONE" and state["armed_signal"] == "NONE":
+                if state["wait_queue_signal"] != "NONE" and state["armed_signal"] == "NONE" and not in_loss_cooldown:
                     wq_age_s = now - state["wait_queue_start_time"]
                     wq_candles = int(wq_age_s / 300)  # Each M5 candle = 300s
                     state["wait_queue_candle_count"] = wq_candles
@@ -3737,7 +4150,7 @@ def main():
                                 log.info(f"⏳  [{symbol}] WAIT QUEUE: Still waiting ({wq_candles}/{WAIT_QUEUE_MAX_CANDLES} candles) for OB/FVG retest...")
 
                 # ── ★ ARM the Signal instead of immediate execution ────────────
-                if signal in ("BUY", "SELL") and state["armed_signal"] == "NONE":
+                if signal in ("BUY", "SELL") and state["armed_signal"] == "NONE" and not in_loss_cooldown:
                     # ★ v28.1: Check veto cooldown before arming
                     if state["veto_cooldown_until"] > 0 and now < state["veto_cooldown_until"] and state["veto_cooldown_dir"] == signal:
                         remaining_cd = int(state["veto_cooldown_until"] - now)
@@ -3757,8 +4170,8 @@ def main():
                 if state["armed_signal"] != "NONE":
                     armed_age = now - state["armed_time"]
                     
-                    if armed_age > 240:  # 4 minutes timeout
-                        log.warning(f"⌛  [{symbol}] ARMED CANCELLED │ No volume burst within 4 mins. Setup stale.")
+                    if armed_age > 420:  # 7 minutes timeout (★ v36: Increased from 4 mins to catch slightly delayed vol bursts)
+                        log.warning(f"⌛  [{symbol}] ARMED CANCELLED │ No volume burst within 7 mins. Setup stale.")
                         state["armed_signal"] = "NONE"
                         state["armed_time"] = 0
                         state["armed_signal_data"] = None
@@ -3773,7 +4186,11 @@ def main():
                             log.info(f"💥  [{symbol}] VOLUME BURST TRIGGERED! Running Pre-Flight Check...")
                             
                             # ── ★ ADVANCED PRE-FLIGHT CHECK ──
-                            passed, reason = AdvancedExecutionValidator.validate(client, symbol, armed_dir)
+                            armed_data = state.get("armed_signal_data")
+                            armed_score = int(armed_data.get("score", 0)) if armed_data else 0
+                            passed, reason, smc_zone = AdvancedExecutionValidator.validate(client, symbol, armed_dir, armed_score)
+                            if smc_zone:
+                                signal_data["smc_zone"] = smc_zone
                             is_micro_scalp = False
                             
                             if not passed:
@@ -3796,34 +4213,34 @@ def main():
                             # BUY: Latest closed body must close ABOVE the previous closed body.
                             # SELL: Latest closed body must close BELOW the previous closed body.
                             try:
-                                m5_momentum = client.futures_klines(symbol=symbol, interval='5m', limit=4)
+                                m5_momentum = client.futures_klines(symbol=symbol, interval='15m', limit=4)  # ★ v37: 15m momentum
                                 if m5_momentum and len(m5_momentum) >= 3:
                                     closed_klines = m5_momentum[:-1]  # Exclude unfinished live candle
+                                    curr_open = float(closed_klines[-1][1])
                                     curr_close = float(closed_klines[-1][4])
                                     prev_close = float(closed_klines[-2][4])
                                     
                                     if armed_dir == "BUY":
-                                        has_momentum = (curr_close > prev_close) if is_high_volume_session else True
+                                        # Relaxed: Must be a green candle OR closed higher than prev close
+                                        has_momentum = (curr_close > curr_open) or (curr_close > prev_close)
                                         if not has_momentum:
-                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but body did not close above previous body (close {curr_close} <= close {prev_close}).")
-                                            visualizer.record_rejection(f"MOMENTUM: Body not broken for BUY")
+                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: BUY but 5m candle is red and failed to break previous close.")
+                                            visualizer.record_rejection(f"MOMENTUM: Failed micro-reversal for BUY")
                                             state["armed_signal"] = "NONE"
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
                                             continue
                                     else:  # SELL
-                                        has_momentum = (curr_close < prev_close) if is_high_volume_session else True
+                                        # Relaxed: Must be a red candle OR closed lower than prev close
+                                        has_momentum = (curr_close < curr_open) or (curr_close < prev_close)
                                         if not has_momentum:
-                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but body did not close below previous body (close {curr_close} >= close {prev_close}).")
-                                            visualizer.record_rejection(f"MOMENTUM: Body not broken for SELL")
+                                            log.warning(f"🚫  [{symbol}] MOMENTUM REJECT: SELL but 5m candle is green and failed to break previous close.")
+                                            visualizer.record_rejection(f"MOMENTUM: Failed micro-reversal for SELL")
                                             state["armed_signal"] = "NONE"
                                             state["armed_time"] = 0
                                             state["armed_signal_data"] = None
                                             continue
-                                    if is_high_volume_session:
-                                        log.info(f"✅  [{symbol}] SMC MICRO-REVERSAL CONFIRMED ✔")
-                                    else:
-                                        log.info(f"✅  [{symbol}] SMC MOMENTUM CHECK BYPASSED (Low Volatility Session) ✔")
+                                    log.info(f"✅  [{symbol}] SMC MICRO-REVERSAL CONFIRMED ✔")
                             except Exception as mom_err:
                                 log.warning(f"⚠  [{symbol}] Momentum check failed: {mom_err} — Proceeding anyway.")
                             
@@ -3883,7 +4300,9 @@ def main():
                             # ── ★ v20: SMC ENTRY VALIDATION GATE ──
                             smc_zone = None  # ★ Fix UnboundLocalError when validation bypass is used
                             if ENTRY_VALIDATION_ENABLED:
-                                smc_result, smc_reason, smc_zone = _smc_entry_validate(client, symbol, armed_dir)
+                                armed_data = state.get("armed_signal_data")
+                                armed_score = int(armed_data.get("score", 0)) if armed_data else 0
+                                smc_result, smc_reason, smc_zone = _smc_entry_validate(client, symbol, armed_dir, armed_score)
                                 log.info(f"📊  [{symbol}] SMC Result: {smc_result} | {smc_reason}")
                                 
                                 if smc_result == "NEUTRAL":
@@ -3895,20 +4314,25 @@ def main():
                                     state["armed_signal_data"] = None
                                     continue
                                 elif smc_result == "WAIT":
-                                    # Move to WAIT queue (don't cancel, don't execute)
-                                    log.info(f"⏳  [{symbol}] SMC WAIT — Signal queued for OB/FVG retest. {WAIT_QUEUE_MAX_CANDLES} candles max.")
-                                    # ★ v22: Use SMC-flipped direction if available
-                                    smc_dir = smc_zone.get("smc_direction", armed_dir) if isinstance(smc_zone, dict) else armed_dir
-                                    state["wait_queue_signal"] = smc_dir
-                                    state["wait_queue_data"] = state["armed_signal_data"]
-                                    state["wait_queue_candle_count"] = 0
-                                    state["wait_queue_start_time"] = time.time()
-                                    state["wait_queue_zone"] = smc_zone  # ★ v20: Store zone for retest
-                                    # Disarm so it doesn't re-trigger burst logic
-                                    state["armed_signal"] = "NONE"
-                                    state["armed_time"] = 0
-                                    state["armed_signal_data"] = None
-                                    continue
+                                    # ★ v36: Only override WAIT if trade is WITH the H1 trend
+                                    # Counter-trend WAIT overrides led to dead cat bounce losses (e.g. ORDI BUY in H1 BEAR)
+                                    h1_tr = state.get("armed_signal_data", {}).get("h1_trend", "UNKNOWN")
+                                    armed_dir_check = state.get("armed_signal", "NONE")
+                                    is_counter_trend = (h1_tr == "BEARISH" and armed_dir_check == "BUY") or \
+                                                       (h1_tr == "BULLISH" and armed_dir_check == "SELL")
+                                    if is_counter_trend:
+                                        log.warning(f"🚫  [{symbol}] SMC WAIT — Counter-trend {armed_dir_check} (H1: {h1_tr}). NOT overriding. Queued.")
+                                        state["armed_signal"] = "NONE"
+                                        state["armed_time"] = 0
+                                        state["armed_signal_data"] = None
+                                        continue
+                                    else:
+                                        # ★ v37: DISABLED WAIT OVERRIDE — Always wait for OB zone retest (15m trades need precision)
+                                        log.warning(f"⏳  [{symbol}] SMC WAIT — Price not in OB zone. Must wait for retest (override disabled v37).")
+                                        state["armed_signal"] = "NONE"
+                                        state["armed_time"] = 0
+                                        state["armed_signal_data"] = None
+                                        continue
                                 # else: "PASS" — continue to execution
 
                             # Restore data for execution

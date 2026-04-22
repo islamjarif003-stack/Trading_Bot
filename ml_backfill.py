@@ -20,7 +20,7 @@ import time
 import math
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from binance.client import Client
 from dotenv import load_dotenv
@@ -395,7 +395,7 @@ def main():
     
     client = Client(API_KEY, API_SECRET, testnet=True)
     
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)  # ★ AUDIT FIX: utcnow() deprecated in 3.12+
     start_date = end_date - timedelta(days=30 * MONTHS_BACK)
     
     # Load existing backfill data (append mode)

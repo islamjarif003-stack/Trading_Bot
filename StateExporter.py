@@ -73,7 +73,8 @@ class StateExporter:
                     log.info(f"📡  PnL History [{self.symbol}] loaded: ${self._total_pnl:.2f} over {self._trade_count} trades")
         except Exception:
             pass
-        if not hasattr(self, '_recent_trades'):
+        # ★ AUDIT FIX: Ensure _recent_trades always exists (even if load fails or key is missing)
+        if not hasattr(self, '_recent_trades') or self._recent_trades is None:
             self._recent_trades = []
 
     def _save_pnl_history(self):

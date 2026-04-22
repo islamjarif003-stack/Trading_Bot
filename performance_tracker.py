@@ -647,8 +647,13 @@ Examples:
         print(f"{C.RED}❌  Missing BINANCE_API_KEY / BINANCE_API_SECRET in .env{C.RESET}")
         sys.exit(1)
     
-    print(f"\n{C.CYAN}⏳  Connecting to Binance Futures Testnet...{C.RESET}")
-    client = Client(API_KEY, API_SECRET, testnet=True, requests_params={"timeout": 20})
+    print(f"\n{C.CYAN}⏳  Connecting to Binance Futures...{C.RESET}")
+    use_testnet = os.environ.get("USE_TESTNET", "true").lower() in ("true", "1", "yes")
+    client = Client(API_KEY, API_SECRET, testnet=use_testnet, requests_params={"timeout": 20})
+    if use_testnet:
+        print(f"{C.YELLOW}    Mode: TESTNET{C.RESET}")
+    else:
+        print(f"{C.GREEN}    Mode: MAINNET{C.RESET}")
     
     # ── Fetch Data ───────────────────────────────────────────────────────
     print(f"{C.CYAN}📡  Fetching realized PnL ({args.hours}h lookback)...{C.RESET}")

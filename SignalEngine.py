@@ -51,7 +51,7 @@ LIQ_MAGNET_PCT = 1.5  # 1.5% distance for magnet
 
 # ─── SCORING THRESHOLDS ─────────────────────────────────────────────────────
 SCORE_THRESHOLD = 12          # ★ v15: Raised to 12 (was 10) — better signal quality, fewer fake entries
-MIN_SCORE_MARGIN = 3          # ★ v13: Winning side must lead by ≥3 pts (was 5, too strict)
+MIN_SCORE_MARGIN = 6          # ★ v31.4: Raised 4 → 6 (require clean, unconflicted signals)
 POINTS_H1_TREND = 3           # +3 points for trend alignment + acts as veto
 POINTS_FIB_GP = 3             # +3 points for Golden Pocket rejection
 POINTS_LIQ_MAGNET = 2         # +2 points pointing toward Liquidation Magnet Zone
@@ -110,7 +110,7 @@ ML_MIN_SAMPLES = 10           # Block trades if < 10 samples
 ML_WIN_THRESHOLD = 0.40       # 40% predicted win probability required
 
 # ─── ★ STRICT FILTERS ─────────────────────────────────────────────────────────
-PENALTY_PRICE_CONTRADICTION = 3   # ★ v28.5: Lowered 10 → 3 (a -10 penalty blocks literally everything in a 15-point passing system)
+PENALTY_PRICE_CONTRADICTION = 5   # ★ v30b: Lowered 8 → 5 (price actively moving against signal is still penalized contextually)
 
 # ─── ★★★ v16.1: VOLUME DELTA SCORE (Enhanced with Opposing Penalty) ─────────
 POINTS_VOLUME_DELTA       = 4     # ★ v27: Upgraded +3 → +4 (real-time order flow data)
@@ -121,9 +121,9 @@ VOLUME_DELTA_STRONG_THRESH = 0.65 # 65% = STRONG alignment (extra bonus)
 
 # ─── ★★★ v16.0: DYNAMIC SCORE THRESHOLD (ATR-ADAPTIVE) ─────────────────────
 # Low volatility → lower threshold (more trades), High vol → higher (avoid fakeouts)
-DYNAMIC_THRESHOLD_LOW  = 13       # ★ v27: Lowered 15 → 13 (more trades, Order Flow Floor protects quality)
-DYNAMIC_THRESHOLD_MID  = 15       # ★ v27: Lowered 17 → 15 (balance frequency + quality)
-DYNAMIC_THRESHOLD_HIGH = 17       # ★ v27: Lowered 19 → 17 (high vol still needs good score)
+DYNAMIC_THRESHOLD_LOW  = 15       # ★ v37 Tuning: Low vol (original 18)
+DYNAMIC_THRESHOLD_MID  = 18       # ★ v37 Tuning: Medium vol (original 21)
+DYNAMIC_THRESHOLD_HIGH = 22       # ★ v37 Tuning: High vol (original 25)
 ATR_PERCENTILE_LOW     = 30       # Below 30th percentile = low volatility
 ATR_PERCENTILE_HIGH    = 70       # Above 70th percentile = high volatility
 
@@ -988,6 +988,24 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
         sell_score += ema_pts
         sell_breakdown.append(f"★★ EMA Triple SELL ({ema_data['alignment']}): +{ema_pts}")
 
+    # ── ★ v36: MA ALIGNMENT GATE (Dead Cat Bounce Trap Detector) ──
+    # If ALL 3 EMAs (8, 21, 50) are above price → strong downtrend → BUY is a dead cat bounce trap
+    # If ALL 3 EMAs are below price → strong uptrend → SELL is fighting momentum
+    ema8_val = ema_data.get("ema8", 0)
+    ema21_v = ema_data.get("ema21", 0)
+    ema50_val = ema_data.get("ema50", 0)
+    if ema8_val > 0 and ema21_v > 0 and ema50_val > 0:
+        all_above = ema8_val > current_price and ema21_v > current_price and ema50_val > current_price
+        all_below = ema8_val < current_price and ema21_v < current_price and ema50_val < current_price
+        if all_above:
+            # All MAs acting as resistance → strong downtrend → penalize BUY
+            buy_score -= 3
+            buy_breakdown.append(f"🚫 MA CEILING: All EMA(8/21/50) above price = dead cat bounce trap: -3")
+        if all_below:
+            # All MAs acting as support → strong uptrend → penalize SELL
+            sell_score -= 3
+            sell_breakdown.append(f"🚫 MA FLOOR: All EMA(8/21/50) below price = strong uptrend: -3")
+
     # ── Heikin-Ashi Trend Confirm (+2 pts) ──
     ha_data = ft_patterns["heikin_ashi"]
     if ha_data["direction"] == "BUY":
@@ -1136,7 +1154,7 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
 
     sniper_buy_triggered = False
     sniper_sell_triggered = False
-    sniper_level_name = ""
+    sniper_level_names = []  # ★ AUDIT FIX: Collect ALL matching level names (was overwriting)
 
     if len(klines_df) >= 2 and sniper_atr_zone > 0:
         last_candle = klines_df.iloc[-1]
@@ -1166,15 +1184,16 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
                         (candle_body_bullish or has_rejection_wick_buy) and
                         not sniper_buy_triggered):
                     sniper_buy_triggered = True
-                    sniper_level_name = level_name
+                    sniper_level_names.append(level_name)
 
                 # SELL Sniper: Price pulled back UP to resistance and is rejecting DOWN
                 if (current_price <= level_price and
                         (candle_body_bearish or has_rejection_wick_sell) and
                         not sniper_sell_triggered):
                     sniper_sell_triggered = True
-                    sniper_level_name = level_name
+                    sniper_level_names.append(level_name)
 
+    sniper_level_name = " + ".join(sniper_level_names) if sniper_level_names else ""
     if sniper_buy_triggered:
         buy_score += POINTS_SNIPER_ZONE  # +3
         buy_breakdown.append(
@@ -1197,8 +1216,8 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
         sell_score -= PENALTY_PRICE_CONTRADICTION
         sell_breakdown.append(f"🚨 Price RISING vs SELL: -{PENALTY_PRICE_CONTRADICTION}")
 
-    buy_score = max(0, buy_score)
-    sell_score = max(0, sell_score)
+    # ★ AUDIT FIX: Score clamp moved AFTER volume delta penalties below (was here before,
+    # which allowed volume delta opposing penalties to push scores negative unclamped)
 
     # ══════════════════════════════════════════════════════════════════
     #  ★★★ v16.1: VOLUME DELTA SCORING (Tiered + Opposing Penalty)
@@ -1234,6 +1253,10 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
         # NEUTRAL delta — no edge, log it but don't add/subtract
         buy_breakdown.append(f"📊 Vol Delta NEUTRAL (Buy%: {vd_ratio_str}): +0")
         sell_breakdown.append(f"📊 Vol Delta NEUTRAL (Buy%: {vd_ratio_str}): +0")
+
+    # ★ AUDIT FIX: Final score clamp — ensures no negative scores after ALL penalties applied
+    buy_score = max(0, buy_score)
+    sell_score = max(0, sell_score)
 
     # ══════════════════════════════════════════════════════════════════
     #  ★★★ v16.0: DYNAMIC SCORE THRESHOLD (ATR-Adaptive)
@@ -1280,7 +1303,7 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
     # ★ v12: Apply MTF Alignment as SOFT PENALTY (not hard VETO)
     # Counter-trend trades are penalized but NOT completely blocked.
     # This allows strong 1m pullback/reversal setups to still fire.
-    MTF_COUNTER_TREND_PENALTY = 5  # Deduct 5 points for counter-trend
+    MTF_COUNTER_TREND_PENALTY = 5  # ★ v36: Reduced back to 5. (+ MA CEILING -3 = -8 total for counter-trend)
 
     if mtf_trend == "BULLISH":
         sell_score = max(0, sell_score - MTF_COUNTER_TREND_PENALTY)
@@ -1386,7 +1409,7 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
     vol_ratio = vol_guard.get("current_vol", 0) / max(vol_guard.get("vol_sma", 1), 1e-10)
     
     # EMA21 distance
-    ema21_val = float(_calculate_ema(klines_df["close"], 21).iloc[-1])
+    # ★ AUDIT FIX: Reuse ema21_val from sniper zone calc above (was recalculating identically)
     ema_cross_dist = (current_price - ema21_val) / current_price * 100.0
     
     # Supertrend distance

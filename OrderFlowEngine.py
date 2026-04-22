@@ -72,7 +72,9 @@ def calculate_cvd(klines_df: pd.DataFrame, lookback: int = 20) -> dict:
     second_half_avg = cvd.iloc[len(cvd)//2:].mean()
     
     diff = second_half_avg - first_half_avg
-    threshold = abs(first_half_avg) * 0.1
+    # ★ AUDIT FIX: Added minimum floor to prevent near-zero threshold
+    # when buy/sell volume is balanced (first_half_avg ≈ 0)
+    threshold = max(abs(first_half_avg) * 0.1, abs(second_half_avg) * 0.05 + 1e-6)
     
     if diff > threshold:
         cvd_trend = "RISING"

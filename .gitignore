@@ -5,5 +5,11 @@ __pycache__/
 *.sqlite3
 live_state_*.json
 ml_trade_memory.json
+ml_trade_memory_v2.json
+ml_backfill_data.json
+kelly_state.json
+prop_state.json
+dry_run_positions.json
+pnl_history_*.json
 tempmediaStorage/
 .vscode/
