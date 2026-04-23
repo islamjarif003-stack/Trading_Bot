@@ -86,6 +86,15 @@ POINTS_SNIPER_ZONE = 3             # +3 BONUS for pullback entry to dynamic S/R 
 FOMO_OVEREXT_ATR_MULT = 1.5        # Distance threshold: > 1.5× ATR from EMA9 = over-extended
 EXHAUSTION_VOL_RATIO = 0.40        # ★ v28.5: Lowered 0.60 → 0.40 (only fire on truly dead volume, not normal retraces)
 
+# ─── ★★★ v40: FAILED BREAKOUT / STRUCTURE SHIFT DETECTOR ─────────────────────
+# When price fails to break recent swing high → structure shifts bearish (lower highs forming)
+# When price fails to break recent swing low → structure shifts bullish (higher lows forming)
+POINTS_STRUCTURE_SHIFT_BONUS = 4    # +4 BONUS for trading WITH the new structure direction
+POINTS_STRUCTURE_SHIFT_PENALTY = -6 # -6 PENALTY for trading AGAINST structure (e.g. BUY after failed high)
+STRUCTURE_LOOKBACK = 30             # Look back 30 candles to find swing high/low
+STRUCTURE_RETEST_TOLERANCE = 0.3    # Price must come within 0.3% of swing level to count as retest
+STRUCTURE_LOWER_HIGH_PCT = 0.15     # Subsequent high must be at least 0.15% lower to confirm lower high
+
 # ─── ★ DERIVATIVE DATA THRESHOLDS ───────────────────────────────────────────
 POINTS_DERIVATIVE_SQUEEZE = 3       # +3 points for squeeze setup
 FUNDING_RATE_STRONG_NEG = -0.0001   # -0.01% (strongly negative)
@@ -1082,6 +1091,86 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
     elif liq_hunt_dir == "HUNT_DOWN":
         sell_score += POINTS_LIQ_HUNT
         sell_breakdown.append(f"💀 LIQ HUNT: Longs stacked! Price→DOWN: +{POINTS_LIQ_HUNT}")
+
+    # ══════════════════════════════════════════════════════════════════
+    #  ★★★ v40: FAILED BREAKOUT / STRUCTURE SHIFT DETECTOR
+    #  When price fails to break swing high → lower highs forming → BEARISH shift
+    #  When price fails to break swing low → higher lows forming → BULLISH shift
+    #  This catches the "couldn't break the high, slowly selling off" pattern
+    # ══════════════════════════════════════════════════════════════════
+    structure_shift = "NONE"  # "BEARISH_SHIFT", "BULLISH_SHIFT", or "NONE"
+    if len(klines_df) >= STRUCTURE_LOOKBACK + 5:
+        _highs = klines_df["high"].values
+        _lows = klines_df["low"].values
+        _closes = klines_df["close"].values
+        
+        # Find THE swing high (highest point in lookback window)
+        lookback_slice = _highs[-(STRUCTURE_LOOKBACK + 1):-1]  # Exclude current candle
+        swing_high = float(np.max(lookback_slice))
+        swing_high_idx = int(np.argmax(lookback_slice))
+        
+        # Find THE swing low (lowest point in lookback window)
+        lookback_slice_low = _lows[-(STRUCTURE_LOOKBACK + 1):-1]
+        swing_low = float(np.min(lookback_slice_low))
+        swing_low_idx = int(np.argmin(lookback_slice_low))
+        
+        # ── FAILED HIGH BREAK → BEARISH STRUCTURE SHIFT ──
+        # Conditions:
+        #   1. Swing high was established (not the very last candle)
+        #   2. After swing high, price attempted to reach it but made a LOWER HIGH
+        #   3. Price is now below the swing high (failed to break)
+        candles_since_high = len(lookback_slice) - 1 - swing_high_idx
+        if candles_since_high >= 10:  # Swing high must be at least 10 candles old (50 min on 5m)
+            # Look at highs AFTER the swing high
+            post_high_highs = _highs[-(STRUCTURE_LOOKBACK + 1) + swing_high_idx + 1:]
+            if len(post_high_highs) >= 3:
+                # Find the highest point after swing high (the retest/lower high)
+                retest_high = float(np.max(post_high_highs))
+                retest_tolerance = swing_high * (STRUCTURE_RETEST_TOLERANCE / 100.0)
+                lower_high_threshold = swing_high * (1.0 - STRUCTURE_LOWER_HIGH_PCT / 100.0)
+                
+                # Retest must have come close to swing high (within tolerance) but stayed below
+                came_close = retest_high >= (swing_high - retest_tolerance * 3)  # Came within 0.9% of high
+                made_lower_high = retest_high < lower_high_threshold  # But stayed meaningfully lower
+                price_below_high = current_price < swing_high  # Currently below the high
+                
+                # Also check: recent candles making progressively lower highs
+                last_8_highs = _highs[-9:-1]  # Last 8 completed candles
+                declining_highs = sum(1 for i in range(1, len(last_8_highs)) if last_8_highs[i] < last_8_highs[i-1])
+                
+                if came_close and made_lower_high and price_below_high and declining_highs >= 5:
+                    structure_shift = "BEARISH_SHIFT"
+        
+        # ── FAILED LOW BREAK → BULLISH STRUCTURE SHIFT ──
+        candles_since_low = len(lookback_slice_low) - 1 - swing_low_idx
+        if candles_since_low >= 10 and structure_shift == "NONE":
+            post_low_lows = _lows[-(STRUCTURE_LOOKBACK + 1) + swing_low_idx + 1:]
+            if len(post_low_lows) >= 3:
+                retest_low = float(np.min(post_low_lows))
+                retest_tolerance = swing_low * (STRUCTURE_RETEST_TOLERANCE / 100.0)
+                higher_low_threshold = swing_low * (1.0 + STRUCTURE_LOWER_HIGH_PCT / 100.0)
+                
+                came_close = retest_low <= (swing_low + retest_tolerance * 3)
+                made_higher_low = retest_low > higher_low_threshold
+                price_above_low = current_price > swing_low
+                
+                last_8_lows = _lows[-9:-1]
+                rising_lows = sum(1 for i in range(1, len(last_8_lows)) if last_8_lows[i] > last_8_lows[i-1])
+                
+                if came_close and made_higher_low and price_above_low and rising_lows >= 5:
+                    structure_shift = "BULLISH_SHIFT"
+    
+    # Apply structure shift scoring
+    if structure_shift == "BEARISH_SHIFT":
+        sell_score += POINTS_STRUCTURE_SHIFT_BONUS   # +4 SELL bonus
+        sell_breakdown.append(f"📉 STRUCTURE SHIFT: Failed High Break → Lower Highs (BEARISH): +{POINTS_STRUCTURE_SHIFT_BONUS}")
+        buy_score += POINTS_STRUCTURE_SHIFT_PENALTY  # -6 BUY penalty
+        buy_breakdown.append(f"📉 STRUCTURE SHIFT: Failed High → BUY BLOCKED (lower highs): {POINTS_STRUCTURE_SHIFT_PENALTY}")
+    elif structure_shift == "BULLISH_SHIFT":
+        buy_score += POINTS_STRUCTURE_SHIFT_BONUS    # +4 BUY bonus
+        buy_breakdown.append(f"📈 STRUCTURE SHIFT: Failed Low Break → Higher Lows (BULLISH): +{POINTS_STRUCTURE_SHIFT_BONUS}")
+        sell_score += POINTS_STRUCTURE_SHIFT_PENALTY  # -6 SELL penalty
+        sell_breakdown.append(f"📈 STRUCTURE SHIFT: Failed Low → SELL BLOCKED (higher lows): {POINTS_STRUCTURE_SHIFT_PENALTY}")
 
     # ══════════════════════════════════════════════════════════════════
     #  ★★★ v11.0: SMART MONEY BRAIN UPGRADE — Anti-FOMO + Sniper Entry
