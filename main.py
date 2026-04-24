@@ -51,7 +51,7 @@ TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 
 # ─── TRADING CONFIGURATION ───────────────────────────────────────────────────
-DRY_RUN              = False    # 🚀 LIVE — v39 Simplified Strategy (Max Loss: $5 hard limit)
+DRY_RUN              = False    # 🚀 LIVE TRADING ACTIVATED
 USE_TESTNET          = False    # ★ v20.1: True = Binance Testnet, False = Binance Mainnet
 ENABLE_DYNAMIC_WATCHLIST = True # ★ Fetch Top 50 Volatile USDT pairs dynamically
 ENABLE_MICRO_SCALPING = False   # ★ v12: DISABLED — Pre-flight fail = NO TRADE (no more weak entries)
@@ -79,7 +79,7 @@ BLACKLIST_COINS = {
 LEVERAGE        = 20                # ★ FIXED 20x leverage
 SL_ATR_MULT     = 1.5               # ★ v25: SL = 1.5 × ATR (wider for MARKET order entries)
 TP_ATR_MULT     = 3.0               # ★ v25: TP = 3.0 × ATR (R:R = 1:2 maintained with SL=1.5)
-HARD_LOCKOUT_S  = 90                # ★ v39.3: 90s lockout (was 300s) — allows re-entry after liquidity sweep
+HARD_LOCKOUT_S  = 300               # ★ v22: 5-minute hard lockout after every trade (was 30m)
 LOOP_INTERVAL_S = 10                # Seconds between each scan cycle
 ENTRY_RISK_PCT  = 15.0              # ★ $50 Config: 15% of $50 ≈ $7.50 risk per trade
 MAX_MARGIN_PCT  = 30.0              # ★ $50 Config: Max 30% of balance as margin ($15 max)
@@ -133,8 +133,8 @@ CORR_REDUCE_SIZE_PCT  = 50      # Reduce to 50% if CORR_ACTION == "REDUCE"
 # Note: These are RAW price % (Unleveraged). A 0.4% raw move = 8% on Binance at 20x leverage.
 # ★ v17: TRUE BREAK-EVEN — uses dynamic R:R, not static %. BE triggers at 1R profit.
 TRUE_BE_FEE_BUFFER_PCT   = 0.25   # ★ v37: Increased 0.15 → 0.25 to cover taker fees + slippage on BE exits
-TRAILING_ACTIVATION_RR   = 1.2    # ★ v39.4: Trail starts at 1.2R (was 1.5R — activate sooner but keep gap)
-TRAILING_SL_DISTANCE_PCT = 1.00   # ★ v39.4: Trail 1.0% behind best (was 1.2% — moderate tightening)
+TRAILING_ACTIVATION_RR   = 1.5    # ★ v37: BE triggers at 1.5R (was 1.0R — too early for 15m candles)
+TRAILING_SL_DISTANCE_PCT = 1.20   # ★ v37: Trail 1.2% behind best price (was 0.7% — 15m needs more room)
 TTP_CHECK_INTERVAL       = 3      # Check every 3 cycles
 DISABLE_HARD_TP          = True    # ★ v26: DISABLED fixed TP to allow dynamic Trailing SL for 'Let Winners Run' mode
 SMART_REVERSAL_EXIT      = True    # ★ v12: Close if 5m MA25 cross-under/over detected
@@ -963,8 +963,10 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             half_kelly_pct = 0.001  # Use a tiny fraction so floor_margin activates
 
         
-        # ★ v39: FIXED $1 margin per trade (testing simplified strategy)
-        dynamic_margin = 1.00  # Hard-fixed $1 margin, no Kelly/dynamic sizing
+        # Apply Kelly sizing with $1 floor (or $10 for realistic DRY RUN)
+        calc_margin = total_balance * half_kelly_pct
+        floor_margin = 10.00 if DRY_RUN else 2.00  # ★ v37: Raised from $1 → $2
+        dynamic_margin = max(calc_margin, floor_margin)
             
         position_value_usd = dynamic_margin * LEVERAGE
         raw_qty = position_value_usd / current_price
@@ -1115,20 +1117,18 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             avg_entry = limit_price  # Use limit price as simulated fill
             actual_qty = quantity
         else:
-            # ★ v25.2: Smart OB Zone Entry — only enter when price is inside/near OB zone
-            # ★ v25.3 FIX: Use ATR-based buffer (not zone-width) to avoid blocking breakout entries
+            # ★ v25.2: Smart OB Zone Entry — LOG only, don't block (was blocking all real trades!)
+            # ★ v34-fix: Changed from hard block → soft warning (dry run didn't have this gate)
             if smc_zone and smc_zone.get("zone_high") and smc_zone.get("zone_low"):
                 zone_high = float(smc_zone["zone_high"])
                 zone_low = float(smc_zone["zone_low"])
-                # Use 1.0x ATR as buffer (v37: balanced — prevents XAUUSDT spam but allows nearby entries)
-                zone_buffer = atr * 1.0
+                zone_buffer = atr * 3.0  # ★ v34-fix: Widened 1.0x → 3.0x ATR
                 if signal == "BUY" and current_price > zone_high + zone_buffer:
-                    log.warning(f"🚫  [{symbol}] OB SKIP — BUY ${current_price:.4f} above OB ${zone_low:.4f}-${zone_high:.4f} (buffer: ${zone_buffer:.4f})")
-                    return False, 0.0
+                    log.info(f"⚠️  [{symbol}] OB NOTE — BUY ${current_price:.4f} above OB ${zone_low:.4f}-${zone_high:.4f} (buffer: ${zone_buffer:.4f}) — proceeding anyway")
                 elif signal == "SELL" and current_price < zone_low - zone_buffer:
-                    log.warning(f"🚫  [{symbol}] OB SKIP — SELL ${current_price:.4f} below OB ${zone_low:.4f}-${zone_high:.4f} (buffer: ${zone_buffer:.4f})")
-                    return False, 0.0
-                log.info(f"✅  [{symbol}] OB ZONE OK — ${current_price:.4f} near OB ${zone_low:.4f}-${zone_high:.4f} (buffer: ${zone_buffer:.4f})")
+                    log.info(f"⚠️  [{symbol}] OB NOTE — SELL ${current_price:.4f} below OB ${zone_low:.4f}-${zone_high:.4f} (buffer: ${zone_buffer:.4f}) — proceeding anyway")
+                else:
+                    log.info(f"✅  [{symbol}] OB ZONE OK — ${current_price:.4f} near OB ${zone_low:.4f}-${zone_high:.4f}")
             try:
                 entry_order = client.futures_create_order(
                     symbol=symbol, side=side,
@@ -1928,9 +1928,8 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
             bot_state["initial_risk_pct"] = initial_risk_pct
             log.info(f"📐  [{symbol}] Dynamic Risk Baseline: {initial_risk_pct:.3f}% (ATR: ${current_atr:.2f} × {SL_ATR_MULT})")
 
-        # ★ v39.5: BE trigger floor 0.40% (was 0.20% — too early, exits at $0.03)
-        # $1 margin × 20x: 0.40% = $0.08 min profit before BE. Enough room to breathe.
-        dynamic_be_trigger = min(max(initial_risk_pct * 0.50, 0.40), 0.75)  # Floor 0.40%, CAP 0.75%
+        # ★ v33 FIX: BE trigger capped at 0.75% — 1.5% cap was still too large (30% ROI at 20x leverage), wait time too long.
+        dynamic_be_trigger = min(max(initial_risk_pct * 0.50, 0.20), 0.75)  # Floor 0.20%, CAP 0.75%
 
         if bot_state["phase"] == "INITIAL" and pnl_pct >= dynamic_be_trigger:
             # ★ v17: TRUE BREAK-EVEN — hardcoded 0.15% fee buffer (covers entry + exit taker fees)
@@ -1966,30 +1965,6 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                     f"🛡  [{symbol}] ★ TRUE BREAK-EVEN │ {pnl_str} │ SL → ${be_sl} (entry +{TRUE_BE_FEE_BUFFER_PCT}% fee cover) │ 1R={initial_risk_pct:.2f}%"
                 )
                 
-                # ── ★ v39.4: PARTIAL CLOSE — Lock 50% profit at BE ──────
-                partial_pnl = 0.0
-                try:
-                    close_side = "SELL" if side == "BUY" else "BUY"
-                    partial_qty = _round_qty(current_qty * 0.5, symbol)  # 50%
-                    
-                    if partial_qty > 0 and not DRY_RUN:
-                        partial_order = client.futures_create_order(
-                            symbol=symbol,
-                            side=close_side,
-                            type="MARKET",
-                            quantity=partial_qty,
-                            reduceOnly=True
-                        )
-                        # Calculate locked profit
-                        partial_pnl = abs(pnl_pct / 100.0 * entry_price * partial_qty * LEVERAGE / entry_price)
-                        bot_state["original_qty"] = current_qty - partial_qty  # Update remaining qty
-                        log.info(
-                            f"💰  [{symbol}] ★ PARTIAL CLOSE 50% │ Closed: {partial_qty} │ "
-                            f"Remaining: {current_qty - partial_qty} │ Locked: ~${partial_pnl:.3f}"
-                        )
-                except Exception as pc_err:
-                    log.warning(f"⚠  [{symbol}] Partial close failed: {pc_err}")
-                
                 # ★ v12: Cancel hard TP orders → let trailing SL manage exit ("Let Winners Run")
                 try:
                     _cancel_tp_orders(client, symbol)
@@ -1997,12 +1972,10 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                     pass
                 
                 # ── TELEGRAM ALERT ──
-                partial_msg = f"\n💰 50% Closed — ~${partial_pnl:.3f} locked!" if partial_pnl > 0 else ""
                 send_telegram_alert(
                     f"🛡 <b>TRUE BREAK-EVEN (v17)</b>\nCoin: {symbol}\nSide: {side}\nEntry: ${entry_price}\n"
                     f"SL → ${be_sl} (+{TRUE_BE_FEE_BUFFER_PCT}% fee buffer)\nPnL: {pnl_pct:+.2f}% (1R={initial_risk_pct:.2f}%)\n"
-                    f"{partial_msg}\n"
-                    f"<i>Remaining 50% trails at {TRAILING_ACTIVATION_RR}R 🚀</i>"
+                    f"<i>Trade is now FEE-PROOF risk-free! Trailing activates at {TRAILING_ACTIVATION_RR}R 🚀</i>"
                 )
             else:
                 # ★ v15: FALLBACK — SL order failed but we still activate software break-even
@@ -2774,27 +2747,35 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
     
     # Bullish CHOCH: Downtrend + price breaks above last swing high
     if trend in ("DOWN", "MIXED"):
-        last_sh_idx, last_sh_price = recent_sh[-1]
-        start_idx = max(0, last_sh_idx)
-        for i in range(start_idx, n):
-            if closes[i] > last_sh_price and i > last_sh_idx:
-                detail = (
-                    f"Bullish CHOCH: Trend was {trend}, price ${closes[i]:.4f} broke above "
-                    f"Swing High ${last_sh_price:.4f} (bar {last_sh_idx})"
-                )
-                return "CHOCH_BULL", i, last_sh_price, detail
+        # ★ v34-fix: Check BOTH last AND 2nd-last swing high (last swing often too recent to break)
+        for sh_check_idx in range(len(recent_sh) - 1, max(len(recent_sh) - 3, -1), -1):
+            if sh_check_idx < 0:
+                break
+            check_sh_idx, check_sh_price = recent_sh[sh_check_idx]
+            start_idx = max(0, check_sh_idx)
+            for i in range(start_idx, n):
+                if closes[i] > check_sh_price and i > check_sh_idx:
+                    detail = (
+                        f"Bullish CHOCH: Trend was {trend}, price ${closes[i]:.4f} broke above "
+                        f"Swing High ${check_sh_price:.4f} (bar {check_sh_idx})"
+                    )
+                    return "CHOCH_BULL", i, check_sh_price, detail
     
     # Bearish CHOCH: Uptrend + price breaks below last swing low
     if trend in ("UP", "MIXED"):
-        last_sl_idx, last_sl_price = recent_sl[-1]
-        start_idx = max(0, last_sl_idx)
-        for i in range(start_idx, n):
-            if closes[i] < last_sl_price and i > last_sl_idx:
-                detail = (
-                    f"Bearish CHOCH: Trend was {trend}, price ${closes[i]:.4f} broke below "
-                    f"Swing Low ${last_sl_price:.4f} (bar {last_sl_idx})"
-                )
-                return "CHOCH_BEAR", i, last_sl_price, detail
+        # ★ v34-fix: Check BOTH last AND 2nd-last swing low
+        for sl_check_idx in range(len(recent_sl) - 1, max(len(recent_sl) - 3, -1), -1):
+            if sl_check_idx < 0:
+                break
+            check_sl_idx, check_sl_price = recent_sl[sl_check_idx]
+            start_idx = max(0, check_sl_idx)
+            for i in range(start_idx, n):
+                if closes[i] < check_sl_price and i > check_sl_idx:
+                    detail = (
+                        f"Bearish CHOCH: Trend was {trend}, price ${closes[i]:.4f} broke below "
+                        f"Swing Low ${check_sl_price:.4f} (bar {check_sl_idx})"
+                    )
+                    return "CHOCH_BEAR", i, check_sl_price, detail
     
     # --- BOS Detection ---
     # Bullish BOS: Uptrend + new Higher High since last swing high
@@ -2822,26 +2803,25 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
                 return "BOS_BEAR", i, last_2_sl[-1][1], detail
     
     # ── ★ v38: ANTICIPATED BOS for Trending Markets ──────────────────────
-    # When market is in a clean trend but hasn't technically broken the last
-    # swing yet, check if price is CLOSE ENOUGH (within 0.2×ATR).
-    # This prevents hours-long dry spells in strong trends.
-    # Safety: Only fires when trend is UP/DOWN (not MIXED), and ATR is known.
+    # ★ v34-fix: Extended to MIXED trends (with tighter threshold)
     if atr14 > 0:
-        if trend == "UP" and len(last_2_sh) >= 2:
+        if trend in ("UP", "MIXED") and len(last_2_sh) >= 2:
             last_sh_price = last_2_sh[-1][1]
-            if current_price >= (last_sh_price - 0.2 * atr14):
+            threshold = 0.2 if trend == "UP" else 0.4  # MIXED gets wider tolerance
+            if current_price >= (last_sh_price - threshold * atr14):
                 detail = (
                     f"Anticipated BOS BULL: price ${current_price:.4f} within "
-                    f"0.2×ATR (${0.2*atr14:.4f}) of Swing High ${last_sh_price:.4f}"
+                    f"{threshold}×ATR (${threshold*atr14:.4f}) of Swing High ${last_sh_price:.4f}"
                 )
                 return "BOS_BULL", n - 1, last_sh_price, detail
         
-        if trend == "DOWN" and len(last_2_sl) >= 2:
+        if trend in ("DOWN", "MIXED") and len(last_2_sl) >= 2:
             last_sl_price = last_2_sl[-1][1]
-            if current_price <= (last_sl_price + 0.2 * atr14):
+            threshold = 0.2 if trend == "DOWN" else 0.4
+            if current_price <= (last_sl_price + threshold * atr14):
                 detail = (
                     f"Anticipated BOS BEAR: price ${current_price:.4f} within "
-                    f"0.2×ATR (${0.2*atr14:.4f}) of Swing Low ${last_sl_price:.4f}"
+                    f"{threshold}×ATR (${threshold*atr14:.4f}) of Swing Low ${last_sl_price:.4f}"
                 )
                 return "BOS_BEAR", n - 1, last_sl_price, detail
     
@@ -2994,331 +2974,380 @@ def _detect_inducement(highs: np.ndarray, lows: np.ndarray, closes: np.ndarray, 
 # ─── SMC ENTRY ORCHESTRATOR (replaces _3layer_entry_validate) ────────────────
 def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int = 0) -> tuple:
     """
-    ★ v39 SIMPLIFIED: H1 Trend Follow + 15m EMA Pullback Strategy.
+    ★ v20 SMC: Smart Money Concepts Entry Validation.
     
-    Rules (5 only):
-      1. Score >= 20 (strong conviction only)
-      2. H1: EMA21 > EMA50 = BUY only, EMA21 < EMA50 = SELL only, Mixed = NO TRADE
-      3. 15m: Price near EMA21 (pullback entry, not chasing)
-      4. Volume: Current candle volume >= 70% of 20-period average
-      5. ATR-based SL/TP (1.5x ATR SL, 2x TP)
+    Orchestrates all SMC checks in sequence:
+      1. Fetch M5 data + compute ATR14
+      2. Detect Swing Points
+      3. Detect Market Structure (BOS / CHOCH)
+      4. Detect Liquidity Sweep
+      5. Detect OB / FVG zone
+      6. Check if price is in the zone → PASS / WAIT
+      7. Validate R:R against next liquidity pool → PASS / NEUTRAL
     
     Returns: (result: str, reason: str, zone_data: dict or None)
-      - "PASS"    → Entry valid, trade with the trend.
-      - "NEUTRAL" → Conditions not met, kill signal.
+      - "PASS"    → SMC criteria met, entry is valid. zone_data has zone info.
+      - "NEUTRAL" → No valid setup. Kill signal.
+      - "WAIT"    → Valid setup but price not in OB/FVG zone yet. Queue for retest.
     """
     try:
-        # ── Score Gate ────────────────────────────────────────────────────
-        if score < 20:
-            reason = f"Score {score} < 20 minimum (need strong conviction)"
-            log.info(f"    [{symbol}] 🚫 {reason}")
-            return "NEUTRAL", reason, None
+        m5 = client.futures_klines(symbol=symbol, interval="5m", limit=200)  # ★ v34-fix: Reverted 15m → 5m (original setup)
+        if not m5 or len(m5) < 40:
+            return "PASS", "SMC SKIP: Not enough M15 data", None
         
-        # ── H1 TREND CHECK (HARD BLOCK — no counter-trend ever) ──────────
-        h1 = client.futures_klines(symbol=symbol, interval="1h", limit=55)
-        if not h1 or len(h1) < 50:
-            return "NEUTRAL", "Insufficient H1 data", None
+        high  = np.array([float(k[2]) for k in m5])
+        low   = np.array([float(k[3]) for k in m5])
+        opn   = np.array([float(k[1]) for k in m5])
+        close = np.array([float(k[4]) for k in m5])
+        vols  = np.array([float(k[5]) for k in m5])
         
-        h1_closes = np.array([float(k[4]) for k in h1])
-        h1_price = float(h1_closes[-1])
+        current_price = close[-1]
+        n = len(close)
         
-        # EMA21
-        _m21 = 2.0 / 22
-        _e21 = float(h1_closes[0])
-        for _v in h1_closes[1:]:
-            _e21 = (float(_v) - _e21) * _m21 + _e21
+        # ── ATR14 Calculation ─────────────────────────────────────────────
+        prev_close = close[:-1]
+        tr = np.maximum(
+            high[1:] - low[1:],
+            np.maximum(np.abs(high[1:] - prev_close), np.abs(low[1:] - prev_close))
+        )
+        atr_arr = np.zeros(len(tr))
+        if len(tr) >= 14:
+            atr_arr[13] = np.mean(tr[:14])
+            for i in range(14, len(tr)):
+                atr_arr[i] = (atr_arr[i - 1] * 13 + tr[i]) / 14.0
+        atr14 = atr_arr[-1]
+        if atr14 <= 0:
+            return "PASS", "SMC SKIP: ATR14 is zero", None
         
-        # EMA50
-        _m50 = 2.0 / 51
-        _e50 = float(h1_closes[0])
-        for _v in h1_closes[1:]:
-            _e50 = (float(_v) - _e50) * _m50 + _e50
+        # ── Step 1: Swing Points ──────────────────────────────────────────
+        swing_highs, swing_lows = _detect_swing_points(high, low, SMC_SWING_LOOKBACK)
+        if len(swing_highs) < 2 or len(swing_lows) < 2:
+            return "PASS", "SMC SKIP: Not enough swing points", None
         
-        h1_bull = h1_price > _e21 and _e21 > _e50
-        h1_bear = h1_price < _e21 and _e21 < _e50
+        log.info(f"    [{symbol}] SMC: {len(swing_highs)} Swing Highs, {len(swing_lows)} Swing Lows detected")
         
-        if direction == "BUY" and not h1_bull:
-            reason = f"H1 NOT BULLISH — BUY blocked (Price ${h1_price:.2f} vs EMA21 ${_e21:.2f} vs EMA50 ${_e50:.2f})"
-            log.info(f"    [{symbol}] 🚫 {reason}")
-            return "NEUTRAL", reason, None
-        
-        if direction == "SELL" and not h1_bear:
-            reason = f"H1 NOT BEARISH — SELL blocked (Price ${h1_price:.2f} vs EMA21 ${_e21:.2f} vs EMA50 ${_e50:.2f})"
-            log.info(f"    [{symbol}] 🚫 {reason}")
-            return "NEUTRAL", reason, None
-        
-        # ── ★ v40: STRUCTURE SHIFT CHECK (Failed Breakout Detection on H1) ──
-        # If price failed to break swing high and making lower highs → bearish shift → block BUY
-        # If price failed to break swing low and making higher lows → bullish shift → block SELL
-        h1_highs = np.array([float(k[2]) for k in h1])
-        h1_lows = np.array([float(k[3]) for k in h1])
-        
-        if len(h1_highs) >= 20:
-            # Find swing high/low in last 20 H1 candles
-            h1_swing_high = float(np.max(h1_highs[-21:-1]))
-            h1_swing_high_idx = int(np.argmax(h1_highs[-21:-1]))
-            h1_swing_low = float(np.min(h1_lows[-21:-1]))
-            h1_swing_low_idx = int(np.argmin(h1_lows[-21:-1]))
+        # ── Step 2: Liquidity Sweep ───────────────────────────────────────
+        swept, sweep_level, sweep_extreme, sweep_detail = _detect_liquidity_sweep(
+            high, low, close, opn, vols, swing_highs, swing_lows, direction, atr14
+        )
+        if swept:
+            log.info(f"    [{symbol}] 💧 {sweep_detail}")
+        else:
+            log.info(f"    [{symbol}] SMC: {sweep_detail}")
+            # ★ v36: Sweep Confirmation is PREFERRED but not MANDATORY
+            # Allow entry without sweep IF structure (BOS/CHOCH) + OB zone is valid
+            log.info(f"    [{symbol}] ⚠ No Liquidity Sweep — Will require strong structure to compensate")
             
-            candles_since_h1_high = 19 - h1_swing_high_idx
-            candles_since_h1_low = 19 - h1_swing_low_idx
-            
-            # FAILED HIGH: Swing high is old (6+ candles = 6 hours) + recent highs are declining
-            if candles_since_h1_high >= 6 and direction == "BUY":
-                post_highs = h1_highs[-21 + h1_swing_high_idx + 1:]
-                if len(post_highs) >= 3:
-                    retest_high = float(np.max(post_highs))
-                    # Recent candles making lower highs
-                    last_6_h1_highs = h1_highs[-7:-1]
-                    declining = sum(1 for i in range(1, len(last_6_h1_highs)) if last_6_h1_highs[i] < last_6_h1_highs[i-1])
-                    
-                    if retest_high < h1_swing_high * 0.998 and h1_price < h1_swing_high and declining >= 3:
-                        reason = (f"H1 STRUCTURE SHIFT ↓: Failed to break high ${h1_swing_high:.2f} "
-                                 f"→ Lower highs forming (retest ${retest_high:.2f}) → BUY blocked")
-                        log.info(f"    [{symbol}] 📉 {reason}")
-                        return "NEUTRAL", reason, None
-            
-            # FAILED LOW: Swing low is old (6+ candles = 6 hours) + recent lows are rising
-            if candles_since_h1_low >= 6 and direction == "SELL":
-                post_lows = h1_lows[-21 + h1_swing_low_idx + 1:]
-                if len(post_lows) >= 3:
-                    retest_low = float(np.min(post_lows))
-                    last_6_h1_lows = h1_lows[-7:-1]
-                    rising = sum(1 for i in range(1, len(last_6_h1_lows)) if last_6_h1_lows[i] > last_6_h1_lows[i-1])
-                    
-                    if retest_low > h1_swing_low * 1.002 and h1_price > h1_swing_low and rising >= 3:
-                        reason = (f"H1 STRUCTURE SHIFT ↑: Failed to break low ${h1_swing_low:.2f} "
-                                 f"→ Higher lows forming (retest ${retest_low:.2f}) → SELL blocked")
-                        log.info(f"    [{symbol}] 📈 {reason}")
-                        return "NEUTRAL", reason, None
+        # ── Step 3: Market Structure (BOS / CHOCH) ────────────────────────
+        struct_type, break_idx, break_level, struct_detail = _detect_market_structure(
+            high, low, close, swing_highs, swing_lows, atr14=atr14  # ★ v38: Pass ATR for Anticipated BOS
+        )
+        log.info(f"    [{symbol}] SMC Structure: {struct_type} | {struct_detail}")
         
-        # ── 15m DATA + ATR ───────────────────────────────────────────────
-        m15 = client.futures_klines(symbol=symbol, interval="15m", limit=50)
-        if not m15 or len(m15) < 25:
-            return "NEUTRAL", "Insufficient 15m data", None
+        # ★ v22: Direction-Agnostic Structure Validation
+        # Accept ANY valid structure shift. If SMC direction opposes signal,
+        # flip the trade direction to follow Smart Money instead of blocking.
+        valid_structure = struct_type in ("CHOCH_BULL", "BOS_BULL", "CHOCH_BEAR", "BOS_BEAR")
         
-        m15_high  = np.array([float(k[2]) for k in m15])
-        m15_low   = np.array([float(k[3]) for k in m15])
-        m15_close = np.array([float(k[4]) for k in m15])
-        m15_vols  = np.array([float(k[5]) for k in m15])
+        # ── ★ v26.3 UPGRADE 3: DISPLACEMENT CANDLE QUALITY CHECK ────────
+        # Only trust structure breaks backed by strong institutional candles.
+        # Weak breaks (small body, no momentum) are often fake breakouts.
+        if valid_structure and break_idx > 0 and break_idx < len(close):
+            brk_body = abs(close[break_idx] - opn[break_idx])
+            brk_range = high[break_idx] - low[break_idx]
+            body_pct = brk_body / brk_range if brk_range > 0 else 0
+            is_strong = body_pct >= 0.25 and brk_body >= 0.10 * atr14  # ★ v37: Relaxed further (25%/0.10x ATR) — allow more SMC setups through
+            if is_strong:
+                log.info(f"    [{symbol}] 💪 Displacement: STRONG (body {body_pct*100:.0f}%, {brk_body/atr14:.1f}x ATR)")
+            else:
+                log.info(f"    [{symbol}] ⚠️ Displacement: WEAK (body {body_pct*100:.0f}%, {brk_body/atr14:.1f}x ATR) → No structure claim")
+                valid_structure = False
         
-        current_price = float(m15_close[-1])
-        
-        # 15m EMA21
-        _m21_15 = 2.0 / 22
-        _e21_15 = float(m15_close[0])
-        for _v in m15_close[1:]:
-            _e21_15 = (float(_v) - _e21_15) * _m21_15 + _e21_15
-        ema21_15m = _e21_15
-        
-        # Distance from EMA21 (pullback check)
-        dist_pct = abs(current_price - ema21_15m) / ema21_15m * 100
-        
-        # ATR14 for SL
-        trs = []
-        for i in range(1, len(m15_high)):
-            tr = max(float(m15_high[i]) - float(m15_low[i]),
-                     abs(float(m15_high[i]) - float(m15_close[i-1])),
-                     abs(float(m15_low[i]) - float(m15_close[i-1])))
-            trs.append(tr)
-        atr14 = float(np.mean(trs[-14:])) if len(trs) >= 14 else float(np.mean(trs))
-        
-        # ── PULLBACK CHECK ───────────────────────────────────────────────
-        # Price should be near EMA21 (within 1.5%) — not chasing extended moves
-        if dist_pct > 1.5:
-            reason = f"Price too far from 15m EMA21 ({dist_pct:.2f}% > 1.5%). Wait for pullback."
-            log.info(f"    [{symbol}] ⚠️ {reason}")
-            # Don't hard-block, just warn — score already filters quality
-        
-        # ── 15m CANDLE CONFIRMATION (v39.3 — Smart Confirmation) ─────────
-        # Strong trend = allow weak candles (consolidation is normal)
-        # Weak trend = require strong confirmation candle
-        m15_open = np.array([float(k[1]) for k in m15])
-        
-        # H1 trend strength (how far EMA21 is from EMA50)
-        h1_trend_gap_pct = abs(_e21 - _e50) / _e50 * 100
-        strong_trend = h1_trend_gap_pct > 0.3  # >0.3% gap = strong trend
-        
-        # Last 3 completed candles — count how many are in our direction
-        candles_in_dir = 0
-        for ci in [-4, -3, -2]:  # 3 completed candles
-            c_green = float(m15_close[ci]) > float(m15_open[ci])
-            if direction == "BUY" and c_green:
-                candles_in_dir += 1
-            elif direction == "SELL" and not c_green:
-                candles_in_dir += 1
-        
-        # Last completed candle color
-        last_candle_green = float(m15_close[-2]) > float(m15_open[-2])
-        last_candle_red = float(m15_close[-2]) < float(m15_open[-2])
-        
-        # Current FORMING candle direction
-        current_candle_body = float(m15_close[-1]) - float(m15_open[-1])
-        avg_body = float(np.mean([abs(float(m15_close[i]) - float(m15_open[i])) for i in range(-12, -2)]))
-        
-        if direction == "BUY":
-            # Strong trend + 2/3 candles bullish → allow even if last candle is weak
-            if not strong_trend or candles_in_dir < 2:
-                if not last_candle_green:
-                    reason = f"15m CANDLE NOT GREEN — BUY needs confirmation (trend gap: {h1_trend_gap_pct:.2f}%)"
+        if not valid_structure:
+            if score >= 22:  # ★ v38.1: Restored to 22 (18 was too loose — all bypass trades lost)
+                # ★ v38.1: H1 TREND DIRECTION CHECK — prevent counter-trend bypass
+                # SELL bypass in BULLISH market = guaranteed loss (XRPUSDT, DASHUSDT losses)
+                h1_trend_ok = True  # default pass
+                try:
+                    h1_klines = client.futures_klines(symbol=symbol, interval="1h", limit=55)
+                    if h1_klines and len(h1_klines) >= 50:
+                        h1c = np.array([float(k[4]) for k in h1_klines])
+                        # Quick EMA21/EMA50
+                        _m21 = 2.0 / 22; _e21 = float(h1c[0])
+                        _m50 = 2.0 / 51; _e50 = float(h1c[0])
+                        for _v in h1c[1:]:
+                            _e21 = (float(_v) - _e21) * _m21 + _e21
+                            _e50 = (float(_v) - _e50) * _m50 + _e50
+                        h1_bull = float(h1c[-1]) > _e21 and _e21 > _e50
+                        h1_bear = float(h1c[-1]) < _e21 and _e21 < _e50
+                        
+                        if direction == "BUY" and h1_bear:
+                            h1_trend_ok = False
+                            log.info(f"    [{symbol}] 🚫 BYPASS BLOCKED: BUY in H1 BEARISH (EMA21 < EMA50)")
+                        elif direction == "SELL" and h1_bull:
+                            h1_trend_ok = False
+                            log.info(f"    [{symbol}] 🚫 BYPASS BLOCKED: SELL in H1 BULLISH (EMA21 > EMA50)")
+                except Exception as h1_err:
+                    log.warning(f"    [{symbol}] H1 trend check failed: {h1_err} — allowing bypass")
+                
+                if not h1_trend_ok:
+                    reason = f"SMC NEUTRAL: Score {score} >= 22 but H1 trend opposes {direction}. Counter-trend blocked."
                     log.info(f"    [{symbol}] 🚫 {reason}")
                     return "NEUTRAL", reason, None
-            # Always block if current forming candle is strongly against us
-            if current_candle_body < -(avg_body * 0.6):
-                reason = f"Current 15m candle AGAINST BUY ({current_candle_body:.4f}) — wait"
-                log.info(f"    [{symbol}] 🚫 {reason}")
-                return "NEUTRAL", reason, None
-        
-        if direction == "SELL":
-            if not strong_trend or candles_in_dir < 2:
-                if not last_candle_red:
-                    reason = f"15m CANDLE NOT RED — SELL needs confirmation (trend gap: {h1_trend_gap_pct:.2f}%)"
+                
+                # ★ v38: EMA20 safety — BUY must be above EMA20, SELL must be below
+                ema20_val = close[-1]  # fallback
+                if len(close) >= 20:
+                    ema_mult_20 = 2.0 / (20 + 1)
+                    _ema = float(close[0])
+                    for _c in close[1:]:
+                        _ema = (float(_c) - _ema) * ema_mult_20 + _ema
+                    ema20_val = _ema
+                ema_ok = (direction == "BUY" and current_price > ema20_val) or \
+                         (direction == "SELL" and current_price < ema20_val)
+                if ema_ok:
+                    log.info(f"    [{symbol}] 🚀 HIGH SCORE BYPASS: Score ({score}) >= 22 + H1 Trend OK + EMA20 ${ema20_val:.4f} OK. Bypassing SMC!")
+                    struct_type = "BYPASS"
+                else:
+                    reason = f"SMC NEUTRAL: Score {score} >= 22 but EMA20 ${ema20_val:.4f} opposes {direction}. Blocked."
                     log.info(f"    [{symbol}] 🚫 {reason}")
                     return "NEUTRAL", reason, None
-            if current_candle_body > (avg_body * 0.6):
-                reason = f"Current 15m candle AGAINST SELL ({current_candle_body:.4f}) — wait"
-                log.info(f"    [{symbol}] 🚫 {reason}")
-                return "NEUTRAL", reason, None
-        
-        # ── MOMENTUM % ANALYSIS (v39.5) ─────────────────────────────────
-        # 7-candle window for overall momentum + last 2 candle critical check
-        all_body_pcts = []     # Last 7 completed candles
-        last2_body_pcts = []   # Last 2 candles (most important!)
-        
-        for ci in range(-8, -1):  # Last 7 completed candles
-            c_open = float(m15_open[ci])
-            c_close = float(m15_close[ci])
-            if c_open > 0:
-                body_pct = ((c_close - c_open) / c_open) * 100
-                all_body_pcts.append(body_pct)
-                if ci >= -3:  # Last 2 candles
-                    last2_body_pcts.append(body_pct)
-        
-        avg_momentum = float(np.mean(all_body_pcts)) if all_body_pcts else 0
-        last2_momentum = float(np.mean(last2_body_pcts)) if last2_body_pcts else 0
-        
-        # Count direction
-        strong_bull = sum(1 for p in all_body_pcts if p > 0.03)
-        strong_bear = sum(1 for p in all_body_pcts if p < -0.03)
-        
-        log.info(f"    [{symbol}] 📊 Momentum(7c): avg={avg_momentum:+.4f}% last2={last2_momentum:+.4f}% | Bull:{strong_bull} Bear:{strong_bear}")
-        
-        if direction == "BUY":
-            # Last 2 candles both red → sellers taking over NOW
-            if last2_momentum < -0.02:
-                reason = f"LAST 2 CANDLES BEARISH — avg {last2_momentum:+.4f}% (sellers active NOW)"
-                log.info(f"    [{symbol}] 🚫 {reason}")
-                return "NEUTRAL", reason, None
-            # Overall 4-candle momentum negative
-            if avg_momentum < -0.02:
-                reason = f"SELLERS DOMINATING — 4c avg {avg_momentum:+.4f}%"
-                log.info(f"    [{symbol}] 🚫 {reason}")
-                return "NEUTRAL", reason, None
-            # Exhaustion: 3+ of 4 candles strong bull
-            if avg_momentum > 0.12 and strong_bull >= 3:
-                reason = f"EXHAUSTION — avg {avg_momentum:+.4f}% + {strong_bull}/4 bull (overextended)"
-                log.info(f"    [{symbol}] ⚠️ {reason}")
-                return "NEUTRAL", reason, None
-        
-        if direction == "SELL":
-            if last2_momentum > 0.02:
-                reason = f"LAST 2 CANDLES BULLISH — avg {last2_momentum:+.4f}% (buyers active NOW)"
-                log.info(f"    [{symbol}] 🚫 {reason}")
-                return "NEUTRAL", reason, None
-            if avg_momentum > 0.02:
-                reason = f"BUYERS DOMINATING — 4c avg {avg_momentum:+.4f}%"
-                log.info(f"    [{symbol}] 🚫 {reason}")
-                return "NEUTRAL", reason, None
-            if avg_momentum < -0.12 and strong_bear >= 3:
-                reason = f"EXHAUSTION — avg {avg_momentum:+.4f}% + {strong_bear}/4 bear (overextended)"
-                log.info(f"    [{symbol}] ⚠️ {reason}")
-                return "NEUTRAL", reason, None
-        
-        # ── VOLUME CHECK ─────────────────────────────────────────────────
-        avg_vol = float(np.mean(m15_vols[-20:]))
-        vol_ratio = float(m15_vols[-1]) / avg_vol if avg_vol > 0 else 0
-        vol_ok = vol_ratio >= 0.7  # At least 70% of average
-        
-        if not vol_ok:
-            log.info(f"    [{symbol}] ⚠️ Volume weak ({vol_ratio:.1f}x avg) — lower confidence")
-        
-        # ── MOVE ALREADY DONE CHECK (v39.5) ─────────────────────────────
-        # Don't enter if price has already moved too far from swing point
-        # BUY: if price already 2%+ above swing low → late entry, move done
-        # SELL: if price already 2%+ below swing high → late entry, move done
-        recent_swing_low = float(np.min(m15_low[-16:-1]))   # Last 15 candles
-        recent_swing_high = float(np.max(m15_high[-16:-1]))
-        
-        if direction == "BUY":
-            move_done_pct = ((close_price - recent_swing_low) / recent_swing_low) * 100
-            if move_done_pct > 2.0:
-                reason = f"MOVE DONE — price already +{move_done_pct:.2f}% above swing low ${recent_swing_low:.4f} (late entry trap)"
-                log.info(f"    [{symbol}] 🚫 {reason}")
-                return "NEUTRAL", reason, None
-        else:  # SELL
-            move_done_pct = ((recent_swing_high - close_price) / recent_swing_high) * 100
-            if move_done_pct > 2.0:
-                reason = f"MOVE DONE — price already -{move_done_pct:.2f}% below swing high ${recent_swing_high:.4f} (late entry trap)"
-                log.info(f"    [{symbol}] 🚫 {reason}")
-                return "NEUTRAL", reason, None
-        
-        # ── SL CALCULATION — SWING LOW/HIGH BASED (v39.5) ──────────────
-        # Place SL below real support (swing low), not at fixed ATR zone
-        # This avoids the liquidity hunt zone where market sweeps stops
-        atr_sl_distance = atr14 * SL_ATR_MULT  # Fallback ATR-based SL
-        
-        if direction == "BUY":
-            # Find lowest low of last 10 completed 15m candles
-            swing_low = float(np.min(m15_low[-11:-1]))  # Last 10 candles
-            buffer = atr14 * 0.15  # Small buffer below swing low
-            swing_sl_distance = close_price - (swing_low - buffer)
-            
-            # Use swing-based if reasonable (not too tight, not too wide)
-            if swing_sl_distance > atr_sl_distance * 0.5 and swing_sl_distance < atr_sl_distance * 3.0:
-                sl_distance = swing_sl_distance
-                log.info(f"    [{symbol}] 🎯 SL = Swing Low ${swing_low:.4f} - buffer ${buffer:.4f} = ${swing_low - buffer:.4f} (dist: ${sl_distance:.4f})")
             else:
-                sl_distance = atr_sl_distance
-                log.info(f"    [{symbol}] 📏 SL = ATR-based ${sl_distance:.4f} (swing ${swing_sl_distance:.4f} out of range)")
-        else:  # SELL
-            swing_high = float(np.max(m15_high[-11:-1]))
-            buffer = atr14 * 0.15
-            swing_sl_distance = (swing_high + buffer) - close_price
-            
-            if swing_sl_distance > atr_sl_distance * 0.5 and swing_sl_distance < atr_sl_distance * 3.0:
-                sl_distance = swing_sl_distance
-                log.info(f"    [{symbol}] 🎯 SL = Swing High ${swing_high:.4f} + buffer ${buffer:.4f} = ${swing_high + buffer:.4f} (dist: ${sl_distance:.4f})")
-            else:
-                sl_distance = atr_sl_distance
-                log.info(f"    [{symbol}] 📏 SL = ATR-based ${sl_distance:.4f} (swing ${swing_sl_distance:.4f} out of range)")
+                reason = f"SMC NEUTRAL (No Valid Structure): 5m has no confirmed BOS/CHOCH ({struct_type}). Waiting for structure."
+                log.info(f"    [{symbol}] 🚫 {reason}")
+                return "NEUTRAL", reason, None
         
-        # Build zone_data for downstream compatibility
+        # ★ v22: Auto-flip direction to match 5m SMC structure
+        if struct_type == "BYPASS":
+            smc_direction = direction
+        else:
+            smc_direction = "BUY" if struct_type in ("CHOCH_BULL", "BOS_BULL") else "SELL"
+            
+        if smc_direction != direction:
+            log.info(f"    [{symbol}] 🔄 SMC FLIP: Signal was {direction} but 5m structure is {struct_type} → Flipping to {smc_direction}")
+            direction = smc_direction
+        
+        # ── ★ v26.3 UPGRADE 2: 15m HIGHER-TIMEFRAME CONFLUENCE (STRICT VETO) ──
+        # If 15m structure opposes 5m direction, SKIP trade entirely.
+        # DO NOT flip — a BUY OB cannot be traded as SELL (SL math breaks).
+        try:
+            m15 = client.futures_klines(symbol=symbol, interval="1h", limit=100)  # ★ v37: Higher TF confluence now 1H (since main is 15m)
+            if m15 and len(m15) >= 40:
+                h15 = np.array([float(k[2]) for k in m15])
+                l15 = np.array([float(k[3]) for k in m15])
+                c15 = np.array([float(k[4]) for k in m15])
+                sh15, sl15 = _detect_swing_points(h15, l15, SMC_SWING_LOOKBACK)
+                if len(sh15) >= 2 and len(sl15) >= 2:
+                    struct15, _, _, detail15 = _detect_market_structure(h15, l15, c15, sh15, sl15)
+                    htf_dir = "BUY" if struct15 in ("CHOCH_BULL", "BOS_BULL") else "SELL" if struct15 in ("CHOCH_BEAR", "BOS_BEAR") else "NONE"
+                    if htf_dir != "NONE" and htf_dir != direction:
+                        reason = f"⚠ WARNING: 15m HTF Mismatch — 5m wants {direction} but 15m is {struct15}. Passing anyway as Micro-Scalp!"
+                        log.warning(f"    [{symbol}] {reason}")
+                        # ★ v31: User wants instant execution, no HTF blocks!
+                    elif htf_dir == direction:
+                        log.info(f"    [{symbol}] 🔗 15m Confluence: ALIGNED ({struct15}) ✅")
+                    else:
+                        log.info(f"    [{symbol}] 🔗 15m Confluence: NEUTRAL (no 15m structure) — Passing on 5m alone.")
+        except Exception as e15:
+            log.warning(f"    [{symbol}] ⚠ 15m HTF check failed: {e15} — Continuing on 5m.")
+        
+        # ── Step 4: Inducement Detection ──────────────────────────────────
+        inducement_found = _detect_inducement(
+            high, low, close, opn, break_idx, sweep_extreme if swept else 0.0, direction
+        )
+        
+        # ── Step 5: Find Strict OB / FVG Zone ─────────────────────────────
+        ob_search_idx = break_idx if break_idx > 0 else n - 3
+        zone_type, zone_high, zone_low, zone_detail = _detect_ob_fvg(
+            high, low, opn, close, ob_search_idx, direction, atr14
+        )
+        
+        if zone_type == "NONE":
+            reason = f"SMC PASS: Valid {struct_type} but no Strict OB/FVG zone found. Proceeding as Momentum Breakout!"
+            
+            # Form partial zone_data just for the CHOCH chart plotting
+            partial_data = {
+                "structure": struct_type, "smc_direction": direction,
+                "swept": swept, "sweep_level": sweep_level, 
+                "zone_type": "NONE"
+            }
+            return "PASS", reason, partial_data
+        
+        log.info(f"    [{symbol}] SMC Zone: {zone_type} @ ${zone_low:.4f}–${zone_high:.4f}")
+        
+        # ── ★ v37: OB QUALITY VALIDATION — Confirm OB is institutional-grade ──
+        # 3 confirmations: Displacement + Imbalance + Unmitigated
+        ob_quality_score = 0
+        ob_quality_details = []
+        
+        if zone_type == "OB" and ob_search_idx > 3:
+            # 1️⃣ DISPLACEMENT CHECK: Was the move away from OB strong?
+            # The candle(s) after the OB should have big body (≥ 1.0x ATR)
+            disp_start = min(ob_search_idx, n - 1)
+            disp_end = min(ob_search_idx + 3, n)
+            max_body = 0.0
+            for di in range(disp_start, disp_end):
+                body = abs(float(close[di]) - float(opn[di]))
+                if body > max_body:
+                    max_body = body
+            if max_body >= atr14 * 0.8:
+                ob_quality_score += 1
+                ob_quality_details.append(f"✅ Displacement: {max_body/atr14:.1f}x ATR (strong)")
+            else:
+                ob_quality_details.append(f"❌ Displacement: {max_body/atr14:.1f}x ATR (weak)")
+            
+            # 2️⃣ IMBALANCE CHECK: Is there a Fair Value Gap between OB and current price?
+            has_imbalance = False
+            scan_start = max(0, ob_search_idx - 2)
+            scan_end = min(ob_search_idx + 5, n - 1)
+            for fi in range(scan_start, scan_end):
+                if fi + 2 < n:
+                    if direction == "BUY" and float(high[fi]) < float(low[fi + 2]):
+                        has_imbalance = True
+                        break
+                    elif direction == "SELL" and float(low[fi]) > float(high[fi + 2]):
+                        has_imbalance = True
+                        break
+            if has_imbalance:
+                ob_quality_score += 1
+                ob_quality_details.append("✅ Imbalance: FVG found (price attracted)")
+            else:
+                ob_quality_details.append("⚠️ Imbalance: No FVG (weaker attraction)")
+            
+            # 3️⃣ UNMITIGATED CHECK: Has price retested OB zone already?
+            mitigated = False
+            for mi in range(ob_search_idx + 1, n):
+                if direction == "BUY" and float(low[mi]) <= zone_high:
+                    mitigated = True
+                    break
+                elif direction == "SELL" and float(high[mi]) >= zone_low:
+                    mitigated = True
+                    break
+            if not mitigated:
+                ob_quality_score += 1
+                ob_quality_details.append("✅ Unmitigated: OB is FRESH (never retested)")
+            else:
+                ob_quality_details.append("⚠️ Mitigated: OB already tested (weaker)")
+            
+            log.info(f"    [{symbol}] 🏆 OB Quality: {ob_quality_score}/3 │ {' │ '.join(ob_quality_details)}")
+            
+            # ★ v34-fix: OB Quality is informational only — don't hard block
+            if ob_quality_score < 1:
+                log.info(f"    [{symbol}] ⚠️ OB Quality low ({ob_quality_score}/3) — proceeding anyway (score filter handles quality)")
+        
+        # ── ★ v26.3 UPGRADE 1: PREMIUM/DISCOUNT ZONE FILTER ──────────────
+        # SMC Refactor: Only block extreme entries (top 25% for BUY, bottom 25% for SELL)
+        if len(swing_highs) >= 2 and len(swing_lows) >= 2:
+            pd_range_high = max(sh[1] for sh in swing_highs[-4:])
+            pd_range_low = min(sl[1] for sl in swing_lows[-4:])
+            range_size = pd_range_high - pd_range_low
+            
+            extreme_premium = pd_range_high - (range_size * 0.05)  # ★ v34-fix: Top 5% only (was 15%)
+            extreme_discount = pd_range_low + (range_size * 0.05)  # ★ v34-fix: Bottom 5% only (was 15%)
+            
+            if direction == "BUY" and current_price > extreme_premium:
+                reason = f"P/D REJECT: BUY in EXTREME PREMIUM (price ${current_price:.4f} > top 25% ${extreme_premium:.4f})."
+                log.warning(f"    [{symbol}] {reason}")
+                return "NEUTRAL", reason, None
+            elif direction == "SELL" and current_price < extreme_discount:
+                reason = f"P/D REJECT: SELL in EXTREME DISCOUNT (price ${current_price:.4f} < bottom 25% ${extreme_discount:.4f})."
+                log.warning(f"    [{symbol}] {reason}")
+                return "NEUTRAL", reason, None
+            else:
+                log.info(f"    [{symbol}] P/D Zone: OK (Not in extreme boundaries)")
+        
         zone_data = {
-            "structure": "TREND_FOLLOW",
-            "smc_direction": direction,
-            "swept": False,
-            "sweep_level": 0,
-            "zone_type": "EMA_PULLBACK",
-            "zone_high": ema21_15m + atr14 * 0.5,
-            "zone_low": ema21_15m - atr14 * 0.5,
-            "sl_distance": sl_distance,
-            "has_sweep": False,
+            "zone_type": zone_type,
+            "zone_high": zone_high,
+            "zone_low": zone_low,
+            "structure": struct_type,
+            "swept": swept,
+            "inducement": inducement_found,
+            "sweep_level": sweep_level,
+            "smc_direction": direction,  # ★ v22: May be flipped from original signal
         }
         
-        # ── ALL CHECKS PASSED ────────────────────────────────────────────
-        trend_str = "BULL 📈" if direction == "BUY" else "BEAR 📉"
+        # ── Step 6: Is price IN the zone now? (ATR-based Buffer) ──────────
+        in_zone = False
+        # ★ v37: ATR-based buffer instead of %. Prevents XAUUSDT-type $23 buffer bug.
+        zone_buffer_abs = 1.0 * atr14  # 1.0 × ATR = balanced (close enough to OB)
+        if direction == "BUY":
+            buy_upper_bound = zone_high + zone_buffer_abs
+            buy_lower_bound = zone_low - zone_buffer_abs
+            in_zone = current_price <= buy_upper_bound and current_price >= buy_lower_bound
+        elif direction == "SELL":
+            sell_lower_bound = zone_low - zone_buffer_abs
+            sell_upper_bound = zone_high + zone_buffer_abs
+            in_zone = current_price >= sell_lower_bound and current_price <= sell_upper_bound
+        
+        if not in_zone:
+            reason = (
+                f"SMC WAIT: {zone_type} zone ${zone_low:.4f}–${zone_high:.4f} found, "
+                f"but price ${current_price:.4f} not in zone yet. Queued for retest."
+            )
+            log.info(f"    [{symbol}] ⏳ {reason}")
+            return "WAIT", reason, zone_data
+        
+        # ── Step 7: Strict R:R Validation (SL behind Sweep) ───────────────
+        sl_distance = SMC_SL_ATR_MULT * atr14
+        if swept and sweep_extreme > 0:
+            # Place SL mathematically behind the exact sweep extreme
+            if direction == "BUY":
+                sl_distance = current_price - (sweep_extreme - (0.2 * atr14))
+            else:
+                sl_distance = (sweep_extreme + (0.2 * atr14)) - current_price
+                
+        # Fallback safeguard
+        # ★ v35 FIX: Use SL_ATR_MULT (1.2) instead of SMC_SL_ATR_MULT (2.0)
+        # The actual trade uses 1.2×ATR for SL, so pre-flight must match
+        sl_distance = SL_ATR_MULT * atr14
+            
+        # ★ HARD REJECTION: Cap SL at 4.0% max raw move to protect against extreme volatility (Medium Tolerance)
+        sl_pct = (sl_distance / current_price) * 100.0
+        if sl_pct > 4.0:
+            reason = f"SMC NEUTRAL: SL distance {sl_pct:.2f}% is too wide (>4.0%). Skipping highly volatile setup."
+            log.warning(f"    [{symbol}] 🚫 {reason}")
+            return "NEUTRAL", reason, zone_data
+            
+        tp_distance = 0.0
+        if direction == "BUY":
+            tp_targets = [sh_price for sh_idx, sh_price in swing_highs if sh_price > current_price + (0.1 * atr14)]
+            tp_distance = min(tp_targets) - current_price if tp_targets else sl_distance * 2.0
+        else:
+            tp_targets = [sl_price for sl_idx, sl_price in swing_lows if sl_price < current_price - (0.1 * atr14)]
+            tp_distance = current_price - max(tp_targets) if tp_targets else sl_distance * 2.0
+        
+        rr_ratio = tp_distance / sl_distance if sl_distance > 0 else 0
+        
+        if rr_ratio < SMC_RR_MIN_RATIO:
+            reason = (
+                f"SMC NEUTRAL: R:R too low. TP ${tp_distance:.4f} / SL ${sl_distance:.4f} = "
+                f"{rr_ratio:.2f}R (need ≥ {SMC_RR_MIN_RATIO}R)."
+            )
+            return "NEUTRAL", reason, zone_data
+        
+        # ── ALL CHECKS PASSED ─────────────────────────────────────────────
+        triggers = []
+        if valid_structure:
+            triggers.append(struct_type)
+        if swept:
+            triggers.append("LIQ_SWEEP")
+        if inducement_found:
+            triggers.append("INDUCEMENT_TRAP")
+        
         final_reason = (
-            f"TREND FOLLOW ✅: H1 {trend_str} + Score {score} + "
-            f"EMA21 dist {dist_pct:.2f}% + Vol {vol_ratio:.1f}x + "
-            f"ATR ${atr14:.4f} → SL ${sl_distance:.4f}"
+            f"SMC PASS ✅: [{'+'.join(triggers)}] → {zone_type} Zone "
+            f"${zone_low:.4f}–${zone_high:.4f}, Price ${current_price:.4f} IN ZONE, "
+            f"R:R = {rr_ratio:.2f}"
         )
+        zone_data["sl_distance"] = sl_distance  # ★ v20 SMC SL Integration: Pass mathematical SL distance down pipe
+        zone_data["has_sweep"] = swept          # ★ v25: Liquidity Sweep Premium Flag
         log.info(f"    [{symbol}] {final_reason}")
         return "PASS", final_reason, zone_data
     
     except Exception as e:
-        log.warning(f"⚠  [{symbol}] Entry validation error: {e}")
-        return "PASS", f"SKIP: Error ({e})", None  # Fail-open
-
+        log.warning(f"⚠  [{symbol}] SMC validation error: {e}")
+        return "PASS", f"SMC SKIP: Error ({e})", None  # Fail-open
 
 
 class AdvancedExecutionValidator:
@@ -3370,19 +3399,12 @@ def initialize_client() -> Client:
     except Exception as e:
         log.warning(f"⚠  Time sync failed: {e}. Continuing with local clock.")
 
-    # ★ v39: Retry ping with backoff (prevents crash-loop on temporary API timeouts)
-    for attempt in range(5):
-        try:
-            client.futures_ping()
-            log.info("✅  Futures Mainnet connection verified (REAL MONEY ACTIVE).")
-            break
-        except Exception as e:
-            if attempt < 4:
-                log.warning(f"⚠  Ping attempt {attempt+1}/5 failed: {e}. Retrying in 10s...")
-                time.sleep(10)
-            else:
-                log.error(f"❌  All 5 ping attempts failed. Last error: {e}")
-                raise
+    try:
+        client.futures_ping()
+        log.info("✅  Futures Mainnet connection verified (REAL MONEY ACTIVE).")
+    except BinanceAPIException as e:
+        log.error(f"❌  Ping failed: {e.message}")
+        raise
 
     global SYMBOLS
     if ENABLE_DYNAMIC_WATCHLIST:
@@ -3739,11 +3761,6 @@ def main():
             # ★ v7.4: Consecutive loss tracking
             "consec_losses": 0,
             "loss_cooldown_until": 0,
-            # ★ v39.3: Re-entry after liquidity sweep
-            "last_sl_direction": "NONE",     # Direction of last SL-hit trade
-            "last_sl_price": 0.0,            # Entry price of last SL-hit trade
-            "last_sl_time": 0,               # When SL was hit
-            "reentry_count": 0,              # How many re-entries done (max 1)
             # ★ v7.4: ATR history for spike detection
             "atr_history": [],
             # ★ v11.1: Micro-Momentum Armed State
@@ -4063,9 +4080,9 @@ def main():
                     
                     continue  # Skip right into lockout
 
-                # ★ v39: GLOBAL TRADE CAP: Max 6 positions
+                # ★ GLOBAL TRADE CAP: Max 5 positions + pending orders
                 total_active = global_open_trades_count + global_pending_orders
-                if total_active >= 6:
+                if total_active >= 5:
                     if scan_count % 6 == 0:
                         log.info(f"⚓  [{symbol}] Global Cap Reached ({global_open_trades_count} pos + {global_pending_orders} orders = {total_active}/5). Skipping.")
                     visualizer.set_bot_status("CAP PAUSE")
@@ -4254,7 +4271,7 @@ def main():
                             # BUY: Latest closed body must close ABOVE the previous closed body.
                             # SELL: Latest closed body must close BELOW the previous closed body.
                             try:
-                                m5_momentum = client.futures_klines(symbol=symbol, interval='15m', limit=4)  # ★ v37: 15m momentum
+                                m5_momentum = client.futures_klines(symbol=symbol, interval='5m', limit=4)  # ★ v34-fix: 5m momentum (original)
                                 if m5_momentum and len(m5_momentum) >= 3:
                                     closed_klines = m5_momentum[:-1]  # Exclude unfinished live candle
                                     curr_open = float(closed_klines[-1][1])

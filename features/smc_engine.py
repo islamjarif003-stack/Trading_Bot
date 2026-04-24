@@ -48,7 +48,7 @@ def _get_vol_ma(df: pd.DataFrame, idx: int, period: int = 20) -> float:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # COMPONENT 1: LIQUIDITY SWEEP DETECTOR
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-def detect_liquidity_sweep(df: pd.DataFrame, lookback: int = 20, max_age: int = 8) -> dict:
+def detect_liquidity_sweep(df: pd.DataFrame, lookback: int = 30, max_age: int = 20) -> dict:
     """
     Finds the most recent liquidity sweep within the last max_age candles.
     """
@@ -123,8 +123,8 @@ def detect_choch(df: pd.DataFrame, sweep_result: dict) -> dict:
         target_level = float(df.iloc[max(0, sweep_idx - 5) : sweep_idx]['high'].max())
         target_type = 'BULLISH_CHOCH'
         
-    # Scan candles after sweep (max 8)
-    max_idx = min(current_idx, sweep_idx + 8)
+    # Scan candles after sweep (max 15)
+    max_idx = min(current_idx, sweep_idx + 15)
     for i in range(sweep_idx + 1, max_idx + 1):
         candle = df.iloc[i]
         atr14 = df['atr14'].iloc[i] if 'atr14' in df.columns else _calc_atr(df, i)
