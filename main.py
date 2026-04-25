@@ -76,9 +76,13 @@ BLACKLIST_COINS = {
     "BASEDUSDT", "ALPACAUSDT", "LINAUSDT", "BNXUSDT",
     "ARIAUSDT", "ENAUSDT", "WETUSDT",
 }
+
+# ★ v34-fix3: TradFi coins — markets closed on weekends (Sat/Sun), skip those days
+TRADFI_SYMBOLS = {"XAUUSDT", "XAGUSDT", "CRCLUSDT", "TSLAUSDT", "INTCUSDT"}
+
 LEVERAGE        = 20                # ★ FIXED 20x leverage
-SL_ATR_MULT     = 1.5               # ★ v25: SL = 1.5 × ATR (wider for MARKET order entries)
-TP_ATR_MULT     = 3.0               # ★ v25: TP = 3.0 × ATR (R:R = 1:2 maintained with SL=1.5)
+SL_ATR_MULT     = 3.0               # ★ v34-fix3: SL = 3.0 × ATR (was 1.5 — too tight, noise killed winning trades)
+TP_ATR_MULT     = 6.0               # ★ v34-fix3: TP = 6.0 × ATR (R:R = 1:2 maintained with SL=3.0)
 HARD_LOCKOUT_S  = 300               # ★ v22: 5-minute hard lockout after every trade (was 30m)
 LOOP_INTERVAL_S = 10                # Seconds between each scan cycle
 ENTRY_RISK_PCT  = 15.0              # ★ $50 Config: 15% of $50 ≈ $7.50 risk per trade
@@ -90,7 +94,7 @@ MAX_DAILY_LOSS_PCT = 10.0            # ★ $50 Config: 10% = $5 daily loss limit
 
 # ─── ★ v7.4: CONSECUTIVE LOSS COOLDOWN ──────────────────────────────────────
 MAX_CONSEC_LOSSES   = 3         # After 3 consecutive losses on a coin...
-LOSS_COOLDOWN_S     = 7200      # ...add 2-hour extra cooldown for that coin
+LOSS_COOLDOWN_S     = 14400     # ...add 4-hour extra cooldown for that coin (strict SMC rule)
 
 # ─── ★ v7.4: VOLATILITY SPIKE FILTER ────────────────────────────────────────
 ATR_SPIKE_MULT      = 2.0       # Skip entry if current ATR > 2× recent average ATR
@@ -114,7 +118,7 @@ VIRTUAL_ACCOUNT         = False    # IMPORTANT: False activates LIVE Binance Exe
 INITIAL_BALANCE         = 25.00    # Hard Account Balance Baseline
 PROFIT_TARGET           = 5.00     # Optional profit ceiling
 DAILY_LOSS_LIMIT        = 5.00     # 🚨 Global Hard Stop mechanism ($5)
-MAX_TOTAL_LOSS          = 5.00     # 🚨 Complete System Lockout at $5 cumulative loss
+MAX_TOTAL_LOSS          = 2.00     # 🚨 Complete System Lockout at $2 cumulative loss
 
 # ─── ★ STRICT POSITION SIZING & RISK ─────────────────────────────────────────
 LEVERAGE                = 20       # 20x Leverage (Ensures Notional Value scales correctly)
@@ -343,19 +347,24 @@ def _get_kelly_params() -> tuple:
 
 # ─── TELEGRAM HELPER ─────────────────────────────────────────────────────────
 def send_telegram_alert(message: str):
-    """Sends a text message to the configured Telegram chat."""
+    """Sends a text message to the configured Telegram chat(s)."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message[:4000],
-        "parse_mode": "HTML"
-    }
-    try:
-        requests.post(url, json=payload, timeout=3)
-    except Exception as e:
-        log.warning(f"⚠  Telegram alert failed: {e}")
+    
+    # Support multiple comma-separated chat IDs
+    chat_ids = [cid.strip() for cid in TELEGRAM_CHAT_ID.split(",") if cid.strip()]
+    
+    for chat_id in chat_ids:
+        payload = {
+            "chat_id": chat_id,
+            "text": message[:4000],
+            "parse_mode": "HTML"
+        }
+        try:
+            requests.post(url, json=payload, timeout=3)
+        except Exception as e:
+            log.warning(f"⚠  Telegram alert failed for {chat_id}: {e}")
 
 
 def send_telegram_photo(image_stream: io.BytesIO, caption: str = ""):
@@ -363,19 +372,24 @@ def send_telegram_photo(image_stream: io.BytesIO, caption: str = ""):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-    image_stream.seek(0)
-    files = {"photo": ("smc_chart.png", image_stream, "image/png")}
-    data = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "caption": caption[:1024],  # Telegram photo caption limit
-        "parse_mode": "HTML"
-    }
-    try:
-        resp = requests.post(url, files=files, data=data, timeout=10)
-        if resp.status_code != 200:
-            log.warning(f"⚠  Telegram photo send failed: {resp.status_code} {resp.text[:200]}")
-    except Exception as e:
-        log.warning(f"⚠  Telegram photo send failed: {e}")
+    
+    chat_ids = [cid.strip() for cid in TELEGRAM_CHAT_ID.split(",") if cid.strip()]
+    
+    for i, chat_id in enumerate(chat_ids):
+        # We need to seek to 0 for each chat ID
+        image_stream.seek(0)
+        files = {"photo": ("smc_chart.png", image_stream, "image/png")}
+        data = {
+            "chat_id": chat_id,
+            "caption": caption[:1024],  # Telegram photo caption limit
+            "parse_mode": "HTML"
+        }
+        try:
+            resp = requests.post(url, files=files, data=data, timeout=10)
+            if resp.status_code != 200:
+                log.warning(f"⚠  Telegram photo send failed for {chat_id}: {resp.status_code} {resp.text[:200]}")
+        except Exception as e:
+            log.warning(f"⚠  Telegram photo send failed for {chat_id}: {e}")
 
 
 def generate_smc_chart(client: Client, symbol: str, signal: str, avg_entry: float,
@@ -965,7 +979,7 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         
         # Apply Kelly sizing with $1 floor (or $10 for realistic DRY RUN)
         calc_margin = total_balance * half_kelly_pct
-        floor_margin = 10.00 if DRY_RUN else 2.00  # ★ v37: Raised from $1 → $2
+        floor_margin = 10.00 if DRY_RUN else 4.00  # ★ v34-fix2: $4 margin (was $2)
         dynamic_margin = max(calc_margin, floor_margin)
             
         position_value_usd = dynamic_margin * LEVERAGE
@@ -1023,34 +1037,24 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         #  ★ v25: STRUCTURAL OB SL (Zone-Based Stop Loss)
         # ════════════════════════════════════════════════════════════════
         if ob_entry_used:
-            buffer = atr_1m_for_offset * 0.20
+            buffer = atr * 0.30  # ★ Use 1H ATR (not 5m) for proper buffer
             if signal == "BUY":
                 sl_distance = limit_price - (zone_low - buffer)
             else:
                 sl_distance = (zone_high + buffer) - limit_price
             
-            # Constraints
-            sl_distance = max(sl_distance, current_price * 0.002) # Min 0.2%
-            sl_distance = min(sl_distance, current_price * 0.04)  # Max 4.0%
-            tp_distance = sl_distance * 2.0  # Maintain 1:2 strict R:R
+            # Constraints — enough room to survive noise
+            sl_distance = max(sl_distance, current_price * 0.003) # Min 0.3% (survive noise)
+            sl_distance = min(sl_distance, current_price * 0.015) # Max 1.5%
+            tp_distance = sl_distance * 3.0  # ★ 1:3 R:R (bigger wins)
         else:
-            # ATR-based SL/TP distances (fallback) with 4% safety cap
-            sl_distance = atr * SL_ATR_MULT   # 1.5 × ATR (atr = 1H ATR after sync)
-            sl_distance = min(sl_distance, current_price * 0.04)
-            tp_distance = sl_distance * (TP_ATR_MULT / SL_ATR_MULT)
+            # ★ Strict SMC Fallback: Tighter ATR SL when no OB zone available
+            sl_distance = atr * 1.5   # 1.5 × ATR (tighter than old 3.0x)
+            sl_distance = max(sl_distance, current_price * 0.002)  # Min 0.2%
+            sl_distance = min(sl_distance, current_price * 0.04)   # Max 4.0%
+            tp_distance = sl_distance * 3.0  # ★ 1:3 R:R (bigger wins)
             
-            # ★ v38 FIX: SMC zone sl_distance uses 15m ATR which can be much smaller
-            # than 1H ATR. Only use it if it's LARGER (more conservative) than 1H-based SL.
-            if signal_data and signal_data.get("smc_zone") and signal_data["smc_zone"].get("sl_distance", 0) > 0:
-                smc_sl = signal_data["smc_zone"]["sl_distance"]
-                if smc_sl > sl_distance:
-                    log.info(f"   ★ SMC SL Override: ${smc_sl:.4f} > 1H ATR SL ${sl_distance:.4f} — Using SMC zone SL")
-                    sl_distance = smc_sl
-                    tp_distance = sl_distance * 2.0
-                else:
-                    log.info(f"   ★ SMC SL Skip: ${smc_sl:.4f} < 1H ATR SL ${sl_distance:.4f} — Keeping 1H ATR SL")
-            
-            # ★ v38: Minimum SL floor = 0.15% of price (prevents instant SL from noise)
+            # ★ Minimum SL floor = 0.15% of price (prevents instant SL from noise)
             min_sl = current_price * 0.0015
             if sl_distance < min_sl:
                 log.warning(f"   ⚠ SL Floor: ${sl_distance:.4f} < 0.15% min ${min_sl:.4f} — Raising to floor")
@@ -1093,6 +1097,11 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         log.info("═" * 70)
         mode_str = "PROP CHALLENGE" if VIRTUAL_ACCOUNT else "REAL ACCOUNT"
         log.info(f"🚀  [{symbol}] EXECUTING {signal} ({mode_str}) │ Score: {score}")
+        # ★ v34-fix3: Track entry time for spam guard (safe — bot_state may not be in scope)
+        try:
+            bot_state["last_entry_attempt_time"] = time.time()
+        except NameError:
+            pass  # bot_state not available in execute_trade scope, skip spam guard tracking
         log.info(f"   ★ LIMIT Entry : ${limit_price} ({entry_method})")
         log.info(f"   Market Price  : ${current_price}")
         log.info(f"   Quantity      : {quantity}")
@@ -2097,8 +2106,10 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                                 break
                     
                     if bot_state["current_trail_sl"] == 0.0:
-                        # Naked position — place emergency SL using 1H ATR
-                        sl_distance = current_atr * SL_ATR_MULT
+                        # Naked position — place emergency SL (tight: max 2% from entry)
+                        sl_distance = current_atr * 1.5  # Use tighter 1.5x ATR
+                        max_sl_distance = entry_price * 0.01  # ★ Hard cap: 1% max (tight SL)
+                        sl_distance = min(sl_distance, max_sl_distance)
                         if side == "BUY":
                             calc_sl = _round_price(entry_price - sl_distance, symbol)
                         else:
@@ -2111,6 +2122,29 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
                 except Exception as e:
                     if "4130" not in str(e):
                         log.warning(f"⚠  [{symbol}] SL check failed: {e}")
+
+            # ★ SL STEP-UP: Tighten SL as price moves in our favor (before break-even)
+            # When profit reaches 0.15%, move SL halfway closer to entry
+            current_sl = bot_state.get("current_trail_sl", 0.0)
+            if current_sl > 0 and pnl_pct >= 0.15 and pnl_pct < dynamic_be_trigger:
+                if side == "BUY":
+                    sl_gap = entry_price - current_sl  # How far SL is below entry
+                    if sl_gap > entry_price * 0.003:  # Only if gap > 0.3%
+                        new_sl = _round_price(entry_price - (sl_gap * 0.5), symbol)  # Halve the gap
+                        if new_sl > current_sl:
+                            success = _update_sl_order(client, symbol, side, new_sl)
+                            if success:
+                                bot_state["current_trail_sl"] = new_sl
+                                log.info(f"📐  [{symbol}] SL STEP-UP: Profit {pnl_pct:.2f}% → SL tightened ${current_sl} → ${new_sl} (gap halved)")
+                elif side == "SELL":
+                    sl_gap = current_sl - entry_price  # How far SL is above entry
+                    if sl_gap > entry_price * 0.003:  # Only if gap > 0.3%
+                        new_sl = _round_price(entry_price + (sl_gap * 0.5), symbol)  # Halve the gap
+                        if new_sl < current_sl:
+                            success = _update_sl_order(client, symbol, side, new_sl)
+                            if success:
+                                bot_state["current_trail_sl"] = new_sl
+                                log.info(f"📐  [{symbol}] SL STEP-UP: Profit {pnl_pct:.2f}% → SL tightened ${current_sl} → ${new_sl} (gap halved)")
 
             log.info(
                 f"   [{symbol}] [{bar}] {pnl_str} │ "
@@ -2657,7 +2691,7 @@ def _check_1h_trend_ema50(client: Client, symbol: str, direction: str) -> tuple:
 import numpy as np
 
 ENTRY_VALIDATION_ENABLED = True    # ★ v20: Master switch for SMC entry validation
-WAIT_QUEUE_MAX_CANDLES   = 16      # ★ WAIT queue: max candles before expiry (8 -> 16 / 40m -> 80m window)
+WAIT_QUEUE_MAX_CANDLES   = 30      # ★ WAIT queue: max 30 candles (2.5h on 5m) before expiry
 SMC_SWING_LOOKBACK       = 3       # ★ Swing detection: ±3 bar window
 SMC_SWEEP_TOLERANCE_ATR  = 0.15    # ★ Sweep: wick must exceed level by at least 0.15× ATR
 SMC_RR_MIN_RATIO         = 1.2     # ★ v37 Tuning: R:R floor lowered (was 1.5) — allows 1.2R+ setups through
@@ -2744,6 +2778,8 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
     
     # --- CHOCH Detection ---
     # Look at ALL candles after the last swing point to see if structure broke during the pullback
+    # ★ v34-fix2: Minimum break distance to filter noise/wick breaks
+    min_break = atr14 * 0.1 if atr14 > 0 else 0  # Must break by at least 0.1×ATR
     
     # Bullish CHOCH: Downtrend + price breaks above last swing high
     if trend in ("DOWN", "MIXED"):
@@ -2754,10 +2790,10 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
             check_sh_idx, check_sh_price = recent_sh[sh_check_idx]
             start_idx = max(0, check_sh_idx)
             for i in range(start_idx, n):
-                if closes[i] > check_sh_price and i > check_sh_idx:
+                if closes[i] > (check_sh_price + min_break) and i > check_sh_idx:
                     detail = (
                         f"Bullish CHOCH: Trend was {trend}, price ${closes[i]:.4f} broke above "
-                        f"Swing High ${check_sh_price:.4f} (bar {check_sh_idx})"
+                        f"Swing High ${check_sh_price:.4f} by ${closes[i]-check_sh_price:.4f} (min ${min_break:.4f}) (bar {check_sh_idx})"
                     )
                     return "CHOCH_BULL", i, check_sh_price, detail
     
@@ -2770,10 +2806,10 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
             check_sl_idx, check_sl_price = recent_sl[sl_check_idx]
             start_idx = max(0, check_sl_idx)
             for i in range(start_idx, n):
-                if closes[i] < check_sl_price and i > check_sl_idx:
+                if closes[i] < (check_sl_price - min_break) and i > check_sl_idx:
                     detail = (
                         f"Bearish CHOCH: Trend was {trend}, price ${closes[i]:.4f} broke below "
-                        f"Swing Low ${check_sl_price:.4f} (bar {check_sl_idx})"
+                        f"Swing Low ${check_sl_price:.4f} by ${check_sl_price-closes[i]:.4f} (min ${min_break:.4f}) (bar {check_sl_idx})"
                     )
                     return "CHOCH_BEAR", i, check_sl_price, detail
     
@@ -2783,10 +2819,10 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
         last_sh_idx = last_2_sh[-1][0]
         start_idx = max(0, last_sh_idx)
         for i in range(start_idx, n):
-            if highs[i] > last_2_sh[-1][1] and i > last_sh_idx:
+            if highs[i] > (last_2_sh[-1][1] + min_break) and i > last_sh_idx:
                 detail = (
                     f"Bullish BOS: Uptrend continuation. High ${highs[i]:.4f} broke "
-                    f"Swing High ${last_2_sh[-1][1]:.4f}"
+                    f"Swing High ${last_2_sh[-1][1]:.4f} by ${highs[i]-last_2_sh[-1][1]:.4f}"
                 )
                 return "BOS_BULL", i, last_2_sh[-1][1], detail
     
@@ -2795,10 +2831,10 @@ def _detect_market_structure(highs: np.ndarray, lows: np.ndarray, closes: np.nda
         last_sl_idx = last_2_sl[-1][0]
         start_idx = max(0, last_sl_idx)
         for i in range(start_idx, n):
-            if lows[i] < last_2_sl[-1][1] and i > last_sl_idx:
+            if lows[i] < (last_2_sl[-1][1] - min_break) and i > last_sl_idx:
                 detail = (
                     f"Bearish BOS: Downtrend continuation. Low ${lows[i]:.4f} broke "
-                    f"Swing Low ${last_2_sl[-1][1]:.4f}"
+                    f"Swing Low ${last_2_sl[-1][1]:.4f} by ${last_2_sl[-1][1]-lows[i]:.4f}"
                 )
                 return "BOS_BEAR", i, last_2_sl[-1][1], detail
     
@@ -3064,7 +3100,22 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
                 valid_structure = False
         
         if not valid_structure:
-            if score >= 22:  # ★ v38.1: Restored to 22 (18 was too loose — all bypass trades lost)
+            # ★ v38.2: Dynamic Session Score Threshold for Bypass
+            session = get_current_session()
+            bypass_threshold = 26  # ★ HIGH QUALITY ONLY
+            
+            # --- ONE TIME FORCED BYPASS (DISABLED) ---
+            import os
+            flag_file = "/opt/trading-bot/.one_time_bypass.flag"
+            # DISABLED — was causing low-quality entries
+            if session == "LONDON":
+                bypass_threshold = 24  # Slightly relaxed for London (good liquidity)
+            elif session == "ASIA":
+                bypass_threshold = 24  # Same for Asia
+            else:
+                bypass_threshold = 26  # Strict for NY (high volatility/fakeouts)
+                
+            if score >= bypass_threshold:  # ★ Dynamic threshold applied
                 # ★ v38.1: H1 TREND DIRECTION CHECK — prevent counter-trend bypass
                 # SELL bypass in BULLISH market = guaranteed loss (XRPUSDT, DASHUSDT losses)
                 h1_trend_ok = True  # default pass
@@ -3270,7 +3321,7 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
         # ── Step 6: Is price IN the zone now? (ATR-based Buffer) ──────────
         in_zone = False
         # ★ v37: ATR-based buffer instead of %. Prevents XAUUSDT-type $23 buffer bug.
-        zone_buffer_abs = 1.0 * atr14  # 1.0 × ATR = balanced (close enough to OB)
+        zone_buffer_abs = 0.5 * atr14  # ★ Strict SMC: 0.5 × ATR buffer (sniper touch entry)
         if direction == "BUY":
             buy_upper_bound = zone_high + zone_buffer_abs
             buy_lower_bound = zone_low - zone_buffer_abs
@@ -3280,6 +3331,36 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
             sell_upper_bound = zone_high + zone_buffer_abs
             in_zone = current_price >= sell_lower_bound and current_price <= sell_upper_bound
         
+        # ★ CANDLE TOUCH CHECK: If current price missed the zone, check if the 
+        # last 2 candles' wick touched it (catches fast bounces between scans).
+        # BUT: only enter if current price is still NEAR the zone (within 1.0 ATR).
+        if not in_zone and n >= 2:
+            near_zone_limit = 1.0 * atr14  # Max distance from zone edge to allow late entry
+            
+            for lookback in range(1, 3):  # Check last 2 candles
+                candle_low = float(low[-lookback])
+                candle_high = float(high[-lookback])
+                
+                if direction == "BUY":
+                    # Did the candle's low dip into/below the OB zone?
+                    candle_touched = candle_low <= buy_upper_bound
+                    # Is current price still close enough to zone top?
+                    price_still_near = current_price <= (zone_high + near_zone_limit)
+                    if candle_touched and price_still_near:
+                        in_zone = True
+                        log.info(f"    [{symbol}] 🎯 CANDLE TOUCH DETECTED! Candle[-{lookback}] Low ${candle_low:.4f} touched zone. Price ${current_price:.4f} still near (within 1.0 ATR).")
+                        break
+                        
+                elif direction == "SELL":
+                    # Did the candle's high reach into/above the OB zone?
+                    candle_touched = candle_high >= sell_lower_bound
+                    # Is current price still close enough to zone bottom?
+                    price_still_near = current_price >= (zone_low - near_zone_limit)
+                    if candle_touched and price_still_near:
+                        in_zone = True
+                        log.info(f"    [{symbol}] 🎯 CANDLE TOUCH DETECTED! Candle[-{lookback}] High ${candle_high:.4f} touched zone. Price ${current_price:.4f} still near (within 1.0 ATR).")
+                        break
+        
         if not in_zone:
             reason = (
                 f"SMC WAIT: {zone_type} zone ${zone_low:.4f}–${zone_high:.4f} found, "
@@ -3288,24 +3369,23 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
             log.info(f"    [{symbol}] ⏳ {reason}")
             return "WAIT", reason, zone_data
         
-        # ── Step 7: Strict R:R Validation (SL behind Sweep) ───────────────
-        sl_distance = SMC_SL_ATR_MULT * atr14
-        if swept and sweep_extreme > 0:
-            # Place SL mathematically behind the exact sweep extreme
-            if direction == "BUY":
-                sl_distance = current_price - (sweep_extreme - (0.2 * atr14))
-            else:
-                sl_distance = (sweep_extreme + (0.2 * atr14)) - current_price
-                
-        # Fallback safeguard
-        # ★ v35 FIX: Use SL_ATR_MULT (1.2) instead of SMC_SL_ATR_MULT (2.0)
-        # The actual trade uses 1.2×ATR for SL, so pre-flight must match
-        sl_distance = SL_ATR_MULT * atr14
+        # ★ Strict SMC: SL = OB edge + 0.2 ATR (tight, zone-based)
+        # Use zone edge as entry reference (not current_price which may have bounced away)
+        if direction == "BUY":
+            entry_ref = min(current_price, zone_high)  # Entry at zone or better
+            sl_distance = entry_ref - (zone_low - (0.2 * atr14))
+        else:
+            entry_ref = max(current_price, zone_low)  # Entry at zone or better
+            sl_distance = (zone_high + (0.2 * atr14)) - entry_ref
+        
+        # Min/Max safety guardrails
+        sl_distance = max(sl_distance, current_price * 0.002)  # Min 0.2%
+        sl_distance = min(sl_distance, current_price * 0.04)   # Max 4.0%
             
-        # ★ HARD REJECTION: Cap SL at 4.0% max raw move to protect against extreme volatility (Medium Tolerance)
+        # ★ HARD REJECTION: Cap SL at 4.0% max raw move to protect against extreme volatility
         sl_pct = (sl_distance / current_price) * 100.0
         if sl_pct > 4.0:
-            reason = f"SMC NEUTRAL: SL distance {sl_pct:.2f}% is too wide (>4.0%). Skipping highly volatile setup."
+            reason = f"SMC NEUTRAL: SL distance {sl_pct:.2f}% is too wide (>4.0%). Skipping."
             log.warning(f"    [{symbol}] 🚫 {reason}")
             return "NEUTRAL", reason, zone_data
             
@@ -3755,6 +3835,7 @@ def main():
             # Core state
             "trade_open_time": 0.0,
             "last_trade_time": 0,
+            "last_entry_attempt_time": 0,  # ★ v34-fix3: Spam guard timestamp
             "last_signal_data": None,
             "last_side": "UNKNOWN",
             "_trade_logged": True,      # Default true to prevent logging random starts
@@ -4080,14 +4161,30 @@ def main():
                     
                     continue  # Skip right into lockout
 
-                # ★ GLOBAL TRADE CAP: Max 5 positions + pending orders
+                # ★ v34-fix3: Skip TradFi coins on weekends (markets closed Sat/Sun)
+                utc_now = datetime.now(timezone.utc)
+                if symbol in TRADFI_SYMBOLS and utc_now.weekday() >= 5:  # 5=Sat, 6=Sun
+                    if scan_count % 30 == 0:  # Log rarely
+                        log.info(f"📅  [{symbol}] TradFi WEEKEND SKIP — Market closed (day={utc_now.strftime('%A')})")
+                    continue
+
+                # ★ GLOBAL TRADE CAP: Max 2 positions + pending orders
                 total_active = global_open_trades_count + global_pending_orders
-                if total_active >= 5:
+                if total_active >= 2:  # ★ v34-fix2: Max 2 open positions (was 5)
                     if scan_count % 6 == 0:
-                        log.info(f"⚓  [{symbol}] Global Cap Reached ({global_open_trades_count} pos + {global_pending_orders} orders = {total_active}/5). Skipping.")
+                        log.info(f"⚓  [{symbol}] Global Cap Reached ({global_open_trades_count} pos + {global_pending_orders} orders = {total_active}/2). Skipping.")
                     visualizer.set_bot_status("CAP PAUSE")
                     visualizer.update()
                     time.sleep(1)  # small delay before moving to next symbol
+                    continue
+
+                # ★ v34-fix3: PER-SYMBOL SPAM GUARD — prevent re-entry on same coin within 10 min
+                last_entry_time = state.get("last_entry_attempt_time", 0)
+                spam_cooldown = 600  # 10 minutes
+                if (time.time() - last_entry_time) < spam_cooldown:
+                    remaining = int(spam_cooldown - (time.time() - last_entry_time))
+                    if scan_count % 6 == 0:
+                        log.info(f"🚫  [{symbol}] SPAM GUARD — {remaining}s until re-entry allowed.")
                     continue
 
                 # ── Fetch signal (forced refresh) ────────────────────────────
@@ -4385,12 +4482,41 @@ def main():
                                         state["armed_signal_data"] = None
                                         continue
                                     else:
-                                        # ★ v37: DISABLED WAIT OVERRIDE — Always wait for OB zone retest (15m trades need precision)
-                                        log.warning(f"⏳  [{symbol}] SMC WAIT — Price not in OB zone. Must wait for retest (override disabled v37).")
-                                        state["armed_signal"] = "NONE"
-                                        state["armed_time"] = 0
-                                        state["armed_signal_data"] = None
-                                        continue
+                                        # ★ v39: SMART WAIT OVERRIDE — If price is very close to zone, proceed anyway
+                                        # This prevents the "double-check WAIT" from blocking near-zone trades
+                                        zone_h = float(smc_zone.get("zone_high", 0)) if isinstance(smc_zone, dict) else 0
+                                        zone_l = float(smc_zone.get("zone_low", 0)) if isinstance(smc_zone, dict) else 0
+                                        
+                                        if zone_h > 0 and zone_l > 0:
+                                            # Check if price is within 1.5 ATR of zone edge
+                                            exc_atr_check = state.get("armed_signal_data", {}).get("atr", 0)
+                                            if exc_atr_check > 0:
+                                                if armed_dir == "BUY":
+                                                    dist_to_zone = current_price - zone_h
+                                                else:
+                                                    dist_to_zone = zone_l - current_price
+                                                    
+                                                if dist_to_zone <= 1.5 * exc_atr_check:
+                                                    log.info(f"🎯  [{symbol}] SMART OVERRIDE: Price ${current_price:.4f} is only {dist_to_zone:.4f} from zone (< 1.5 ATR). Proceeding!")
+                                                    # Don't block, let it flow to execution below
+                                                else:
+                                                    log.warning(f"⏳  [{symbol}] SMC WAIT — Price ${current_price:.4f} too far from zone ({dist_to_zone:.4f} > 1.5 ATR). Queued.")
+                                                    state["armed_signal"] = "NONE"
+                                                    state["armed_time"] = 0
+                                                    state["armed_signal_data"] = None
+                                                    continue
+                                            else:
+                                                log.warning(f"⏳  [{symbol}] SMC WAIT — No ATR data. Queued.")
+                                                state["armed_signal"] = "NONE"
+                                                state["armed_time"] = 0
+                                                state["armed_signal_data"] = None
+                                                continue
+                                        else:
+                                            log.warning(f"⏳  [{symbol}] SMC WAIT — No zone data. Queued.")
+                                            state["armed_signal"] = "NONE"
+                                            state["armed_time"] = 0
+                                            state["armed_signal_data"] = None
+                                            continue
                                 # else: "PASS" — continue to execution
 
                             # Restore data for execution
@@ -4431,6 +4557,9 @@ def main():
                                         size_multiplier = CORR_REDUCE_SIZE_PCT / 100.0
                                         log.info(f"⚠  [{symbol}] CORR FILTER REDUCE — Size: {CORR_REDUCE_SIZE_PCT}% │ BTC Corr: {btc_corr:+.4f}")
 
+                            # ★ v34-fix3: Set spam guard BEFORE execute (prevents retry spam)
+                            state["last_entry_attempt_time"] = time.time()
+                            
                             success, entry_qty = execute_trade(
                                 client, symbol, exc_signal, exc_price, exc_atr, exc_data,
                                 size_multiplier=size_multiplier, is_micro_scalp=is_micro_scalp

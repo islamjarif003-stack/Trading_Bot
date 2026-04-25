@@ -501,43 +501,48 @@ def render_symbol_dashboard(symbol: str, state: dict):
     st.markdown("### 🖥️ Live Terminal Logs")
     
     log_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trading_bot.log")
+    import subprocess
+    import sys
     try:
-        if os.path.exists(log_file):
-            with open(log_file, "r", encoding="utf-8") as f:
-                # Read last 12 lines for a better terminal look
-                lines = f.readlines()
-                latest_logs = lines[-12:] if len(lines) >= 12 else lines
-                
-                log_text = "".join(latest_logs).strip()
-                if log_text:
-                    # Escape HTML characters just in case
-                    log_text = log_text.replace("<", "&lt;").replace(">", "&gt;")
-                    
-                    # Terminal UI styled with CSS
-                    terminal_html = f"""
-                    <div style="
-                        background-color: #050505; 
-                        color: #00ff00; 
-                        font-family: 'JetBrains Mono', 'Courier New', Courier, monospace; 
-                        font-size: 13px; 
-                        padding: 16px; 
-                        border-radius: 10px; 
-                        border: 1px solid #1e293b; 
-                        box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
-                        overflow-x: auto; 
-                        white-space: pre; 
-                        line-height: 1.6;
-                    ">
-{log_text}
-                    </div>
-                    """
-                    st.markdown(terminal_html, unsafe_allow_html=True)
-                else:
-                    st.info("Log file is empty.")
+        if sys.platform == "win32":
+            # Fetch live logs directly from the remote server via SSH so local dashboard shows real logs
+            cmd = ['ssh', 'root@103.174.50.149', 'tail -n 12 /opt/trading-bot/trading_bot.log']
+            kwargs = {"capture_output": True, "text": True, "timeout": 5, "creationflags": subprocess.CREATE_NO_WINDOW}
         else:
-            st.info("trading_bot.log not found. Make sure the bot is running and writing to this file.")
+            # Running on the remote Linux server directly
+            cmd = ['tail', '-n', '12', '/opt/trading-bot/trading_bot.log']
+            kwargs = {"capture_output": True, "text": True, "timeout": 5}
+            
+        result = subprocess.run(cmd, **kwargs)
+        
+        if result.returncode == 0 and result.stdout.strip():
+            log_text = result.stdout.strip()
+            # Escape HTML characters just in case
+            log_text = log_text.replace("<", "&lt;").replace(">", "&gt;")
+            
+            # Terminal UI styled with CSS
+            terminal_html = f"""
+            <div style="
+                background-color: #050505; 
+                color: #00ff00; 
+                font-family: 'JetBrains Mono', 'Courier New', Courier, monospace; 
+                font-size: 13px; 
+                padding: 16px; 
+                border-radius: 10px; 
+                border: 1px solid #1e293b; 
+                box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+                overflow-x: auto; 
+                white-space: pre; 
+                line-height: 1.6;
+            ">
+{log_text}
+            </div>
+            """
+            st.markdown(terminal_html, unsafe_allow_html=True)
+        else:
+            st.info("Log file is empty or SSH connection failed.")
     except Exception as e:
-        st.error(f"Error reading logs: {e}")
+        st.error(f"Error reading logs via SSH: {e}")
 
     # ── Footer ───────────────────────────────────────────────────────────
     st.markdown("---")

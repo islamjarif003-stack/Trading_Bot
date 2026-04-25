@@ -1,90 +1,104 @@
-"""Full trade report — all coins, last 48 hours"""
+"""Check: Where was price exactly 1 hour after entry? (FIXED timestamps)"""
 from binance.client import Client
 from dotenv import load_dotenv
 import os, time
+from datetime import datetime, timezone
 
 load_dotenv()
 c = Client(os.getenv('BINANCE_API_KEY'), os.getenv('BINANCE_API_SECRET'))
 c.API_URL = 'https://fapi.binance.com/fapi'
 
-# Get all trades from last 48 hours
-start_time = int((time.time() - 48*3600) * 1000)
+# Get actual entry times from trade history
+trades_info = [
+    {"coin": "FOLKSUSDT", "side": "SELL", "entry": 1.442, "sl": 1.494},
+    {"coin": "LINKUSDT", "side": "BUY", "entry": 9.40, "sl": 9.38},
+    {"coin": "ZECUSDT", "side": "SELL", "entry": 362.66, "sl": 361.33},
+]
 
-# Check account
-acct = c.futures_account()
-balance = float(acct['totalWalletBalance'])
-available = float(acct['availableBalance'])
-unrealized = float(acct['totalUnrealizedProfit'])
+print("=" * 80)
+print("  1-HOUR POST-ENTRY ANALYSIS (using actual trade timestamps)")
+print("=" * 80)
 
-# Get open positions
-pos = c.futures_position_information()
-open_pos = [p for p in pos if float(p.get('positionAmt', 0)) != 0]
-
-# Get all recent trades across all symbols
-all_symbols = set()
-income = c.futures_income_history(incomeType='REALIZED_PNL', startTime=start_time, limit=100)
-for inc in income:
-    all_symbols.add(inc['symbol'])
-
-print("=" * 70)
-print(f"  FULL TRADE REPORT — Last 48 Hours")
-print(f"  Balance: ${balance:.2f} | Available: ${available:.2f} | Unrealized: ${unrealized:.2f}")
-print("=" * 70)
-
-# Open positions
-print(f"\n📊 OPEN POSITIONS: {len(open_pos)}")
-for p in open_pos:
-    amt = float(p['positionAmt'])
-    entry = float(p['entryPrice'])
-    mark = float(p['markPrice'])
-    pnl = float(p['unRealizedProfit'])
-    side = "LONG" if amt > 0 else "SHORT"
-    print(f"  {p['symbol']:12s} | {side:5s} | Qty: {abs(amt):.4f} | Entry: ${entry:.4f} | Mark: ${mark:.4f} | PnL: ${pnl:+.4f}")
-
-# Trade history per symbol
-print(f"\n📈 REALIZED TRADES:")
-total_pnl = 0
-total_fees = 0
-trade_count = 0
-wins = 0
-losses = 0
-
-for sym in sorted(all_symbols):
-    try:
-        trades = c.futures_account_trades(symbol=sym, startTime=start_time, limit=50)
-        if not trades:
-            continue
+for t in trades_info:
+    sym = t["coin"]
+    side = t["side"]
+    entry = t["entry"]
+    sl = t["sl"]
+    
+    # Get actual trades to find exact entry time
+    all_trades = c.futures_account_trades(symbol=sym, limit=20)
+    
+    # Find the entry trade (matching side and approximate price)
+    entry_trade = None
+    for tr in all_trades:
+        if tr['side'] == side.upper() and abs(float(tr['price']) - entry) < entry * 0.01:
+            entry_trade = tr
+            break
+    
+    if not entry_trade:
+        # Just use the most recent trade for this symbol
+        for tr in reversed(all_trades):
+            entry_trade = tr
+            break
+    
+    entry_time_ms = int(entry_trade['time'])
+    entry_price = float(entry_trade['price'])
+    entry_dt = datetime.fromtimestamp(entry_time_ms/1000, tz=timezone.utc)
+    
+    print(f"\n{'─' * 80}")
+    print(f"  {sym} | {side} @ ${entry_price:.4f} | SL: ${sl}")
+    print(f"  Entry Time: {entry_dt.strftime('%Y-%m-%d %H:%M UTC')}")
+    print(f"{'─' * 80}")
+    
+    # Get 5m candles starting from entry
+    klines = c.futures_klines(symbol=sym, interval='5m', startTime=entry_time_ms, limit=15)
+    
+    if len(klines) < 2:
+        print(f"  Not enough data")
+        continue
+    
+    worst_dd = 0
+    best_pf = 0
+    
+    for i, k in enumerate(klines[:13]):
+        mins = i * 5
+        close_p = float(k[4])
+        high_p = float(k[2])
+        low_p = float(k[3])
         
-        sym_pnl = sum(float(t['realizedPnl']) for t in trades)
-        sym_fee = sum(float(t['commission']) for t in trades)
-        sym_net = sym_pnl - sym_fee
-        n_trades = len([t for t in trades if float(t['realizedPnl']) != 0])
-        
-        if n_trades == 0:
-            continue
-        
-        total_pnl += sym_pnl
-        total_fees += sym_fee
-        trade_count += n_trades
-        
-        result = "✅ WIN" if sym_net > 0 else "❌ LOSS"
-        if sym_net > 0:
-            wins += 1
+        if side == "SELL":
+            dd = high_p - entry_price
+            pf = entry_price - low_p
         else:
-            losses += 1
+            dd = entry_price - low_p
+            pf = high_p - entry_price
         
-        print(f"  {sym:12s} | PnL: ${sym_pnl:+.4f} | Fee: ${sym_fee:.4f} | Net: ${sym_net:+.4f} | {result} | Fills: {len(trades)}")
-    except Exception as e:
-        print(f"  {sym:12s} | Error: {e}")
-
-print(f"\n{'=' * 70}")
-print(f"  SUMMARY")
-print(f"{'=' * 70}")
-print(f"  Total Realized PnL : ${total_pnl:+.4f}")
-print(f"  Total Fees         : ${total_fees:.4f}")
-print(f"  NET PnL            : ${total_pnl - total_fees:+.4f}")
-print(f"  Trades             : {trade_count} ({wins} wins, {losses} losses)")
-print(f"  Win Rate           : {wins/(wins+losses)*100:.0f}%" if (wins+losses) > 0 else "  Win Rate: N/A")
-print(f"  Starting Balance   : $16.54")
-print(f"  Current Balance    : ${balance:.2f}")
-print(f"  Total Change       : ${balance - 16.54:+.2f}")
+        if dd > 0 and dd > worst_dd: worst_dd = dd
+        if pf > 0 and pf > best_pf: best_pf = pf
+    
+    checkpoints = [(3, "15min"), (6, "30min"), (9, "45min"), (12, "1hour")]
+    
+    for bars, label in checkpoints:
+        if bars < len(klines):
+            price_at = float(klines[bars][4])
+            if side == "SELL":
+                move = entry_price - price_at
+                pct = move / entry_price * 100
+                tag = "✅ DOWN (RIGHT)" if move > 0 else "❌ UP (WRONG)"
+            else:
+                move = price_at - entry_price
+                pct = move / entry_price * 100
+                tag = "✅ UP (RIGHT)" if move > 0 else "❌ DOWN (WRONG)"
+            
+            print(f"  +{label:6s}: ${price_at:.4f} | Move: ${move:+.4f} ({pct:+.2f}%) | {tag}")
+    
+    sl_dist = abs(sl - entry_price)
+    print(f"")
+    print(f"  SL Distance        : ${sl_dist:.4f} ({sl_dist/entry_price*100:.2f}%)")
+    print(f"  Worst Against (1hr): ${worst_dd:.4f} ({worst_dd/entry_price*100:.2f}%)")
+    print(f"  Best For Bot (1hr) : ${best_pf:.4f} ({best_pf/entry_price*100:.2f}%)")
+    
+    if worst_dd > sl_dist:
+        print(f"  ⚠️  SL TOO TIGHT! Drawdown ${worst_dd:.4f} > SL ${sl_dist:.4f}")
+    if best_pf > sl_dist:
+        print(f"  💰 Would have profited ${best_pf:.4f} if SL survived!")
