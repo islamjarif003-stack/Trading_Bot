@@ -96,9 +96,7 @@ MAX_DAILY_LOSS_PCT = 10.0            # ★ $50 Config: 10% = $5 daily loss limit
 MAX_CONSEC_LOSSES   = 3         # After 3 consecutive losses on a coin...
 LOSS_COOLDOWN_S     = 7200      # ★ v42: 2-hour cooldown after ANY loss on a coin (was 4hr for 3 consec)
 
-# ─── ★ v42: MINIMUM SL DISTANCE ─────────────────────────────────────────────
-MIN_SL_PCT          = 0.0050    # ★ v42: SL must be at least 0.50% from entry (prevent noise SL hits)
-RISK_PER_TRADE_USD  = 0.15      # ★ v42: Fixed $0.15 risk per trade (max loss if SL hits)
+
 
 # ─── ★ v7.4: VOLATILITY SPIKE FILTER ────────────────────────────────────────
 ATR_SPIKE_MULT      = 2.0       # Skip entry if current ATR > 2× recent average ATR
@@ -962,11 +960,39 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         except Exception as atr_err:
             log.warning(f"⚠ [{symbol}] Could not fetch 1H ATR, using signal ATR: {atr_err}")
 
-        # ★ v42: RISK-BASED POSITION SIZING
-        # Quantity will be calculated AFTER SL distance is known (below).
-        # Old Kelly/margin sizing removed — now we size based on fixed $0.15 risk.
-        risk_amount = RISK_PER_TRADE_USD  # For logging
-        quantity = 0  # Placeholder — will be set after SL calculation
+        # ★ v22: HALF-KELLY CRITERION POSITION SIZING
+        try:
+            account = client.futures_account()
+            total_balance = float(account.get("totalWalletBalance", 0.0))
+        except Exception as bal_err:
+            log.warning(f"⚠ [{symbol}] Could not fetch balance. Defaulting margin to $1.00. Error: {bal_err}")
+            total_balance = 0.0
+        
+        # Calculate Kelly-optimal risk fraction
+        kelly_wr, kelly_rr = _get_kelly_params()
+        half_kelly_pct = calculate_kelly_risk_pct(kelly_wr, kelly_rr)
+        kelly_trades = kelly_state["total_wins"] + kelly_state["total_losses"]
+        kelly_source = "LIVE" if kelly_trades >= KELLY_MIN_TRADES_FOR_LIVE else "DEFAULT"
+        
+        if half_kelly_pct <= 0.0:
+            log.warning(f"\ud83d\udea8  [{symbol}] NEGATIVE KELLY: WR={kelly_wr*100:.1f}% RR={kelly_rr:.2f} \u2192 No statistical edge. Using Minimum Risk Floor.")
+            half_kelly_pct = 0.001
+
+        # Apply Kelly sizing with $2.50 cap
+        calc_margin = total_balance * half_kelly_pct
+        floor_margin = 10.00 if DRY_RUN else 2.50
+        dynamic_margin = max(calc_margin, floor_margin)
+        dynamic_margin = min(dynamic_margin, 2.50)  # HARD CAP
+            
+        position_value_usd = dynamic_margin * LEVERAGE
+        raw_qty = position_value_usd / current_price
+        quantity = _round_qty(raw_qty * size_multiplier, symbol)
+
+        risk_amount = dynamic_margin
+
+        if quantity <= 0:
+            log.warning("⚠  Calculated quantity is 0.")
+            return False, 0.0
 
         if signal == "BUY":
             side = SIDE_BUY
@@ -1045,43 +1071,27 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             log.warning("⚠  SL Distance is <= 0. Cannot compute. Skipping.")
             return False, 0.0
 
-        # ── ★ v42: ENFORCE MIN SL 0.50% ──
-        entry_ref = limit_price if limit_price > 0 else current_price
-        sl_distance_pct = sl_distance / entry_ref
-
-        if sl_distance_pct < MIN_SL_PCT:
-            old_sl_dist = sl_distance
-            sl_distance = entry_ref * MIN_SL_PCT
-            tp_distance = sl_distance * 3.0  # Maintain 1:3 R:R
-            log.info(f"    [{symbol}] ⚠ SL WIDENED: {sl_distance_pct*100:.2f}% → 0.50% (${old_sl_dist:.4f} → ${sl_distance:.4f})")
-
-        # ── ★ v42: RISK-BASED QUANTITY SIZING ──
+        # ★ PROP FIRM POSITION SIZING UPDATE ★
         if VIRTUAL_ACCOUNT:
-            # ★ PROP FIRM POSITION SIZING (unchanged)
             risk_usd = prop_state["current_balance"] * (RISK_PER_TRADE_PERCENT / 100.0)
+            
+            # ★ v34 FIX: Strict Dollar Risk Cap (The Hard Lock)
             MAX_RISK_PER_TRADE_USD = 20.0
             if risk_usd > MAX_RISK_PER_TRADE_USD:
-                log.info(f"🛡  [{symbol}] Capping risk_usd from ${risk_usd:.2f} to strict maximum ${MAX_RISK_PER_TRADE_USD:.2f}")
+                log.info(f"\ud83d\udee1  [{symbol}] Capping risk_usd from ${risk_usd:.2f} to strict maximum ${MAX_RISK_PER_TRADE_USD:.2f}")
                 risk_usd = MAX_RISK_PER_TRADE_USD
             raw_qty_prop = risk_usd / sl_distance
             max_qty_allowed = (prop_state["current_balance"] * LEVERAGE_SIM) / current_price
             if raw_qty_prop > max_qty_allowed:
                 log.warning(f"⚠  [{symbol}] Prop SL Sizing exceeds max {LEVERAGE_SIM}x leverage limit! Capping size.")
                 raw_qty_prop = max_qty_allowed
+            
             quantity = _round_qty(raw_qty_prop * size_multiplier, symbol)
             dynamic_margin = (quantity * current_price) / LEVERAGE_SIM
             risk_amount = risk_usd
-        else:
-            # ★ v42: LIVE — Fixed $0.15 risk per trade
-            risk_qty = RISK_PER_TRADE_USD / sl_distance
-            max_allowed_qty = (2.50 * LEVERAGE) / current_price  # Max $2.50 margin
-            quantity = _round_qty(min(risk_qty, max_allowed_qty) * size_multiplier, symbol)
-            dynamic_margin = (quantity * current_price) / LEVERAGE
-            risk_amount = RISK_PER_TRADE_USD
-            log.info(f"    [{symbol}] 🎯 Risk Sizing: ${RISK_PER_TRADE_USD} risk / ${sl_distance:.4f} SL = {quantity} qty (margin ${dynamic_margin:.2f})")
-
+            
         if quantity <= 0:
-            log.warning("⚠  Calculated quantity is 0 after risk sizing.")
+            log.warning("⚠  Calculated quantity is 0 after rounding.")
             return False, 0.0
 
         entry_method = "50% OB Equilibrium" if ob_entry_used else "ATR Offset"
@@ -1203,18 +1213,6 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         else:
             sl_price = _round_price(avg_entry + sl_distance, symbol)
             tp_price = _round_price(avg_entry - tp_distance, symbol)
-
-        # ── ★ v42: MINIMUM SL DISTANCE ENFORCEMENT ──
-        sl_pct = abs(avg_entry - sl_price) / avg_entry if avg_entry > 0 else 0
-        if sl_pct < MIN_SL_PCT and avg_entry > 0:
-            old_sl = sl_price
-            if signal == "BUY":
-                sl_price = _round_price(avg_entry * (1 - MIN_SL_PCT), symbol)
-            else:
-                sl_price = _round_price(avg_entry * (1 + MIN_SL_PCT), symbol)
-            # Recalculate sl_distance for downstream use
-            sl_distance = abs(avg_entry - sl_price)
-            log.info(f"    [{symbol}] ⚠ SL ADJUSTED: {sl_pct*100:.2f}% → 0.50% (was ${old_sl} → now ${sl_price})")
 
         # ── TELEGRAM ALERT: Entry ──
         whale_tag = ""
