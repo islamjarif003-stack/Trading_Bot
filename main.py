@@ -138,7 +138,7 @@ CORR_REDUCE_SIZE_PCT  = 50      # Reduce to 50% if CORR_ACTION == "REDUCE"
 # ★ v17: TRUE BREAK-EVEN — uses dynamic R:R, not static %. BE triggers at 1R profit.
 TRUE_BE_FEE_BUFFER_PCT   = 0.25   # ★ v37: Increased 0.15 → 0.25 to cover taker fees + slippage on BE exits
 TRAILING_ACTIVATION_RR   = 1.5    # ★ v37: BE triggers at 1.5R (was 1.0R — too early for 15m candles)
-TRAILING_SL_DISTANCE_PCT = 1.20   # ★ v37: Trail 1.2% behind best price (was 0.7% — 15m needs more room)
+TRAILING_SL_DISTANCE_PCT = 1.55   # ★ v38: Trail 1.55% behind best price (was 1.80% / 1.20%)
 TTP_CHECK_INTERVAL       = 3      # Check every 3 cycles
 DISABLE_HARD_TP          = True    # ★ v26: DISABLED fixed TP to allow dynamic Trailing SL for 'Let Winners Run' mode
 SMART_REVERSAL_EXIT      = True    # ★ v12: Close if 5m MA25 cross-under/over detected
@@ -979,8 +979,9 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         
         # Apply Kelly sizing with $1 floor (or $10 for realistic DRY RUN)
         calc_margin = total_balance * half_kelly_pct
-        floor_margin = 10.00 if DRY_RUN else 4.00  # ★ v34-fix2: $4 margin (was $2)
+        floor_margin = 10.00 if DRY_RUN else 2.50  # ★ v42: $2.50 margin cap per trade
         dynamic_margin = max(calc_margin, floor_margin)
+        dynamic_margin = min(dynamic_margin, 2.50)  # ★ v42: HARD CAP — never exceed $2.50 margin per trade
             
         position_value_usd = dynamic_margin * LEVERAGE
         raw_qty = position_value_usd / current_price
@@ -1930,15 +1931,47 @@ def manage_trailing_tp(client: Client, symbol: str, bot_state: dict, visualizer=
         #    Triggers at 1R profit. SL → Entry + 0.15% fee buffer.
         #    Covers Taker fees on BOTH sides so net PnL is always ≥ $0.
         # ══════════════════════════════════════════════════════════════
-        # Calculate dynamic initial risk % (based on ATR at entry)
+        # Calculate dynamic initial risk % (based on ACTUAL SL if available, else ATR)
         initial_risk_pct = bot_state.get("initial_risk_pct", 0.0)
+        
+        # ★ v41 FIX: Fetch actual SL to determine True 1R instead of relying on generic 3.0x ATR multiplier
         if initial_risk_pct == 0.0 and current_atr > 0 and entry_price > 0:
-            initial_risk_pct = (current_atr * SL_ATR_MULT / entry_price) * 100.0
-            bot_state["initial_risk_pct"] = initial_risk_pct
-            log.info(f"📐  [{symbol}] Dynamic Risk Baseline: {initial_risk_pct:.3f}% (ATR: ${current_atr:.2f} × {SL_ATR_MULT})")
+            actual_sl_dist = 0.0
+            if bot_state.get("current_trail_sl", 0.0) > 0:
+                actual_sl_dist = abs(entry_price - bot_state["current_trail_sl"])
+            else:
+                try:
+                    if DRY_RUN and symbol in dry_run_positions:
+                        actual_sl_dist = abs(entry_price - dry_run_positions[symbol]["sl_price"])
+                    else:
+                        _orders = client.futures_get_open_orders(symbol=symbol)
+                        for _ord in _orders:
+                            _otype = _ord.get("type", "") or _ord.get("origType", "")
+                            if "STOP" in _otype.upper() and "TAKE_PROFIT" not in _otype.upper():
+                                actual_sl_dist = abs(entry_price - float(_ord["stopPrice"]))
+                                bot_state["current_trail_sl"] = float(_ord["stopPrice"]) # Cache it
+                                break
+                except Exception:
+                    pass
 
-        # ★ v33 FIX: BE trigger capped at 0.75% — 1.5% cap was still too large (30% ROI at 20x leverage), wait time too long.
-        dynamic_be_trigger = min(max(initial_risk_pct * 0.50, 0.20), 0.75)  # Floor 0.20%, CAP 0.75%
+            if actual_sl_dist > 0:
+                initial_risk_pct = (actual_sl_dist / entry_price) * 100.0
+                bot_state["initial_risk_pct"] = initial_risk_pct
+                log.info(f"📐  [{symbol}] True Risk Baseline (1R): {initial_risk_pct:.3f}% (Actual SL Dist: ${actual_sl_dist:.4f})")
+            else:
+                initial_risk_pct = (current_atr * SL_ATR_MULT / entry_price) * 100.0
+                bot_state["initial_risk_pct"] = initial_risk_pct
+                log.info(f"📐  [{symbol}] Dynamic Risk Baseline: {initial_risk_pct:.3f}% (ATR: ${current_atr:.2f} × {SL_ATR_MULT})")
+
+        # ★ v42 FIX: BE triggers exactly when profit hits $0.40 USDT (calculated dynamically as a %)
+        position_notional = entry_price * current_qty
+        if position_notional > 0:
+            target_usdt_profit = 0.40
+            dynamic_be_trigger = (target_usdt_profit / position_notional) * 100.0
+            # Safety floor: never trigger before 0.15% to avoid fee burn
+            dynamic_be_trigger = max(dynamic_be_trigger, 0.15)
+        else:
+            dynamic_be_trigger = 0.50  # Fallback
 
         if bot_state["phase"] == "INITIAL" and pnl_pct >= dynamic_be_trigger:
             # ★ v17: TRUE BREAK-EVEN — hardcoded 0.15% fee buffer (covers entry + exit taker fees)
@@ -2882,8 +2915,8 @@ def _detect_liquidity_sweep(highs: np.ndarray, lows: np.ndarray, closes: np.ndar
         for sh_idx, sh_price in reversed(swing_highs[-5:]):
             if sh_idx >= n - 2:
                 continue
-            # ★ v35 FIX: Check all candles since the swing high (was max(n-4, ...))
-            for i in range(sh_idx + 1, n):
+            # ★ v42: FRESH SWEEP ONLY — only check last 3 candles (15 min on 5m)
+            for i in range(max(sh_idx + 1, n - 3), n):
                 wick_above = highs[i] - sh_price
                 # ★ v25.2: Relaxed volume from 1.0x down to 0.7x (catch more valid sweeps)
                 if wick_above >= min_sweep and closes[i] < sh_price and vols[i] >= vol_ma * 0.7:
@@ -2898,8 +2931,8 @@ def _detect_liquidity_sweep(highs: np.ndarray, lows: np.ndarray, closes: np.ndar
         for sl_idx, sl_price in reversed(swing_lows[-5:]):
             if sl_idx >= n - 2:
                 continue
-            # ★ v35 FIX: Check all candles since the swing low (was max(n-4, ...))
-            for i in range(sl_idx + 1, n):
+            # ★ v42: FRESH SWEEP ONLY — only check last 3 candles (15 min on 5m)
+            for i in range(max(sl_idx + 1, n - 3), n):
                 wick_below = sl_price - lows[i]
                 # ★ v25.2: Relaxed volume from 1.0x down to 0.5x (catch more valid sweeps)
                 if wick_below >= min_sweep and closes[i] > sl_price and vols[i] >= vol_ma * 0.5:
@@ -3027,6 +3060,40 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
       - "WAIT"    → Valid setup but price not in OB/FVG zone yet. Queue for retest.
     """
     try:
+        # ── ★ v42: GATE 0 — 15m EMA21 Trend Filter (FIRST CHECK) ──────────
+        # If 15m price is on the wrong side of EMA21, reject immediately.
+        try:
+            m15_raw = client.futures_klines(symbol=symbol, interval="15m", limit=50)
+            if m15_raw and len(m15_raw) >= 25:
+                m15_closes = np.array([float(k[4]) for k in m15_raw])
+                # Calculate EMA21 on 15m closes
+                ema_period = 21
+                m15_ema21 = m15_closes[0]
+                for _c in m15_closes[1:]:
+                    m15_ema21 = _c * (2.0 / (ema_period + 1)) + m15_ema21 * (1 - 2.0 / (ema_period + 1))
+                m15_close = m15_closes[-1]
+
+                if direction == "BUY" and m15_close < m15_ema21:
+                    reason = (
+                        f"15m TREND BEARISH: Price {m15_close:.4f} "
+                        f"< EMA21 {m15_ema21:.4f}. NO BUY allowed."
+                    )
+                    log.info(f"    [{symbol}] ❌ {reason}")
+                    return "NEUTRAL", reason, None
+
+                if direction == "SELL" and m15_close > m15_ema21:
+                    reason = (
+                        f"15m TREND BULLISH: Price {m15_close:.4f} "
+                        f"> EMA21 {m15_ema21:.4f}. NO SELL allowed."
+                    )
+                    log.info(f"    [{symbol}] ❌ {reason}")
+                    return "NEUTRAL", reason, None
+
+                log.info(f"    [{symbol}] ✅ 15m EMA21 Gate: PASSED (Price {m15_close:.4f} vs EMA21 {m15_ema21:.4f})")
+        except Exception as e_m15:
+            log.warning(f"    [{symbol}] ⚠ 15m EMA21 gate failed: {e_m15} — BLOCKED")
+            return "NEUTRAL", f"15m EMA21 gate failed: {e_m15}", None
+
         m5 = client.futures_klines(symbol=symbol, interval="5m", limit=200)  # ★ v34-fix: Reverted 15m → 5m (original setup)
         if not m5 or len(m5) < 40:
             return "PASS", "SMC SKIP: Not enough M15 data", None
@@ -3074,6 +3141,54 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
             # Allow entry without sweep IF structure (BOS/CHOCH) + OB zone is valid
             log.info(f"    [{symbol}] ⚠ No Liquidity Sweep — Will require strong structure to compensate")
             
+        # ── ★ v42: REVERSAL CONFIRMATION — Validate bounce after sweep ─────
+        # After sweep, next 2 candles must confirm reversal direction.
+        # This filters out sweeps that are actually continuation traps.
+        if swept and n >= 3:
+            c_1 = close[-2]  # candle after sweep (or recent)
+            o_1 = opn[-2]
+            c_2 = close[-1]  # current candle
+            o_2 = opn[-1]
+            v_2 = vols[-1]
+            
+            # Average volume for threshold
+            avg_vol = np.mean(vols[-20:]) if len(vols) >= 20 else np.mean(vols)
+            
+            # The close of the sweep candle (approximate: sweep_level is the swing that was swept)
+            sweep_close_ref = sweep_level
+            
+            if direction == "BUY":
+                body_1 = c_1 - o_1  # positive = bullish
+                body_2 = c_2 - o_2
+                confirmation = (
+                    body_1 > 0 and           # green candle
+                    body_2 > 0 and           # green candle
+                    c_1 > sweep_close_ref and
+                    c_2 > c_1 and
+                    v_2 > avg_vol * 0.8
+                )
+            else:  # SELL
+                body_1 = o_1 - c_1  # positive = bearish
+                body_2 = o_2 - c_2
+                confirmation = (
+                    body_1 > 0 and           # red candle
+                    body_2 > 0 and           # red candle
+                    c_1 < sweep_close_ref and
+                    c_2 < c_1 and
+                    v_2 > avg_vol * 0.8
+                )
+            
+            if not confirmation:
+                reason = (
+                    f"REVERSAL NOT CONFIRMED: Bounce looks like a trap. "
+                    f"Need 2 consecutive {'bullish' if direction == 'BUY' else 'bearish'} closes "
+                    f"{'above' if direction == 'BUY' else 'below'} sweep level ${sweep_close_ref:.4f}."
+                )
+                log.info(f"    [{symbol}] ⚠ {reason}")
+                return "WAIT", reason, None
+            else:
+                log.info(f"    [{symbol}] ✅ Reversal Confirmed: 2 consecutive {'bullish' if direction == 'BUY' else 'bearish'} candles after sweep")
+
         # ── Step 3: Market Structure (BOS / CHOCH) ────────────────────────
         struct_type, break_idx, break_level, struct_detail = _detect_market_structure(
             high, low, close, swing_highs, swing_lows, atr14=atr14  # ★ v38: Pass ATR for Anticipated BOS
@@ -4168,11 +4283,11 @@ def main():
                         log.info(f"📅  [{symbol}] TradFi WEEKEND SKIP — Market closed (day={utc_now.strftime('%A')})")
                     continue
 
-                # ★ GLOBAL TRADE CAP: Max 2 positions + pending orders
+                # ★ GLOBAL TRADE CAP: Max 5 positions + pending orders
                 total_active = global_open_trades_count + global_pending_orders
-                if total_active >= 2:  # ★ v34-fix2: Max 2 open positions (was 5)
+                if total_active >= 5:  # ★ v42: Max 5 open positions (was 2)
                     if scan_count % 6 == 0:
-                        log.info(f"⚓  [{symbol}] Global Cap Reached ({global_open_trades_count} pos + {global_pending_orders} orders = {total_active}/2). Skipping.")
+                        log.info(f"⚓  [{symbol}] Global Cap Reached ({global_open_trades_count} pos + {global_pending_orders} orders = {total_active}/5). Skipping.")
                     visualizer.set_bot_status("CAP PAUSE")
                     visualizer.update()
                     time.sleep(1)  # small delay before moving to next symbol

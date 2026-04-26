@@ -35,7 +35,7 @@ log = logging.getLogger("InstitutionalBot")
 # ─── CONFIGURATION ───────────────────────────────────────────────────────────
 KLINE_INTERVAL = Client.KLINE_INTERVAL_5MINUTE    # ★ v23: Production mode — 5m entries for cleaner signals, less noise
 KLINE_LIMIT = 200                                  # ★ v23: 200×5m ≈ 16.6 hours of data
-H1_KLINE_INTERVAL = Client.KLINE_INTERVAL_15MINUTE  # ★ v23: 15m trend/flow (was 1H — now more responsive)
+H1_KLINE_INTERVAL = Client.KLINE_INTERVAL_1HOUR     # ★ v38: Restored real 1H — 15m was too noisy, flipping direction every scan causing wrong trades
 H1_KLINE_LIMIT = 250
 ORDER_BOOK_DEPTH = 20
 NUM_BINS = 50
@@ -100,30 +100,30 @@ POINTS_EMA_TRIPLE = 3             # +3 for Triple EMA alignment (FULL=3, PARTIAL
 POINTS_HEIKIN_ASHI = 1            # ★ v13: Downgraded +2 → +1 (passive indicator)
 
 # ─── ★★ v8.0: ORDER FLOW SCORING ────────────────────────────────────────────
-POINTS_CVD_TREND = 5              # ★ v27: Upgraded +3 → +5 (Ultra-Quant: CVD is king of real money flow)
-POINTS_TAKER_PRESSURE = 5         # ★ v27: Upgraded +3 → +5 (Ultra-Quant: aggressive whale buying/selling)
-POINTS_WHALE_WALL = 5             # ★ v27: Upgraded +3 → +5 (Ultra-Quant: whale order wall = institutional)
-POINTS_ABSORPTION = 5             # ★ v27: Upgraded +3 → +5 (Ultra-Quant: absorption = breakout coming)
+POINTS_CVD_TREND = 3              # ★ v38: +5 → +3 (micro-data was overriding macro structural direction)
+POINTS_TAKER_PRESSURE = 3         # ★ v38: +5 → +3 (noisy 10-second data shouldn't dominate direction)
+POINTS_WHALE_WALL = 3             # ★ v38: +5 → +3 (often spoofed, was giving wrong side +5)
+POINTS_ABSORPTION = 3             # ★ v38: +5 → +3 (noisy pattern, structural analysis should lead)
 
 # ─── ★ ML FILTER CONFIGURATION (v2 — XGBoost) ──────────────────────────────
 ML_MIN_SAMPLES = 10           # Block trades if < 10 samples
 ML_WIN_THRESHOLD = 0.40       # 40% predicted win probability required
 
 # ─── ★ STRICT FILTERS ─────────────────────────────────────────────────────────
-PENALTY_PRICE_CONTRADICTION = 5   # ★ v30b: Lowered 8 → 5 (price actively moving against signal is still penalized contextually)
+PENALTY_PRICE_CONTRADICTION = 8   # ★ v38: Restored 5 → 8 — trading against live price momentum is the #1 cause of wrong-direction losses
 
 # ─── ★★★ v16.1: VOLUME DELTA SCORE (Enhanced with Opposing Penalty) ─────────
-POINTS_VOLUME_DELTA       = 4     # ★ v27: Upgraded +3 → +4 (real-time order flow data)
-POINTS_VOLUME_DELTA_STRONG = 6    # ★ v27: Upgraded +4 → +6 (EXTREME alignment = ultra conviction)
+POINTS_VOLUME_DELTA       = 3     # ★ v38: +4 → +3 (micro-data reduced to not override structural signals)
+POINTS_VOLUME_DELTA_STRONG = 4    # ★ v38: +6 → +4 (same — direction accuracy > conviction inflation)
 PENALTY_VOLUME_DELTA_OPPOSE = -3  # -3 PENALTY when delta OPPOSES signal (buying into selling)
 VOLUME_DELTA_THRESHOLD    = 0.55  # 55% taker buy = bullish, <45% = bearish
 VOLUME_DELTA_STRONG_THRESH = 0.65 # 65% = STRONG alignment (extra bonus)
 
 # ─── ★★★ v16.0: DYNAMIC SCORE THRESHOLD (ATR-ADAPTIVE) ─────────────────────
 # Low volatility → lower threshold (more trades), High vol → higher (avoid fakeouts)
-DYNAMIC_THRESHOLD_LOW  = 19       # ★ v34-fix: 19 (was 18, +1 for quality)
-DYNAMIC_THRESHOLD_MID  = 21       # ★ v34-fix: 21 (was 20)
-DYNAMIC_THRESHOLD_HIGH = 23       # ★ v34-fix: 23 (was 22)
+DYNAMIC_THRESHOLD_LOW  = 18       # ★ v41: Increased to 18 to filter out low-conviction (Score 15/16) trades
+DYNAMIC_THRESHOLD_MID  = 20       # ★ v41: Increased to 20 to improve win rate
+DYNAMIC_THRESHOLD_HIGH = 22       # ★ v41: Increased to 22 for highly volatile markets
 ATR_PERCENTILE_LOW     = 30       # Below 30th percentile = low volatility
 ATR_PERCENTILE_HIGH    = 70       # Above 70th percentile = high volatility
 
