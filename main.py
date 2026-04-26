@@ -3404,23 +3404,20 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
                 return "NEUTRAL", reason, None
         
         # ── ★ v26.3 UPGRADE 1: PREMIUM/DISCOUNT ZONE FILTER ──────────────
-        # SMC Refactor: Only block extreme entries (top 25% for BUY, bottom 25% for SELL)
+        # ★ v43.2: Downgraded to INFO ONLY — FVG gate handles quality filtering now
+        # P/D was blocking 282 valid trades/day including 3/3 OB quality setups
         if len(swing_highs) >= 2 and len(swing_lows) >= 2:
             pd_range_high = max(sh[1] for sh in swing_highs[-4:])
             pd_range_low = min(sl[1] for sl in swing_lows[-4:])
             range_size = pd_range_high - pd_range_low
             
-            extreme_premium = pd_range_high - (range_size * 0.05)  # ★ v34-fix: Top 5% only (was 15%)
-            extreme_discount = pd_range_low + (range_size * 0.05)  # ★ v34-fix: Bottom 5% only (was 15%)
+            extreme_premium = pd_range_high - (range_size * 0.05)
+            extreme_discount = pd_range_low + (range_size * 0.05)
             
             if direction == "BUY" and current_price > extreme_premium:
-                reason = f"P/D REJECT: BUY in EXTREME PREMIUM (price ${current_price:.4f} > top 25% ${extreme_premium:.4f})."
-                log.warning(f"    [{symbol}] {reason}")
-                return "NEUTRAL", reason, None
+                log.info(f"    [{symbol}] ⚠️ P/D NOTE: BUY in premium zone (${current_price:.4f} > ${extreme_premium:.4f}) — proceeding (FVG gate handles quality)")
             elif direction == "SELL" and current_price < extreme_discount:
-                reason = f"P/D REJECT: SELL in EXTREME DISCOUNT (price ${current_price:.4f} < bottom 25% ${extreme_discount:.4f})."
-                log.warning(f"    [{symbol}] {reason}")
-                return "NEUTRAL", reason, None
+                log.info(f"    [{symbol}] ⚠️ P/D NOTE: SELL in discount zone (${current_price:.4f} < ${extreme_discount:.4f}) — proceeding (FVG gate handles quality)")
             else:
                 log.info(f"    [{symbol}] P/D Zone: OK (Not in extreme boundaries)")
         
