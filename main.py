@@ -4315,6 +4315,109 @@ def main():
                             log.info(f"🧊  [{symbol}] LOSS COOLDOWN: {remaining_min}min left before re-entry allowed.")
                         continue
 
+                # ★ v43: CHECK PENDING CANDLE CONFIRMATION
+                # If we have a pending signal waiting for candle close, skip normal scan
+                # and go directly to the confirmation check in the armed section
+                pending_cc = state.get("pending_candle_signal")
+                if pending_cc:
+                    if time.time() > pending_cc["expires_at"]:
+                        log.info(f"⏰  [{symbol}] CANDLE CONFIRM EXPIRED: Signal waited too long. Cancelled.")
+                        state["pending_candle_signal"] = None
+                        continue
+                    
+                    # Get last fully closed 5m candle for confirmation
+                    try:
+                        cc_candles = client.futures_klines(symbol=symbol, interval='5m', limit=3)
+                        if not cc_candles or len(cc_candles) < 3:
+                            continue
+                        
+                        cc_closed = cc_candles[-2]  # Last FULLY closed candle
+                        cc_open  = float(cc_closed[1])
+                        cc_high  = float(cc_closed[2])
+                        cc_low   = float(cc_closed[3])
+                        cc_close = float(cc_closed[4])
+                        cc_range = cc_high - cc_low + 0.0000001
+                        cc_body  = abs(cc_close - cc_open)
+                        cc_body_pct = cc_body / cc_range
+                        
+                        p_dir = pending_cc["direction"]
+                        
+                        # Check if this is a NEW closed candle (not the same one we armed on)
+                        cc_open_time = int(cc_closed[0])
+                        armed_time = pending_cc.get("armed_candle_time", 0)
+                        if cc_open_time == armed_time:
+                            # Same candle still open — wait more
+                            if scan_count % 3 == 0:
+                                log.info(f"⏳  [{symbol}] CANDLE CONFIRM: Still waiting for current 5m candle to close...")
+                            continue
+                        
+                        # Confirmation check
+                        if p_dir == "BUY":
+                            confirmed = (cc_close > cc_open and cc_body_pct >= 0.40)
+                            structural_sl = cc_low * 0.998
+                        else:
+                            confirmed = (cc_close < cc_open and cc_body_pct >= 0.40)
+                            structural_sl = cc_high * 1.002
+                        
+                        if not confirmed:
+                            log.warning(f"🚫  [{symbol}] CANDLE CONFIRM FAILED: {p_dir} but body {cc_body_pct*100:.0f}% ({'GREEN' if cc_close > cc_open else 'RED'}). Signal cancelled.")
+                            state["pending_candle_signal"] = None
+                            continue
+                        
+                        # Validate SL distance
+                        cc_entry = float(cc_candles[-1][1])  # Current candle open
+                        cc_sl_dist = abs(cc_entry - structural_sl)
+                        cc_sl_pct = cc_sl_dist / cc_entry if cc_entry > 0 else 0
+                        
+                        if cc_sl_pct < 0.003:
+                            log.warning(f"🚫  [{symbol}] CANDLE CONFIRM: SL too tight ({cc_sl_pct*100:.2f}%). Skipped.")
+                            state["pending_candle_signal"] = None
+                            continue
+                        if cc_sl_pct > 0.020:
+                            log.warning(f"🚫  [{symbol}] CANDLE CONFIRM: SL too wide ({cc_sl_pct*100:.2f}%). Skipped.")
+                            state["pending_candle_signal"] = None
+                            continue
+                        
+                        # ✅ CONFIRMED! Execute trade
+                        log.info(f"✅  [{symbol}] CANDLE CONFIRMED: {p_dir} │ Body {cc_body_pct*100:.0f}% │ Entry ${cc_entry:.4f} │ SL ${structural_sl:.4f} ({cc_sl_pct*100:.2f}%)")
+                        
+                        cc_exc_data = pending_cc["signal_data"]
+                        cc_smc_zone = pending_cc["smc_zone"]
+                        cc_size_mult = pending_cc["size_multiplier"]
+                        cc_micro = pending_cc["is_micro_scalp"]
+                        
+                        state["pending_candle_signal"] = None
+                        state["last_entry_attempt_time"] = time.time()
+                        
+                        success, entry_qty = execute_trade(
+                            client, symbol, p_dir, cc_entry, cc_exc_data.get("atr", 0), cc_exc_data,
+                            size_multiplier=cc_size_mult, is_micro_scalp=cc_micro
+                        )
+                        
+                        if success == "PENDING" and isinstance(entry_qty, dict):
+                            pending_info = entry_qty
+                            state["pending_entry_order_id"] = pending_info["order_id"]
+                            state["pending_entry_time"] = pending_info["placed_time"]
+                            state["pending_entry_side"] = pending_info["side"]
+                            state["pending_entry_zone"] = pending_info.get("zone")
+                            state["pending_entry_data"] = pending_info
+                            state["pending_entry_price"] = pending_info["limit_price"]
+                        elif success:
+                            state["last_signal_data"] = cc_exc_data
+                            state["last_side"] = p_dir
+                            state["_trade_logged"] = False
+                            state["original_qty"] = entry_qty
+                            state["phase"] = "INITIAL"
+                            state["best_price"] = 0.0
+                            state["current_trail_sl"] = 0.0
+                            state["trade_open_time"] = time.time()
+                        continue
+                        
+                    except Exception as cc_err:
+                        log.warning(f"⚠  [{symbol}] Candle confirmation error: {cc_err}")
+                        state["pending_candle_signal"] = None
+                        continue
+
                 # ── Fetch signal (forced refresh) ────────────────────────────
                 try:
                     signal_data = get_quant_signal(client, symbol)
@@ -4688,8 +4791,48 @@ def main():
                             # ★ v34-fix3: Set spam guard BEFORE execute (prevents retry spam)
                             state["last_entry_attempt_time"] = time.time()
                             
+                            # ═══════════════════════════════════════════════════════
+                            # ★ v43: CANDLE CLOSE CONFIRMATION ENTRY SYSTEM
+                            # Instead of entering immediately mid-candle,
+                            # store signal and wait for current candle to close.
+                            # Enter only if closed candle confirms direction.
+                            # ═══════════════════════════════════════════════════════
+                            
+                            # Check if we have a PENDING signal waiting for confirmation
+                            pending_sig = state.get("pending_candle_signal")
+                            
+                            if pending_sig is None:
+                                # ── STEP 1: ARM the signal, wait for candle close ──
+                                # Get current candle open time to know when it closes
+                                try:
+                                    arm_candles = client.futures_klines(symbol=symbol, interval='5m', limit=2)
+                                    current_candle_time = int(arm_candles[-1][0]) if arm_candles else 0
+                                except Exception:
+                                    current_candle_time = 0
+                                
+                                state["pending_candle_signal"] = {
+                                    "direction": exc_signal,
+                                    "signal_price": exc_price,
+                                    "signal_data": exc_data,
+                                    "smc_zone": smc_zone,
+                                    "size_multiplier": size_multiplier,
+                                    "is_micro_scalp": is_micro_scalp,
+                                    "armed_at": time.time(),
+                                    "armed_candle_time": current_candle_time,  # Track which candle we armed on
+                                    "expires_at": time.time() + 600,  # 10 min max wait
+                                }
+                                log.info(f"⏳  [{symbol}] CANDLE CONFIRM: Signal {exc_signal} ARMED @ ${exc_price:.4f}. Waiting for 5m candle close...")
+                                # Reset armed state but keep pending
+                                state["armed_signal"] = "NONE"
+                                state["armed_time"] = 0
+                                state["armed_signal_data"] = None
+                                continue  # Don't enter yet!
+                            
+                            # NOTE: If we reach here, it means the early loop check (line 4318)
+                            # already confirmed the candle. This path is the fallback.
+                            
                             success, entry_qty = execute_trade(
-                                client, symbol, exc_signal, exc_price, exc_atr, exc_data,
+                                client, symbol, exc_signal, exc_price, exc_data.get("atr", 0), exc_data,
                                 size_multiplier=size_multiplier, is_micro_scalp=is_micro_scalp
                             )
                             
