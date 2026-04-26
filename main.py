@@ -94,7 +94,10 @@ MAX_DAILY_LOSS_PCT = 10.0            # ★ $50 Config: 10% = $5 daily loss limit
 
 # ─── ★ v7.4: CONSECUTIVE LOSS COOLDOWN ──────────────────────────────────────
 MAX_CONSEC_LOSSES   = 3         # After 3 consecutive losses on a coin...
-LOSS_COOLDOWN_S     = 14400     # ...add 4-hour extra cooldown for that coin (strict SMC rule)
+LOSS_COOLDOWN_S     = 7200      # ★ v42: 2-hour cooldown after ANY loss on a coin (was 4hr for 3 consec)
+
+# ─── ★ v42: MINIMUM SL DISTANCE ─────────────────────────────────────────────
+MIN_SL_PCT          = 0.0050    # ★ v42: SL must be at least 0.50% from entry (prevent noise SL hits)
 
 # ─── ★ v7.4: VOLATILITY SPIKE FILTER ────────────────────────────────────────
 ATR_SPIKE_MULT      = 2.0       # Skip entry if current ATR > 2× recent average ATR
@@ -1213,6 +1216,18 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         else:
             sl_price = _round_price(avg_entry + sl_distance, symbol)
             tp_price = _round_price(avg_entry - tp_distance, symbol)
+
+        # ── ★ v42: MINIMUM SL DISTANCE ENFORCEMENT ──
+        sl_pct = abs(avg_entry - sl_price) / avg_entry if avg_entry > 0 else 0
+        if sl_pct < MIN_SL_PCT and avg_entry > 0:
+            old_sl = sl_price
+            if signal == "BUY":
+                sl_price = _round_price(avg_entry * (1 - MIN_SL_PCT), symbol)
+            else:
+                sl_price = _round_price(avg_entry * (1 + MIN_SL_PCT), symbol)
+            # Recalculate sl_distance for downstream use
+            sl_distance = abs(avg_entry - sl_price)
+            log.info(f"    [{symbol}] ⚠ SL ADJUSTED: {sl_pct*100:.2f}% → 0.50% (was ${old_sl} → now ${sl_price})")
 
         # ── TELEGRAM ALERT: Entry ──
         whale_tag = ""
@@ -4164,6 +4179,9 @@ def main():
                             kelly_state["total_losses"] += 1
                             kelly_state["total_loss_pnl"] += abs(pnl)
                             _save_kelly_state()
+                            # ★ v42: 2H cooldown after ANY loss on this coin
+                            state["coin_loss_time"] = time.time()
+                            log.info(f"🧊  [{symbol}] LOSS COOLDOWN: 2hr cooldown activated for this coin.")
                             if state["consec_losses"] >= MAX_CONSEC_LOSSES:
                                 state["loss_cooldown_until"] = time.time() + LOSS_COOLDOWN_S
                                 log.warning(f"🧊  [{symbol}] {MAX_CONSEC_LOSSES} CONSECUTIVE LOSSES → Extra {LOSS_COOLDOWN_S}s cooldown activated.")
@@ -4301,6 +4319,16 @@ def main():
                     if scan_count % 6 == 0:
                         log.info(f"🚫  [{symbol}] SPAM GUARD — {remaining}s until re-entry allowed.")
                     continue
+
+                # ★ v42: PER-COIN LOSS COOLDOWN — 2 hours after any loss
+                coin_loss_time = state.get("coin_loss_time", 0)
+                if coin_loss_time > 0:
+                    elapsed = time.time() - coin_loss_time
+                    if elapsed < LOSS_COOLDOWN_S:
+                        remaining_min = int((LOSS_COOLDOWN_S - elapsed) / 60)
+                        if scan_count % 6 == 0:
+                            log.info(f"🧊  [{symbol}] LOSS COOLDOWN: {remaining_min}min left before re-entry allowed.")
+                        continue
 
                 # ── Fetch signal (forced refresh) ────────────────────────────
                 try:
