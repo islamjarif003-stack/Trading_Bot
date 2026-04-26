@@ -3397,9 +3397,11 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
             
             log.info(f"    [{symbol}] 🏆 OB Quality: {ob_quality_score}/3 │ {' │ '.join(ob_quality_details)}")
             
-            # ★ v34-fix: OB Quality is informational only — don't hard block
-            if ob_quality_score < 1:
-                log.info(f"    [{symbol}] ⚠️ OB Quality low ({ob_quality_score}/3) — proceeding anyway (score filter handles quality)")
+            # ★ v43.2: FVG (Gap/Imbalance) is REQUIRED — No FVG = No Trade
+            if not has_imbalance:
+                reason = f"FVG REQUIRED: No Fair Value Gap found near OB. Without gap, entry has no attraction. Skipping."
+                log.warning(f"    [{symbol}] 🚫 {reason}")
+                return "NEUTRAL", reason, None
         
         # ── ★ v26.3 UPGRADE 1: PREMIUM/DISCOUNT ZONE FILTER ──────────────
         # SMC Refactor: Only block extreme entries (top 25% for BUY, bottom 25% for SELL)
