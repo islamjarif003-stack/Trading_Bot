@@ -4681,7 +4681,7 @@ def main():
                                         zone_l = float(smc_zone.get("zone_low", 0)) if isinstance(smc_zone, dict) else 0
                                         
                                         if zone_h > 0 and zone_l > 0:
-                                            # Check if price is within 1.5 ATR of zone edge
+                                            # Check if price is within 5.0 ATR of zone edge
                                             exc_atr_check = state.get("armed_signal_data", {}).get("atr", 0)
                                             if exc_atr_check > 0:
                                                 if armed_dir == "BUY":
@@ -4689,11 +4689,15 @@ def main():
                                                 else:
                                                     dist_to_zone = zone_l - current_price
                                                     
-                                                if dist_to_zone <= 1.5 * exc_atr_check:
-                                                    log.info(f"🎯  [{symbol}] SMART OVERRIDE: Price ${current_price:.4f} is only {dist_to_zone:.4f} from zone (< 1.5 ATR). Proceeding!")
+                                                # ★ v44.1: Increased from 1.5 ATR to 5.0 ATR
+                                                # We MUST place the Limit order NOW while the breakout score is high.
+                                                # If we wait for price to return within 1.5 ATR, volume indicators 
+                                                # will cool down and the signal will be lost.
+                                                if dist_to_zone <= 5.0 * exc_atr_check:
+                                                    log.info(f"🎯  [{symbol}] SMART OVERRIDE: Price ${current_price:.4f} is {dist_to_zone:.4f} from zone (< 5.0 ATR). Proceeding to place Limit Order!")
                                                     # Don't block, let it flow to execution below
                                                 else:
-                                                    log.warning(f"⏳  [{symbol}] SMC WAIT — Price ${current_price:.4f} too far from zone ({dist_to_zone:.4f} > 1.5 ATR). Queued.")
+                                                    log.warning(f"⏳  [{symbol}] SMC WAIT — Price ${current_price:.4f} too far from zone ({dist_to_zone:.4f} > 5.0 ATR). Queued.")
                                                     state["armed_signal"] = "NONE"
                                                     state["armed_time"] = 0
                                                     state["armed_signal_data"] = None
