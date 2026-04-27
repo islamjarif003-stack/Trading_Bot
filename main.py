@@ -142,7 +142,7 @@ TRUE_BE_FEE_BUFFER_PCT   = 0.25   # ★ v37: Increased 0.15 → 0.25 to cover ta
 TRAILING_ACTIVATION_RR   = 1.5    # ★ v37: BE triggers at 1.5R (was 1.0R — too early for 15m candles)
 TRAILING_SL_DISTANCE_PCT = 1.55   # ★ v38: Trail 1.55% behind best price (was 1.80% / 1.20%)
 TTP_CHECK_INTERVAL       = 3      # Check every 3 cycles
-DISABLE_HARD_TP          = True    # ★ v26: DISABLED fixed TP to allow dynamic Trailing SL for 'Let Winners Run' mode
+DISABLE_HARD_TP          = False   # ★ v44.3: RE-ENABLED Hard TP to lock in profits at structural levels before violent reversals
 SMART_REVERSAL_EXIT      = True    # ★ v12: Close if 5m MA25 cross-under/over detected
 STALE_TRADE_MIN_LOSS_PCT = -0.50   # ★ v17: Stale timeout only fires if PnL < -0.50% (prevents fee-draining flat closes)
 
