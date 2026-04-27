@@ -1009,22 +1009,19 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
 
         size_note = f" (REDUCED {size_multiplier*100:.0f}%)" if size_multiplier < 1.0 else ""
 
-        # ★ v24: 50% EQUILIBRIUM ORDER BLOCK LIMIT ENTRY
-        # Instead of a tiny ATR offset, we target the OB midpoint for better fill & less drawdown
+        # ★ v44.0: ORDER BLOCK LIMIT ENTRY (OB Edge)
+        # Instead of 50% equilibrium which misses trades, we target the OB edge (zone_high for BUY)
         smc_zone = signal_data.get("smc_zone") if signal_data else None
         ob_entry_used = False
         if smc_zone and smc_zone.get("zone_high") and smc_zone.get("zone_low"):
             zone_high = float(smc_zone["zone_high"])
             zone_low = float(smc_zone["zone_low"])
-            equilibrium_price = (zone_high + zone_low) / 2.0
             if signal == "BUY":
-                # Safety: If price already pulled back below equilibrium, use current price (better fill)
-                limit_price = _round_price(min(equilibrium_price, current_price), symbol)
+                limit_price = _round_price(min(zone_high, current_price), symbol)
             else:
-                # Safety: If price already rallied above equilibrium, use current price (better fill)
-                limit_price = _round_price(max(equilibrium_price, current_price), symbol)
+                limit_price = _round_price(max(zone_low, current_price), symbol)
             ob_entry_used = True
-            log.info(f"   🧱 OB Equilibrium: zone ${zone_low:.4f}–${zone_high:.4f} → 50% = ${equilibrium_price:.4f}")
+            log.info(f"   🧱 OB Edge Target: zone ${zone_low:.4f}–${zone_high:.4f} → Target: ${limit_price:.4f}")
         else:
             # Fallback: Dynamic ATR offset (original logic for non-OB setups)
             dynamic_offset = atr_1m_for_offset * 0.10
@@ -1140,18 +1137,22 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
                 else:
                     log.info(f"✅  [{symbol}] OB ZONE OK — ${current_price:.4f} near OB ${zone_low:.4f}-${zone_high:.4f}")
             try:
-                # ★ v43.6: SMART HYBRID ENTRY — MARKET if near OB, LIMIT if far
-                # Near OB (within 1 ATR) → MARKET ORDER (don't miss the move!)
-                # Far from OB → LIMIT ORDER at OB (wait for retest)
+                # ★ v44.0: SMART HYBRID ENTRY (TIGHT)
+                # MARKET ONLY if price is already inside the OB (or <= 0.1 ATR away)
+                # LIMIT if price is outside the OB (wait for retest)
                 use_market = False
                 if smc_zone and smc_zone.get("zone_high") and smc_zone.get("zone_low"):
-                    zone_mid = (float(smc_zone["zone_high"]) + float(smc_zone["zone_low"])) / 2
-                    dist_to_ob = abs(current_price - zone_mid)
-                    if dist_to_ob <= atr * 1.0:
+                    zone_high = float(smc_zone["zone_high"])
+                    zone_low = float(smc_zone["zone_low"])
+                    
+                    if side == SIDE_BUY and current_price <= zone_high + (atr * 0.1):
                         use_market = True
-                        log.info(f"✅  [{symbol}] SMART ENTRY: Price ${current_price:.4f} within 1 ATR of OB ${zone_mid:.4f} (dist: ${dist_to_ob:.4f}) → MARKET ORDER")
+                        log.info(f"✅  [{symbol}] SMART ENTRY: Price ${current_price:.4f} inside/at OB top ${zone_high:.4f} → MARKET ORDER")
+                    elif side == SIDE_SELL and current_price >= zone_low - (atr * 0.1):
+                        use_market = True
+                        log.info(f"✅  [{symbol}] SMART ENTRY: Price ${current_price:.4f} inside/at OB bottom ${zone_low:.4f} → MARKET ORDER")
                     else:
-                        log.info(f"📋  [{symbol}] SMART ENTRY: Price ${current_price:.4f} far from OB ${zone_mid:.4f} (dist: ${dist_to_ob:.4f} > 1 ATR) → LIMIT @ ${limit_price}")
+                        log.info(f"📋  [{symbol}] SMART ENTRY: Price ${current_price:.4f} far from OB edge → LIMIT @ ${limit_price}")
                 else:
                     use_market = True  # No zone data → use market
                     log.info(f"⚠️  [{symbol}] No OB zone data — using MARKET ORDER")
