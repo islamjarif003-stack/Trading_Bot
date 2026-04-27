@@ -1140,18 +1140,20 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
                 else:
                     log.info(f"✅  [{symbol}] OB ZONE OK — ${current_price:.4f} near OB ${zone_low:.4f}-${zone_high:.4f}")
             try:
+                # ★ v43.3: LIMIT ORDER at OB Equilibrium — NO MORE MARKET ORDERS
+                # Price must come to OB zone for fill. No fill = no trade = no loss.
                 entry_order = client.futures_create_order(
                     symbol=symbol, side=side,
-                    type='MARKET',
-                    # price=str(limit_price),  # v25: Not needed for MARKET
+                    type='LIMIT',
+                    price=str(limit_price),
                     quantity=quantity,
-                    # timeInForce='GTC',  # v25: Not needed for MARKET
+                    timeInForce='GTC',
                 )
                 e_id = entry_order.get('orderId', entry_order.get('order_id', 'UNKNOWN'))
-                log.info(f"🚀  [{symbol}] MARKET ORDER FILLED — Qty: {quantity} │ OrderID: {e_id}")
+                log.info(f"📋  [{symbol}] LIMIT ORDER PLACED @ ${limit_price} — Qty: {quantity} │ OrderID: {e_id} │ Waiting for OB touch...")
 
-                # ★ v24: Quick fill check (5 seconds) — if already at price, fills instantly
-                filled = True  # v25: MARKET orders always fill instantly
+                # Quick fill check (5 seconds) — if price is already at OB, fills instantly
+                filled = False
                 time.sleep(5)
                 try:
                     order_status = client.futures_get_order(symbol=symbol, orderId=e_id)
