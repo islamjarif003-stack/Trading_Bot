@@ -765,7 +765,7 @@ def _get_current_atr(client: Client, symbol: str) -> float:
     import pandas as pd
     raw = client.futures_klines(
         symbol=symbol,
-        interval=Client.KLINE_INTERVAL_1HOUR,
+        interval=Client.KLINE_INTERVAL_1MINUTE,
         limit=30,
     )
     df = pd.DataFrame(raw, columns=[
@@ -1043,7 +1043,7 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         #  ★ v25: STRUCTURAL OB SL (Zone-Based Stop Loss)
         # ════════════════════════════════════════════════════════════════
         if ob_entry_used:
-            buffer = atr * 0.30  # ★ Use 1H ATR (not 5m) for proper buffer
+            buffer = atr * 0.30  # ★ Use 1m ATR for proper tight buffer on 1m chart
             if signal == "BUY":
                 sl_distance = limit_price - (zone_low - buffer)
             else:
