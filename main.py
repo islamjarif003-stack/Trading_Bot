@@ -2946,68 +2946,81 @@ def _detect_liquidity_sweep(highs: np.ndarray, lows: np.ndarray, closes: np.ndar
                     
     return False, 0.0, 0.0, f"No {direction}-side high-volume sweep detected"
 
-
 # ─── ORDER BLOCK / FAIR VALUE GAP DETECTOR ──────────────────────────────────
 def _detect_ob_fvg(highs: np.ndarray, lows: np.ndarray, opens: np.ndarray,
                     closes: np.ndarray, break_index: int, direction: str, atr: float) -> tuple:
     """
-    ★ v20 Advanced SMC: Strict Order Block sizing.
-    OB must be between 0.5x and 3.0x ATR to be considered institutional.
-    OB top/bottom strictly defined by candle body (open/close).
+    ★ v43.4: Find the LARGEST OB/FVG — not just the first one.
+    Scans all candidates and picks the biggest zone by size.
+    This ensures entry at the strongest support/resistance level.
     """
     if break_index < 3:
         return "NONE", 0.0, 0.0, "Break index too early for OB/FVG detection"
     
     search_start = max(0, break_index - 10)
     
+    # ★ v43.4: Collect ALL valid OBs, then pick the LARGEST
+    best_ob = None  # (size, ob_high, ob_low, detail, bar_idx)
+    
     if direction == "BUY":
-        # Bullish setup: Find the last BEARISH candle before the bullish break
         for i in range(break_index - 1, search_start - 1, -1):
             if closes[i] < opens[i]:  # Bearish candle
-                ob_high = float(opens[i])   # body top
-                ob_low = float(closes[i])   # body bottom
+                ob_high = float(opens[i])
+                ob_low = float(closes[i])
                 size = ob_high - ob_low
                 
-                # Strict size filter
-                if size < 0.2 * atr or size > 3.0 * atr:  # ★ v21 TESTING: Lowered min from 0.5 to 0.2 (accept more OB setups)
+                if size < 0.2 * atr or size > 3.0 * atr:
                     continue
                     
-                qual = min(1.0, size / atr)
-                detail = f"Bullish OB: Bar {i}, Zone ${ob_low:.4f}–${ob_high:.4f} (Qual: {qual:.2f})"
-                log.info(f"    🧱 {detail}")
-                return "OB", ob_high, ob_low, detail
-                
+                if best_ob is None or size > best_ob[0]:
+                    qual = min(1.0, size / atr)
+                    detail = f"Bullish OB: Bar {i}, Zone ${ob_low:.4f}–${ob_high:.4f} (Qual: {qual:.2f})"
+                    best_ob = (size, ob_high, ob_low, detail, i)
+                    
     elif direction == "SELL":
-        # Bearish setup: Find the last BULLISH candle before the bearish break
         for i in range(break_index - 1, search_start - 1, -1):
             if closes[i] > opens[i]:  # Bullish candle
-                ob_high = float(closes[i])  # body top
-                ob_low = float(opens[i])    # body bottom
+                ob_high = float(closes[i])
+                ob_low = float(opens[i])
                 size = ob_high - ob_low
                 
-                if size < 0.2 * atr or size > 3.0 * atr:  # ★ v21 TESTING: Lowered min from 0.5 to 0.2 (accept more OB setups)
+                if size < 0.2 * atr or size > 3.0 * atr:
                     continue
                     
-                qual = min(1.0, size / atr)
-                detail = f"Bearish OB: Bar {i}, Zone ${ob_low:.4f}–${ob_high:.4f} (Qual: {qual:.2f})"
-                log.info(f"    🧱 {detail}")
-                return "OB", ob_high, ob_low, detail
-                
-    # Fallback to FVG
+                if best_ob is None or size > best_ob[0]:
+                    qual = min(1.0, size / atr)
+                    detail = f"Bearish OB: Bar {i}, Zone ${ob_low:.4f}–${ob_high:.4f} (Qual: {qual:.2f})"
+                    best_ob = (size, ob_high, ob_low, detail, i)
+    
+    if best_ob:
+        log.info(f"    🧱 {best_ob[3]} ★ LARGEST OB selected")
+        return "OB", best_ob[1], best_ob[2], best_ob[3]
+    
+    # Fallback to FVG — also pick the LARGEST
+    best_fvg = None  # (size, fvg_high, fvg_low, detail)
+    
     for i in range(break_index - 1, max(search_start, 1), -1):
         if i + 1 < len(highs):
             if direction == "BUY":
                 if highs[i - 1] < lows[i + 1]:
                     fvg_low = float(highs[i - 1])
                     fvg_high = float(lows[i + 1])
-                    detail = f"Bullish FVG: Bar {i}, Zone ${fvg_low:.4f}–${fvg_high:.4f}"
-                    return "FVG", fvg_high, fvg_low, detail
+                    fvg_size = fvg_high - fvg_low
+                    if best_fvg is None or fvg_size > best_fvg[0]:
+                        detail = f"Bullish FVG: Bar {i}, Zone ${fvg_low:.4f}–${fvg_high:.4f} (Size: ${fvg_size:.4f})"
+                        best_fvg = (fvg_size, fvg_high, fvg_low, detail)
             else:
                 if lows[i - 1] > highs[i + 1]:
                     fvg_high = float(lows[i - 1])
                     fvg_low = float(highs[i + 1])
-                    detail = f"Bearish FVG: Bar {i}, Zone ${fvg_low:.4f}–${fvg_high:.4f}"
-                    return "FVG", fvg_high, fvg_low, detail
+                    fvg_size = fvg_high - fvg_low
+                    if best_fvg is None or fvg_size > best_fvg[0]:
+                        detail = f"Bearish FVG: Bar {i}, Zone ${fvg_low:.4f}–${fvg_high:.4f} (Size: ${fvg_size:.4f})"
+                        best_fvg = (fvg_size, fvg_high, fvg_low, detail)
+    
+    if best_fvg:
+        log.info(f"    🧱 {best_fvg[3]} ★ LARGEST FVG selected")
+        return "FVG", best_fvg[1], best_fvg[2], best_fvg[3]
                     
     return "NONE", 0.0, 0.0, "No Strict Order Block or FVG found"
     
