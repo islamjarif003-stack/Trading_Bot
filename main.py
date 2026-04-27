@@ -3088,23 +3088,17 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
                     m15_ema21 = _c * (2.0 / (ema_period + 1)) + m15_ema21 * (1 - 2.0 / (ema_period + 1))
                 m15_close = m15_closes[-1]
 
+                # ★ v43.5: 15m EMA21 is INFO ONLY — not a hard block
+                # During OB retest, price is naturally below EMA (pulling back).
+                # Hard blocking here kills exactly the best entry opportunities.
                 if direction == "BUY" and m15_close < m15_ema21:
-                    reason = (
-                        f"15m TREND BEARISH: Price {m15_close:.4f} "
-                        f"< EMA21 {m15_ema21:.4f}. NO BUY allowed."
-                    )
-                    log.info(f"    [{symbol}] ❌ {reason}")
-                    return "NEUTRAL", reason, None
+                    log.info(f"    [{symbol}] ⚠️ 15m EMA21 NOTE: Price {m15_close:.4f} < EMA21 {m15_ema21:.4f} (pullback) — proceeding (OB retest expected)")
 
-                if direction == "SELL" and m15_close > m15_ema21:
-                    reason = (
-                        f"15m TREND BULLISH: Price {m15_close:.4f} "
-                        f"> EMA21 {m15_ema21:.4f}. NO SELL allowed."
-                    )
-                    log.info(f"    [{symbol}] ❌ {reason}")
-                    return "NEUTRAL", reason, None
+                elif direction == "SELL" and m15_close > m15_ema21:
+                    log.info(f"    [{symbol}] ⚠️ 15m EMA21 NOTE: Price {m15_close:.4f} > EMA21 {m15_ema21:.4f} (bounce) — proceeding (OB retest expected)")
 
-                log.info(f"    [{symbol}] ✅ 15m EMA21 Gate: PASSED (Price {m15_close:.4f} vs EMA21 {m15_ema21:.4f})")
+                else:
+                    log.info(f"    [{symbol}] ✅ 15m EMA21 Gate: ALIGNED (Price {m15_close:.4f} vs EMA21 {m15_ema21:.4f})")
         except Exception as e_m15:
             log.warning(f"    [{symbol}] ⚠ 15m EMA21 gate failed: {e_m15} — BLOCKED")
             return "NEUTRAL", f"15m EMA21 gate failed: {e_m15}", None
