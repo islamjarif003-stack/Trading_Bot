@@ -90,7 +90,7 @@ MAX_MARGIN_PCT  = 30.0              # ★ $50 Config: Max 30% of balance as marg
 LIMIT_OFFSET_PCT = 0.05             # ★ Buffer (Tolerance Zone): 0.05% offset to ensure limit orders get filled
 ADX_ENTRY_MIN   = 5.0               # ★ v20: Lowered from 7.0 — SMC works in ranging markets, only filter dead markets
 SCAN_DELAY_S    = 1                 # ★ v7.2: Delay between each coin scan (API rate-limit safety)
-MAX_DAILY_LOSS_PCT = 10.0            # ★ $50 Config: 10% = $5 daily loss limit (2 SL trades)
+MAX_DAILY_LOSS_PCT = 100.0           # ★ Kill switch disabled (set to 100%)
 
 # ─── ★ v7.4: CONSECUTIVE LOSS COOLDOWN ──────────────────────────────────────
 MAX_CONSEC_LOSSES   = 3         # After 3 consecutive losses on a coin...
@@ -1023,10 +1023,20 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
             
             if signal == "BUY":
                 limit_target = zone_high + front_run_buffer
-                limit_price = _round_price(min(limit_target, current_price), symbol)
+                # ★ Smart Entry: If price hasn't run away too far (within 0.8 ATR), just FOMO in at market price!
+                if current_price > limit_target and (current_price - limit_target) <= atr_1m_for_offset * 0.8:
+                    limit_price = current_price
+                    log.info(f"🚀  [SMART ENTRY] Price near OB, jumping in at current price: ${limit_price:.4f}")
+                else:
+                    limit_price = _round_price(min(limit_target, current_price), symbol)
             else:
                 limit_target = zone_low - front_run_buffer
-                limit_price = _round_price(max(limit_target, current_price), symbol)
+                # ★ Smart Entry: If price hasn't run away too far (within 0.8 ATR), just FOMO in at market price!
+                if current_price < limit_target and (limit_target - current_price) <= atr_1m_for_offset * 0.8:
+                    limit_price = current_price
+                    log.info(f"🚀  [SMART ENTRY] Price near OB, jumping in at current price: ${limit_price:.4f}")
+                else:
+                    limit_price = _round_price(max(limit_target, current_price), symbol)
                 
             ob_entry_used = True
             log.info(f"   🧱 OB Edge Target: zone ${zone_low:.4f}–${zone_high:.4f} + Buffer ${front_run_buffer:.4f} → Target: ${limit_price:.4f}")

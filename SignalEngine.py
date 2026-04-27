@@ -1369,26 +1369,50 @@ def get_quant_signal(client: Client, symbol: str) -> dict:
             signal = "NONE"
 
     # ══════════════════════════════════════════════════════════════════
-    #  ★ RULE 3: CANDLE CLOSE CONFIRMATION
+    #  ★ RULE 3: CANDLE CLOSE CONFIRMATION & EXHAUSTION VETO
     #    BUY: Last closed candle (iloc[-2]) must be Green (close > open)
     #    SELL: Last closed candle (iloc[-2]) must be Red (close < open)
+    #    ★ EXHAUSTION VETO: Do not sell the bottom of a massive dump wick!
     # ══════════════════════════════════════════════════════════════════
     if signal in ("BUY", "SELL"):
         # Use the second-to-last candle (the last CLOSED candle, not the live one)
         last_closed = klines_df.iloc[-2]
+        live_candle = klines_df.iloc[-1]
+        
         candle_is_green = last_closed["close"] > last_closed["open"]
         candle_is_red = last_closed["close"] < last_closed["open"]
+        
+        # Wick Exhaustion Check (Check both live and last closed candle)
+        def check_exhaustion(c):
+            op, cl, hi, lo = c["open"], c["close"], c["high"], c["low"]
+            body = abs(op - cl)
+            u_wick = hi - max(op, cl)
+            l_wick = min(op, cl) - lo
+            # Veto if wick is more than 2.5x the body (massive rejection)
+            return u_wick > (body * 2.5), l_wick > (body * 2.5)
+            
+        _, last_l_wick = check_exhaustion(last_closed)
+        last_u_wick, _ = check_exhaustion(last_closed)
+        live_u_wick, live_l_wick = check_exhaustion(live_candle)
 
-        if signal == "BUY" and not candle_is_green:
-            final_score = max(0, final_score - 1)  # ★ v28.5: -2 → -1 (candle color is secondary to SMC structure)
-            score_breakdown.append("★ Candle NOT green (−1)")
-            if final_score < dynamic_threshold:
+        if signal == "BUY":
+            if last_u_wick or live_u_wick:
+                score_breakdown.append("🚫 EXHAUSTION VETO: Buying into a massive upper rejection wick (Top Trap)!")
                 signal = "NONE"
-        elif signal == "SELL" and not candle_is_red:
-            final_score = max(0, final_score - 1)  # ★ v28.5: -2 → -1
-            score_breakdown.append("★ Candle NOT red (−1)")
-            if final_score < dynamic_threshold:
+            elif not candle_is_green:
+                final_score = max(0, final_score - 1)  # ★ v28.5: -2 → -1
+                score_breakdown.append("★ Candle NOT green (−1)")
+                if final_score < dynamic_threshold:
+                    signal = "NONE"
+        elif signal == "SELL":
+            if last_l_wick or live_l_wick:
+                score_breakdown.append("🚫 EXHAUSTION VETO: Selling into a massive lower rejection wick (Bottom Trap)!")
                 signal = "NONE"
+            elif not candle_is_red:
+                final_score = max(0, final_score - 1)  # ★ v28.5: -2 → -1
+                score_breakdown.append("★ Candle NOT red (−1)")
+                if final_score < dynamic_threshold:
+                    signal = "NONE"
 
     if signal == "NONE" and not score_breakdown:
         score_breakdown = ["No confluence (Vetoed)"]
