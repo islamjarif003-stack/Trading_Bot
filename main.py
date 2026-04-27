@@ -3433,6 +3433,13 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
                 reason = f"FVG REQUIRED: No Fair Value Gap found near OB. Without gap, entry has no attraction. Skipping."
                 log.warning(f"    [{symbol}] 🚫 {reason}")
                 return "NEUTRAL", reason, None
+            
+            # ★ v43.7: OB Quality minimum 2/3 — No weak OBs
+            # 1/3 quality = weak displacement + mitigated = trap entry
+            if ob_quality_score < 2:
+                reason = f"OB QUALITY TOO LOW: {ob_quality_score}/3 (minimum 2/3 required). Weak OB = trap entry. Skipping."
+                log.warning(f"    [{symbol}] 🚫 {reason}")
+                return "NEUTRAL", reason, None
         
         # ── ★ v26.3 UPGRADE 1: PREMIUM/DISCOUNT ZONE FILTER ──────────────
         # ★ v43.2: Downgraded to INFO ONLY — FVG gate handles quality filtering now
