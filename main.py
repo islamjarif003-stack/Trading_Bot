@@ -3320,9 +3320,35 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
         else:
             smc_direction = "BUY" if struct_type in ("CHOCH_BULL", "BOS_BULL") else "SELL"
             
-        if smc_direction != direction:
+        was_flipped = (smc_direction != direction)
+        if was_flipped:
             log.info(f"    [{symbol}] 🔄 SMC FLIP: Signal was {direction} but 5m structure is {struct_type} → Flipping to {smc_direction}")
             direction = smc_direction
+            
+            # ★ v43.8: FLIPPED trades MUST align with 15m EMA21
+            # If SELL→BUY flip but 15m is bearish, it's a stale structure flip into downtrend
+            try:
+                m15_raw = client.futures_klines(symbol=symbol, interval="15m", limit=50)
+                if m15_raw and len(m15_raw) >= 25:
+                    m15_closes = np.array([float(k[4]) for k in m15_raw])
+                    ema_period = 21
+                    m15_ema21 = m15_closes[0]
+                    for _c in m15_closes[1:]:
+                        m15_ema21 = _c * (2.0 / (ema_period + 1)) + m15_ema21 * (1 - 2.0 / (ema_period + 1))
+                    m15_close = m15_closes[-1]
+                    
+                    if direction == "BUY" and m15_close < m15_ema21:
+                        reason = f"FLIP REJECTED: Flipped to BUY but 15m BEARISH (${m15_close:.4f} < EMA21 ${m15_ema21:.4f}). Stale structure."
+                        log.warning(f"    [{symbol}] 🚫 {reason}")
+                        return "NEUTRAL", reason, None
+                    elif direction == "SELL" and m15_close > m15_ema21:
+                        reason = f"FLIP REJECTED: Flipped to SELL but 15m BULLISH (${m15_close:.4f} > EMA21 ${m15_ema21:.4f}). Stale structure."
+                        log.warning(f"    [{symbol}] 🚫 {reason}")
+                        return "NEUTRAL", reason, None
+                    else:
+                        log.info(f"    [{symbol}] ✅ FLIP VALIDATED: 15m EMA21 confirms {direction}")
+            except Exception:
+                pass  # If 15m data fails, allow the trade
         
         # ── ★ v26.3 UPGRADE 2: 15m HIGHER-TIMEFRAME CONFLUENCE (STRICT VETO) ──
         # If 15m structure opposes 5m direction, SKIP trade entirely.
