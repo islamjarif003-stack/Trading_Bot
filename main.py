@@ -1016,12 +1016,20 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         if smc_zone and smc_zone.get("zone_high") and smc_zone.get("zone_low"):
             zone_high = float(smc_zone["zone_high"])
             zone_low = float(smc_zone["zone_low"])
+            
+            # ★ v44.2: Front-Run Buffer
+            # Add a small buffer (0.25x 5m ATR) to prevent missing trades when market reverses just before OB
+            front_run_buffer = atr_1m_for_offset * 0.25
+            
             if signal == "BUY":
-                limit_price = _round_price(min(zone_high, current_price), symbol)
+                limit_target = zone_high + front_run_buffer
+                limit_price = _round_price(min(limit_target, current_price), symbol)
             else:
-                limit_price = _round_price(max(zone_low, current_price), symbol)
+                limit_target = zone_low - front_run_buffer
+                limit_price = _round_price(max(limit_target, current_price), symbol)
+                
             ob_entry_used = True
-            log.info(f"   🧱 OB Edge Target: zone ${zone_low:.4f}–${zone_high:.4f} → Target: ${limit_price:.4f}")
+            log.info(f"   🧱 OB Edge Target: zone ${zone_low:.4f}–${zone_high:.4f} + Buffer ${front_run_buffer:.4f} → Target: ${limit_price:.4f}")
         else:
             # Fallback: Dynamic ATR offset (original logic for non-OB setups)
             dynamic_offset = atr_1m_for_offset * 0.10
