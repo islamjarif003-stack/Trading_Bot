@@ -3789,7 +3789,6 @@ def _check_pending_entry_order(client: Client, symbol: str, state: dict, current
                             stopPrice=str(sl_price),
                             quantity=qty,
                             reduceOnly="true",
-                            timeInForce=TIME_IN_FORCE_GTC,
                             workingType="MARK_PRICE",
                         )
                         log.info(f"🛡  [{symbol}] POST-FILL SL — ${sl_price}")
@@ -3804,12 +3803,26 @@ def _check_pending_entry_order(client: Client, symbol: str, state: dict, current
                                 type="TAKE_PROFIT_MARKET",
                                 stopPrice=str(tp_price),
                                 closePosition="true",
-                                timeInForce=TIME_IN_FORCE_GTC,
                                 workingType="MARK_PRICE",
                             )
                             log.info(f"🎯  [{symbol}] POST-FILL TP — ${tp_price}")
                         except Exception as tp_e:
                             log.warning(f"⚠  [{symbol}] Post-fill TP failed: {tp_e}")
+                            # Fallback to reduceOnly if closePosition fails
+                            try:
+                                pos = _has_open_position(client, symbol)
+                                qty = pos["qty"] if pos else pending_data.get("quantity", 0)
+                                client.futures_create_order(
+                                    symbol=symbol, side=close_side,
+                                    type="TAKE_PROFIT_MARKET",
+                                    stopPrice=str(tp_price),
+                                    quantity=qty,
+                                    reduceOnly="true",
+                                    workingType="MARK_PRICE",
+                                )
+                                log.info(f"🎯  [{symbol}] POST-FILL TP (Fallback) — ${tp_price}")
+                            except Exception as tp_e2:
+                                log.warning(f"⚠  [{symbol}] Post-fill TP Fallback failed: {tp_e2}")
                 
                 # Telegram alert
                 try:
@@ -4205,10 +4218,18 @@ def main():
                 
                 # ── Trade Closure check ──────────────────────────────────────
                 # ★ AUDIT FIX: Skip if manage_trailing_tp already handled this closure
+                # ★ AUDIT FIX: Skip if manage_trailing_tp already handled this closure
                 if state.get("_trade_logged_by_manager"):
                     state["_trade_logged_by_manager"] = False  # Reset flag
                     state["_trade_logged"] = True
                     log.info(f"📊  [{symbol}] Closure already handled by trailing manager. Skipping duplicate.")
+                    try:
+                        state["last_signal_data"] = None
+                        _reset_bot_state(state)
+                        state["last_trade_time"] = time.time()
+                        visualizer.clear_position_data()
+                    except Exception:
+                        pass
                     continue
                 if not state["_trade_logged"]:
                     try:
@@ -4300,15 +4321,18 @@ def main():
                         else:
                             prop_msg = f"\nToday's Net PnL: ${daily_pnl:.2f}{streak_info}"
 
-                        send_telegram_alert(
-                            f"{res_emoji} <b>Trade Closed</b>\n"
-                            f"Coin: {symbol}\n"
-                            f"Side: {last_side}\n"
-                            f"Close Reason: {close_reason}\n"
-                            f"Phase: {phase}\n"
-                            f"Realized PnL: ${pnl:.2f}"
-                            f"{prop_msg}"
-                        )
+                        try:
+                            send_telegram_alert(
+                                f"{res_emoji} <b>Trade Closed</b>\n"
+                                f"Coin: {symbol}\n"
+                                f"Side: {last_side}\n"
+                                f"Close Reason: {close_reason}\n"
+                                f"Phase: {phase}\n"
+                                f"Realized PnL: ${pnl:.2f}"
+                                f"{prop_msg}"
+                            )
+                        except Exception as t_err:
+                            log.warning(f"⚠️  [{symbol}] Telegram timeout during closure: {t_err}")
 
                         # ── KILL SWITCH EVALUATION ──
                         # ★ v22: Skip kill switch in DRY RUN mode (balance is $0.02, any PnL triggers it)
