@@ -410,7 +410,7 @@ def generate_smc_chart(client: Client, symbol: str, signal: str, avg_entry: floa
     """
     try:
         # ── Fetch 100 candles of 5m data ──
-        raw_klines = client.futures_klines(symbol=symbol, interval='5m', limit=100)
+        raw_klines = client.futures_klines(symbol=symbol, interval='1m', limit=100)
         if not raw_klines or len(raw_klines) < 20:
             log.warning(f"⚠ [{symbol}] SMC Chart: Not enough data ({len(raw_klines) if raw_klines else 0} candles)")
             return None
@@ -3134,7 +3134,7 @@ def _smc_entry_validate(client: Client, symbol: str, direction: str, score: int 
             log.warning(f"    [{symbol}] ⚠ 15m EMA21 gate failed: {e_m15} — BLOCKED")
             return "NEUTRAL", f"15m EMA21 gate failed: {e_m15}", None
 
-        m5 = client.futures_klines(symbol=symbol, interval="5m", limit=200)  # ★ v34-fix: Reverted 15m → 5m (original setup)
+        m5 = client.futures_klines(symbol=symbol, interval="1m", limit=200)  # ★ v44.4: Shifted to 1m timeframe per user request
         if not m5 or len(m5) < 40:
             return "PASS", "SMC SKIP: Not enough M15 data", None
         
@@ -4569,7 +4569,7 @@ def main():
                             # BUY: Latest closed body must close ABOVE the previous closed body.
                             # SELL: Latest closed body must close BELOW the previous closed body.
                             try:
-                                m5_momentum = client.futures_klines(symbol=symbol, interval='5m', limit=4)  # ★ v34-fix: 5m momentum (original)
+                                m5_momentum = client.futures_klines(symbol=symbol, interval='1m', limit=4)  # ★ v44.4: Shifted to 1m momentum
                                 if m5_momentum and len(m5_momentum) >= 3:
                                     closed_klines = m5_momentum[:-1]  # Exclude unfinished live candle
                                     curr_open = float(closed_klines[-1][1])
