@@ -761,11 +761,14 @@ def _cancel_all_open_orders(client: Client, symbol: str):
 
 
 def _get_current_atr(client: Client, symbol: str) -> float:
-    """Fetch fresh ATR(14) for adaptive trailing."""
+    """Fetch fresh ATR(14) on 15m timeframe for SL/TP + trailing.
+    ★ v44.8: Shifted from 1m → 15m. Analysis showed 61% of losing trades
+    had price go in our direction after SL hit — 1m ATR was too tight.
+    15m ATR gives proper breathing room while entries stay on 1m."""
     import pandas as pd
     raw = client.futures_klines(
         symbol=symbol,
-        interval=Client.KLINE_INTERVAL_1MINUTE,
+        interval=Client.KLINE_INTERVAL_15MINUTE,
         limit=30,
     )
     df = pd.DataFrame(raw, columns=[
@@ -949,16 +952,16 @@ def execute_trade(client: Client, symbol: str, signal: str, current_price: float
         # ★ v21: Save 5m ATR for dynamic limit offset only
         atr_1m_for_offset = atr
 
-        # ★ v36 FIX: Use 1H ATR for SL/TP — MUST match trailing manager's _get_current_atr()
-        # The 5m ATR from signal engine is too small (~$0.01) causing tiny SL that gets
-        # immediately replaced by Emergency SL (~7.8%). Using 1H ATR ensures consistency.
+        # ★ v44.8 FIX: Use 15m ATR for SL/TP — gives breathing room while entries stay fast on 1m
+        # Analysis: 61% of losses had price go our direction after SL hit (SL too tight with 1m ATR)
+        # 15m ATR provides ~10x wider SL than 1m, preventing premature stop-outs
         try:
-            atr_1h = _get_current_atr(client, symbol)
-            if atr_1h > 0:
-                log.info(f"   ★ ATR Sync: 5m={atr:.4f} → 1H={atr_1h:.4f} (using 1H for SL/TP)")
-                atr = atr_1h
+            atr_15m = _get_current_atr(client, symbol)
+            if atr_15m > 0:
+                log.info(f"   ★ ATR Sync: 1m={atr:.4f} → 15m={atr_15m:.4f} (using 15m for SL/TP)")
+                atr = atr_15m
         except Exception as atr_err:
-            log.warning(f"⚠ [{symbol}] Could not fetch 1H ATR, using signal ATR: {atr_err}")
+            log.warning(f"⚠ [{symbol}] Could not fetch 15m ATR, using signal ATR: {atr_err}")
 
         # ★ v22: HALF-KELLY CRITERION POSITION SIZING
         try:

@@ -1,0 +1,2005 @@
+[TAILING] Tailing last 1000 lines for [trading-bot] process (change the value with --lines option)
+/root/.pm2/logs/trading-bot-out.log last 1000 lines:
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ���
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+8|trading- | 
+8|trading- | 🛑  Graceful shutdown complete.
+8|trading- | 
+8|trading- | 
+8|trading- | ╔══════════════════════════════════════════════════════════════════╗
+8|trading- | ║   INSTITUTIONAL MULTI-PAIR BOT v9.0 — BREAK-EVEN + TRAIL      ║
+8|trading- | ║   ★ 5 Pairs │ Telegram Alerts │ Daily Kill Switch (5%)         ║
+8|trading- | ║   ★ SL 1.5×ATR + TP 3.0×ATR │ BE at +0.30% │ Trail 0.15%       ║
+8|trading- | ║   MTF+Price │ RSI Zone │ Candle Confirm │ Score≥18             ║
+8|trading- | ╚══════════════════════════════════════════════════════════════════╝
+8|trading- | 
+8|trading- | 
+
+/root/.pm2/logs/trading-bot-error.log last 1000 lines:
+8|trading- | 2026-04-28 05:49:46 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:48 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:48 │ INFO     │ SCAN #0359 │ [0GUSDT] │ ⚡ CLOSE
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   Price: $0.55  │  POC: $0.55 (0.287%)  │  Liq Zone: $0.55
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   Regime: TRENDING (ADX: 26.24)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   Score: [████░░░░░░░░░░░░░░░░] 19/87 (need ≥20)
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   ★ OI: 17343944.00 (→FLAT)  │  FR: -0.0530%  │  Price: FLAT
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   ★ BTC Corr: -0.0733 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ Liq Magnet Below ($0.5): +2
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ Liq Magnet Below ($0.5): +2
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ ★★ EMA Triple SELL (FULL): +3
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ 🚫 MA FLOOR: All EMA(8/21/50) below price = strong uptrend: -3
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-51582.00): +3
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ ★★ Taker SELL Press (R:0.80): +3
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:0.9x): +3
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ 📊 Vol Delta BEARISH (Buy%: 40.5%): +3
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   │  ✦ ★ Candle NOT red (−1)
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   └─
+8|trading- | 2026-04-28 05:49:48 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:49:48 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:50 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:50 │ INFO     │ SCAN #0359 │ [BCHUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   Price: $447.78  │  POC: $448.24 (0.102%)  │  Liq Zone: $448.24
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   Regime: TRENDING (ADX: 19.08)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 11/87 (need ≥18)
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   ★ OI: 392616.68 (→FLAT)  │  FR: 0.0051%  │  Price: RISING
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   ★ BTC Corr: +0.5016 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ Liq Magnet Above ($448.2): +2
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ Liq Magnet Above ($449.3): +2
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ DOM Buy Wall (1.7x): +2
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ VWAP Value (Below $448.3): +3
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0839): +1
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:66.18): +3
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.72): +3
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 50.0%): +0
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   └─
+8|trading- | 2026-04-28 05:49:50 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:49:50 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:52 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:52 │ INFO     │ SCAN #0359 │ [ENSOUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   Price: $0.92  │  POC: $0.93 (0.375%)  │  Liq Zone: $0.93
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   Regime: RANGING (ADX: 8.52)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 7/87 (need ≥20)
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   ★ OI: 8502608.10 (→FLAT)  │  FR: -0.1847%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   ★ BTC Corr: +0.1181 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   │  ✦ Liq Magnet Above ($0.9): +2
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   │  ✦ VWAP Value (Below $0.9): +3
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   │  ✦ ★★ EMA Triple BUY (PARTIAL): +1
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.1x): +3
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   │  ✦ 💀 LIQ HUNT: Shorts stacked! Price→UP: +3
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   │  ✦ 🚨 Price DROPPING vs BUY: -8
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 48.0%): +0
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   └─
+8|trading- | 2026-04-28 05:49:52 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:49:52 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:54 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:54 │ INFO     │ SCAN #0359 │ [LABUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   Price: $0.69  │  POC: $0.64 (7.816%)  │  Liq Zone: $0.64
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   Regime: TRENDING (ADX: 28.03)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 3/87 (need ≥18)
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   ★ OI: 18994944.00 (→FLAT)  │  FR: 0.0115%  │  Price: RISING
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   ★ BTC Corr: -0.1231 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   │  ✦ VWAP Value (Below $0.7): +3
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   │  ✦ 🚫 MA CEILING: All EMA(8/21/50) above price = dead cat bounce trap: -3
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 47.0%): +0
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   └─
+8|trading- | 2026-04-28 05:49:54 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:49:54 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:56 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:56 │ INFO     │ SCAN #0359 │ [XMRUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   Price: $376.24  │  POC: $382.88 (1.767%)  │  Liq Zone: $382.88
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   Regime: TRENDING (ADX: 28.31)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 4/87 (need ≥20)
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   ★ OI: 72822.13 (→FLAT)  │  FR: 0.0219%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   ★ BTC Corr: +0.1574 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   │  ✦ VWAP Value (Below $378.3): +3
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.69): +3
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   │  ✦ 🚨 Price DROPPING vs BUY: -8
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 55.5%): +3
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   └─
+8|trading- | 2026-04-28 05:49:56 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:49:56 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:59 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:49:59 │ INFO     │ SCAN #0359 │ [MSTRUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   Price: $169.03  │  POC: $170.03 (0.586%)  │  Liq Zone: $170.03
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   Regime: TRENDING (ADX: 20.18)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 10/87 (need ≥18)
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   ★ OI: 49732.30 (→FLAT)  │  FR: 0.0000%  │  Price: RISING
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   ★ BTC Corr: +0.7161 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ Liq Magnet Above ($170.0): +2
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ Liq Magnet Above ($171.0): +2
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ VWAP Value (Below $169.8): +3
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ ★★ BB Squeeze BUY (W:0.60): +1
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.1033): +1
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ ★★ EMA Triple BUY (PARTIAL): +1
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:2.18): +3
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 53.5%): +0
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   └─
+8|trading- | 2026-04-28 05:49:59 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:49:59 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:01 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:01 │ INFO     │ SCAN #0359 │ [ORDIUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   Price: $4.36  │  POC: $4.25 (2.613%)  │  Liq Zone: $4.25
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   Regime: TRENDING (ADX: 22.96)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 5/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   ★ OI: 3089100.40 (→FLAT)  │  FR: 0.0050%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   ★ BTC Corr: +0.6123 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ ★★ BB Squeeze BUY (W:0.90): +1
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0044): +1
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ ★★ EMA Triple BUY (PARTIAL): +1
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (3 candles): +1
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.32): +3
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ 📊 DELTA DIV: Price↑ CVD↓ (Fake Pump!): -1
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 58.4%): +3
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:01 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:01 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:03 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:03 │ INFO     │ SCAN #0359 │ [UNIUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   Price: $3.23  │  POC: $3.22 (0.143%)  │  Liq Zone: $3.22
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   Regime: TRENDING (ADX: 21.88)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 11/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   ★ OI: 17686409.00 (→FLAT)  │  FR: -0.0012%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   ★ BTC Corr: +0.6792 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   │  ✦ VWAP Value (Below $3.2): +3
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0009): +1
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:3164.00): +3
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:2.03): +3
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   │  ✦ 🎯 SNIPER ZONE: Pullback to EMA21 + rejection → BUY: +3
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 61.9%): +3
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:03 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:03 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:05 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:05 │ INFO     │ SCAN #0359 │ [TSLAUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   Price: $377.19  │  POC: $369.64 (1.999%)  │  Liq Zone: $369.64
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   Regime: TRENDING (ADX: 26.57)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 4/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   ★ OI: 36648.85 (→FLAT)  │  FR: 0.0112%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   ★ BTC Corr: -0.0145 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   │  ✦ VWAP Value (Above $376.5): +3
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   │  ✦ 🚫 MA FLOOR: All EMA(8/21/50) below price = strong uptrend: -3
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:0.9x): +3
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (0% of prev): -2
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 47.8%): +0
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:05 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:05 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:08 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:08 │ INFO     │ SCAN #0359 │ [ASTERUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   Price: $0.64  │  POC: $0.65 (0.716%)  │  Liq Zone: $0.65
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   Regime: TRENDING (ADX: 25.45)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 10/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   ★ OI: 117396465.00 (→FLAT)  │  FR: 0.0031%  │  Price: FLAT
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   ★ BTC Corr: +0.4681 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ Liq Magnet Above ($0.6): +2
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ Liq Magnet Above ($0.6): +2
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ VWAP Value (Below $0.6): +3
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0001): +1
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:30.00): +3
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:30000000001.16): +3
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 46.4%): +0
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:08 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:08 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:10 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:10 │ INFO     │ SCAN #0359 │ [VIRTUALUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   Price: $0.69  │  POC: $0.69 (0.847%)  │  Liq Zone: $0.69
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   Regime: TRENDING (ADX: 19.43)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 8/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   ★ OI: 23026803.40 (→FLAT)  │  FR: 0.0006%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   ★ BTC Corr: +0.0600 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   │  ✦ VWAP Value (Below $0.7): +3
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-237.40): +3
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.72): +3
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 62.2%): +3
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:10 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:10 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:12 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:12 │ INFO     │ SCAN #0359 │ [MUSDT] │ ⚡ CLOSE
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   Price: $3.65  │  POC: $3.96 (8.259%)  │  Liq Zone: $3.96
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   Regime: RANGING (ADX: 16.47)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   Score: [███░░░░░░░░░░░░░░░░░] 16/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   ★ OI: 8877155.00 (→FLAT)  │  FR: 0.0050%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   ★ BTC Corr: -0.2105 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   │  ✦ DOM Sell Wall (1.9x): +2
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   │  ✦ ★★ MACD Cross SELL (H:-0.0009): +1
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   │  ✦ ★★ EMA Triple SELL (FULL): +3
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:75.00): +3
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:0.5x): +3
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 49.5%): +0
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:12 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:12 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:23 │ INFO     │ 🌍 [MARKET SESSION DETECTED] LOW LIQUIDITY (Asian/Early London) | Filters Relaxed | UTC Hour: 4
+8|trading- | 2026-04-28 05:50:24 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:24 │ INFO     │ SCAN #0360 │ [BTCUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   Price: $76880.05  │  POC: $76711.44 (0.219%)  │  Liq Zone: $76711.44
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   Regime: TRENDING (ADX: 20.9)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 12/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   ★ OI: 98077.71 (→FLAT)  │  FR: -0.0040%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   ★ BTC Corr: +1.0000 (⚠ HIGH)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ Liq Magnet Above ($77041.2): +2
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ DOM Buy Wall (47.0x): +2
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ VWAP Value (Below $76914.6): +3
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:25.7282): +1
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ ★★ EMA Triple BUY (PARTIAL): +1
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-7.84): +3
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.36): +3
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:47.0x): +3
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ 🪤 BULL TRAP DETECTED: -5
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 57.0%): +3
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:24 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:24 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:27 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:27 │ INFO     │ SCAN #0360 │ [ETHUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   Price: $2288.8  │  POC: $2272.31 (0.720%)  │  Liq Zone: $2272.31
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   Regime: TRENDING (ADX: 18.77)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 12/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   ★ OI: 2028749.45 (→FLAT)  │  FR: -0.0161%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   ★ BTC Corr: +0.8511 (⚠ HIGH)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   │  ✦ VWAP Value (Below $2290.8): +3
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.6019): +1
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:346.09): +3
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.98): +3
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   │  ✦ 💀 LIQ HUNT: Shorts stacked! Price→UP: +3
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 64.8%): +3
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:27 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:27 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:29 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:29 │ INFO     │ SCAN #0360 │ [SOLUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   Price: $84.05  │  POC: $84.21 (0.199%)  │  Liq Zone: $84.21
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   Regime: TRENDING (ADX: 18.19)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 3/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   ★ OI: 9467133.06 (→FLAT)  │  FR: -0.0114%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   ★ BTC Corr: +0.7319 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ Liq Magnet Below ($83.9): +2
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ ★★ EMA Triple SELL (PARTIAL): +1
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-872.61): +3
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:0.8x): +3
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (15% of prev): -2
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ 🚨 Price RISING vs SELL: -8
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 50.0%): +0
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:29 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:29 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:31 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:31 │ INFO     │ SCAN #0360 │ [XAUUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   Price: $4670.03  │  POC: $4675.54 (0.118%)  │  Liq Zone: $4675.54
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   Regime: TRENDING (ADX: 32.95)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   Score: [███░░░░░░░░░░░░░░░░░] 14/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   ★ OI: 45535.66 (→FLAT)  │  FR: 0.0000%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   ★ BTC Corr: +0.2962 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ DOM Sell Wall (7.6x): +2
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ ★★ StochRSI SELL (K:74.0): +1
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ ★★ EMA Triple SELL (FULL): +3
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-7.90): +3
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:0.1x): +3
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (3% of prev): -2
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 51.8%): +0
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:31 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:31 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:33 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:33 │ INFO     │ SCAN #0360 │ [XAGUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   Price: $74.56  │  POC: $75.77 (1.626%)  │  Liq Zone: $75.77
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   Regime: TRENDING (ADX: 36.87)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 9/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   ★ OI: 1524064.83 (→FLAT)  │  FR: 0.0015%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   ★ BTC Corr: +0.2535 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   │  ✦ ★★ EMA Triple SELL (FULL): +3
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   │  ✦ ★★ Heikin-Ashi SELL (2 candles): +1
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:2910.51): +3
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (26% of prev): -2
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 46.5%): +0
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:33 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike
+8|trading- | 2026-04-28 05:50:33 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:35 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:35 │ INFO     │ SCAN #0360 │ [XRPUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   Price: $1.39  │  POC: $1.39 (0.145%)  │  Liq Zone: $1.39
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   Regime: RANGING (ADX: 16.85)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   Score: [███░░░░░░░░░░░░░░░░░] 15/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   ★ OI: 264719823.10 (→FLAT)  │  FR: -0.0021%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   ★ BTC Corr: +0.6869 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ Liq Magnet Above ($1.4): +2
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ VWAP Value (Below $1.4): +3
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0004): +1
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ ★★ EMA Triple BUY (PARTIAL): +1
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-2715.20): +3
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.44): +3
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.2x): +3
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 57.8%): +3
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:35 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:35 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:38 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:38 │ INFO     │ SCAN #0360 │ [BSBUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   Price: $0.71  │  POC: $0.74 (3.590%)  │  Liq Zone: $0.74
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   Regime: RANGING (ADX: 15.83)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 2/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   ★ OI: 22586366.00 (→FLAT)  │  FR: 0.0170%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   ★ BTC Corr: -0.1460 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   │  ✦ VWAP Value (Below $0.7): +3
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   │  ✦ ★★ StochRSI BUY (K:13.2): +1
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   │  ✦ 🚫 MA CEILING: All EMA(8/21/50) above price = dead cat bounce trap: -3
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-12828.00): +3
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.0x): +3
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   │  ✦ 🚨 Price DROPPING vs BUY: -8
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 51.6%): +0
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:38 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:38 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:39 │ INFO     │ 🧊  [ORCAUSDT] LOSS COOLDOWN: 85min left before re-entry allowed.
+8|trading- | 2026-04-28 05:50:39 │ INFO     │ 🧊  [ZECUSDT] LOSS COOLDOWN: 95min left before re-entry allowed.
+8|trading- | 2026-04-28 05:50:40 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:40 │ INFO     │ SCAN #0360 │ [HYPEUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   Price: $41.25  │  POC: $41.62 (0.879%)  │  Liq Zone: $41.62
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   Regime: TRENDING (ADX: 22.53)  │  H1 Trend: BEARISH  │  Fib GP: ✅
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 7/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   ★ OI: 4874586.14 (→FLAT)  │  FR: -0.0040%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   ★ BTC Corr: +0.6083 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ Fib Golden Pocket Reject (BUY): +3
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ Liq Magnet Above ($41.6): +2
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0391): +1
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (3 candles): +1
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:433.52): +3
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.38): +3
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ 🪤 BULL TRAP DETECTED: -5
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 56.2%): +3
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:40 │ INFO     │   ⏳ Waiting for: Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:40 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:42 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:42 │ INFO     │ SCAN #0360 │ [BNBUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   Price: $625.49  │  POC: $620.29 (0.830%)  │  Liq Zone: $620.29
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   Regime: TRENDING (ADX: 20.01)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 6/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   ★ OI: 547437.83 (→FLAT)  │  FR: 0.0000%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   ★ BTC Corr: +0.7781 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.1436): +1
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-24.04): +3
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.88): +3
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.1x): +3
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 53.0%): +0
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:42 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:42 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:44 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:44 │ INFO     │ SCAN #0360 │ [SUIUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   Price: $0.93  │  POC: $0.92 (1.397%)  │  Liq Zone: $0.92
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   Regime: RANGING (ADX: 14.73)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 1/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   ★ OI: 88674852.00 (→FLAT)  │  FR: -0.0004%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   ★ BTC Corr: +0.8142 (⚠ HIGH)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ Liq Magnet Below ($0.9): +2
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ Liq Magnet Below ($0.9): +2
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ VWAP Value (Above $0.9): +3
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ 🚫 MA FLOOR: All EMA(8/21/50) below price = strong uptrend: -3
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-1929.90): +3
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (11% of prev): -2
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ 🚨 Price RISING vs SELL: -8
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 47.0%): +0
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:44 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:44 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:47 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:47 │ INFO     │ SCAN #0360 │ [AAVEUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   Price: $97.38  │  POC: $96.33 (1.087%)  │  Liq Zone: $96.33
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   Regime: RANGING (ADX: 14.12)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 0/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   ★ OI: 649778.80 (→FLAT)  │  FR: -0.0019%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   ★ BTC Corr: +0.5258 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0599): +1
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ ★★ EMA Triple BUY (FULL): +3
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (3 candles): +1
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-322.10): +3
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.78): +3
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 55.9%): +3
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   │  ✦ ★ VETO: Ranging Overbought (RSI > 60)
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:47 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:47 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:49 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:49 │ INFO     │ SCAN #0360 │ [TAOUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   Price: $248.38  │  POC: $245.05 (1.340%)  │  Liq Zone: $245.05
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   Regime: TRENDING (ADX: 21.26)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 10/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   ★ OI: 304593.99 (→FLAT)  │  FR: -0.0085%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   ★ BTC Corr: +0.3173 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ Liq Magnet Above ($250.4): +2
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.1288): +1
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ ★★ EMA Triple BUY (FULL): +3
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (3 candles): +1
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:29.18): +3
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.47): +3
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Pump on dying vol (11% of prev): -2
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 58.4%): +3
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:49 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:49 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:51 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:51 │ INFO     │ SCAN #0360 │ [TRUMPUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   Price: $2.52  │  POC: $2.46 (2.405%)  │  Liq Zone: $2.46
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   Regime: RANGING (ADX: 15.31)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 8/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   ★ OI: 20938539.74 (→FLAT)  │  FR: -0.0107%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   ★ BTC Corr: +0.4584 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (3 candles): +1
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:2.37): +3
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.2x): +3
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   │  ✦ 💀 LIQ HUNT: Shorts stacked! Price→UP: +3
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 59.0%): +3
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:51 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:51 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:53 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:53 │ INFO     │ SCAN #0360 │ [AVAXUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   Price: $9.22  │  POC: $9.17 (0.573%)  │  Liq Zone: $9.17
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   Regime: RANGING (ADX: 16.94)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 8/87 (need ≥18)
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   ★ OI: 9430102.00 (→FLAT)  │  FR: -0.0015%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   ★ BTC Corr: +0.8328 (⚠ HIGH)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   │  ✦ VWAP Value (Below $9.2): +3
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:884.00): +3
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.75): +3
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 61.0%): +3
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:53 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:53 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:56 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:56 │ INFO     │ SCAN #0360 │ [LINKUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   Price: $9.28  │  POC: $9.26 (0.133%)  │  Liq Zone: $9.26
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   Regime: RANGING (ADX: 14.9)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 4/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   ★ OI: 9171000.03 (→FLAT)  │  FR: 0.0012%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   ★ BTC Corr: +0.7817 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   │  ✦ VWAP Value (Below $9.3): +3
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-791.88): +3
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.1x): +3
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 48.7%): +0
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:56 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:56 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:58 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:50:58 │ INFO     │ SCAN #0360 │ [AXSUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   Price: $1.47  │  POC: $1.44 (2.116%)  │  Liq Zone: $1.44
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   Regime: TRENDING (ADX: 26.21)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 5/87 (need ≥20)
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   ★ OI: 13520731.00 (→FLAT)  │  FR: -0.0227%  │  Price: RISING
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   ★ BTC Corr: +0.0142 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   │  ✦ VWAP Value (Below $1.5): +3
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   │  ✦ ★★ StochRSI BUY (K:1.6): +1
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   │  ✦ 🚫 MA CEILING: All EMA(8/21/50) above price = dead cat bounce trap: -3
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   │  ✦ 💀 LIQ HUNT: Shorts stacked! Price→UP: +3
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Pump on dying vol (31% of prev): -2
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 46.7%): +0
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   └─
+8|trading- | 2026-04-28 05:50:58 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:50:58 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:00 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:00 │ INFO     │ SCAN #0360 │ [CRCLUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   Price: $94.98  │  POC: $95.9 (0.958%)  │  Liq Zone: $95.9
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   Regime: TRENDING (ADX: 25.42)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 8/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   ★ OI: 137303.51 (→FLAT)  │  FR: 0.0017%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   ★ BTC Corr: +0.4733 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   │  ✦ Liq Magnet Above ($95.9): +2
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-111.87): +3
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.97): +3
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 55.6%): +3
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:00 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:00 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:02 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:02 │ INFO     │ SCAN #0360 │ [NEARUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   Price: $1.36  │  POC: $1.35 (0.669%)  │  Liq Zone: $1.35
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   Regime: RANGING (ADX: 16.68)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 11/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   ★ OI: 47100794.00 (→FLAT)  │  FR: 0.0100%  │  Price: FLAT
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   ★ BTC Corr: +0.3636 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   │  ✦ Liq Magnet Below ($1.4): +2
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   │  ✦ Liq Magnet Below ($1.4): +2
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   │  ✦ VWAP Value (Above $1.4): +3
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   │  ✦ 🚫 MA FLOOR: All EMA(8/21/50) below price = strong uptrend: -3
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:2963.00): +3
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 48.8%): +0
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:02 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:02 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:04 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:04 │ INFO     │ SCAN #0360 │ [FILUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   Price: $0.93  │  POC: $0.9 (2.353%)  │  Liq Zone: $0.9
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   Regime: TRENDING (ADX: 35.31)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 9/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   ★ OI: 39238985.70 (→FLAT)  │  FR: 0.0100%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   ★ BTC Corr: +0.4722 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   │  ✦ ★★ EMA Triple BUY (FULL): +3
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (3 candles): +1
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:2814.20): +3
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:2.28): +3
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.3x): +3
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 54.0%): +0
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:04 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike
+8|trading- | 2026-04-28 05:51:04 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:06 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:06 │ INFO     │ SCAN #0360 │ [LTCUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   Price: $55.41  │  POC: $55.06 (0.628%)  │  Liq Zone: $55.06
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   Regime: RANGING (ADX: 12.95)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 7/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   ★ OI: 1248787.51 (→FLAT)  │  FR: -0.0057%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   ★ BTC Corr: +0.5604 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0073): +1
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   │  ✦ ★★ EMA Triple BUY (PARTIAL): +1
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:2.69): +3
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.2x): +3
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 56.8%): +3
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:06 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:06 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:09 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:09 │ INFO     │ SCAN #0360 │ [DOTUSDT] │ ⚡ CLOSE
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   Price: $1.24  │  POC: $1.22 (1.276%)  │  Liq Zone: $1.22
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   Regime: TRENDING (ADX: 20.36)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   Score: [████░░░░░░░░░░░░░░░░] 20/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   ★ OI: 34842237.60 (→FLAT)  │  FR: -0.0123%  │  Price: FLAT
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   ★ BTC Corr: +0.3279 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ Liq Magnet Below ($1.2): +2
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ Liq Magnet Below ($1.2): +2
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ VWAP Value (Above $1.2): +3
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ 🚫 MA FLOOR: All EMA(8/21/50) below price = strong uptrend: -3
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-2665.20): +3
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ ★★ Taker SELL Press (R:0.68): +3
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:1.1x): +3
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ 📊 Vol Delta BEARISH (Buy%: 40.0%): +3
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   │  ✦ 🚫 EXHAUSTION VETO: Selling into a massive lower rejection wick (Bottom Trap)!
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:09 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:09 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:11 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:11 │ INFO     │ SCAN #0360 │ [INTCUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   Price: $84.55  │  POC: $84.34 (0.241%)  │  Liq Zone: $84.34
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   Regime: RANGING (ADX: 17.66)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 7/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   ★ OI: 67685.39 (→FLAT)  │  FR: 0.0000%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   ★ BTC Corr: +0.1000 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   │  ✦ DOM Buy Wall (2.3x): +2
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:0.05): +3
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:2.18): +3
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:2.3x): +3
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   │  ✦ 🚨 Price DROPPING vs BUY: -8
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 49.6%): +0
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:11 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:11 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:13 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:13 │ INFO     │ SCAN #0360 │ [PAXGUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   Price: $4656.77  │  POC: $4660.21 (0.074%)  │  Liq Zone: $4660.21
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   Regime: TRENDING (ADX: 38.78)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 9/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   ★ OI: 25706.30 (→FLAT)  │  FR: -0.0027%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   ★ BTC Corr: +0.2712 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   │  ✦ ★★ StochRSI SELL (K:74.2): +1
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   │  ✦ ★★ EMA Triple SELL (FULL): +3
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-1.54): +3
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:0.8x): +3
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (12% of prev): -2
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   │  ✦ 📊 Vol Delta OPPOSES SELL (Buy%: 58.7%): -3
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:13 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:13 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:15 │ INFO     │ 🤖  ML V2 Info │ Win Prob: 57.9% │ Memory: 2000 trades
+8|trading- | 2026-04-28 05:51:15 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:15 │ INFO     │ SCAN #0360 │ [0GUSDT] │ 🚀 SELL
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   Price: $0.55  │  POC: $0.55 (0.241%)  │  Liq Zone: $0.55
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   Regime: TRENDING (ADX: 25.4)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   Score: [████░░░░░░░░░░░░░░░░] 18/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   ★ OI: 17342153.00 (→FLAT)  │  FR: -0.0530%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 57.9%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   ★ BTC Corr: -0.0644 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ Liq Magnet Below ($0.5): +2
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ Liq Magnet Below ($0.5): +2
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ ★★ EMA Triple SELL (FULL): +3
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-2277.00): +3
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ ★★ Taker SELL Press (R:0.75): +3
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (5% of prev): -2
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   │  ✦ 📊 Vol Delta BEARISH (Buy%: 40.2%): +3
+8|trading- | 2026-04-28 05:51:15 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:15 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:15 │ INFO     │ 🚫  [0GUSDT] FUNDING GATE — FR -0.0530% < -0.01% │ Too expensive to hold SHORT. Skipping SELL.
+8|trading- | 2026-04-28 05:51:17 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:17 │ INFO     │ SCAN #0360 │ [BCHUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   Price: $447.72  │  POC: $448.24 (0.118%)  │  Liq Zone: $448.24
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   Regime: TRENDING (ADX: 18.41)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 8/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   ★ OI: 392624.56 (→FLAT)  │  FR: 0.0051%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   ★ BTC Corr: +0.5418 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ Liq Magnet Above ($448.2): +2
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ Liq Magnet Above ($449.3): +2
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ VWAP Value (Below $448.3): +3
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0949): +1
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-8.41): +3
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.74): +3
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ ★★ Whale BUY Wall (IMB:1.2x): +3
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ 🪤 BULL TRAP DETECTED: -5
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 52.0%): +0
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:17 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:17 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:19 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:19 │ INFO     │ SCAN #0360 │ [ENSOUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   Price: $0.92  │  POC: $0.93 (0.190%)  │  Liq Zone: $0.93
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   Regime: RANGING (ADX: 8.26)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   Score: [███░░░░░░░░░░░░░░░░░] 15/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   ★ OI: 8494437.50 (→FLAT)  │  FR: -0.1847%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   ★ BTC Corr: +0.0330 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   │  ✦ Liq Magnet Above ($0.9): +2
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   │  ✦ VWAP Value (Below $0.9): +3
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   │  ✦ ★★ EMA Triple BUY (FULL): +3
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   │  ✦ 💀 LIQ HUNT: Shorts stacked! Price→UP: +3
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Pump on dying vol (30% of prev): -2
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   │  ✦ 🎯 SNIPER ZONE: Pullback to EMA21 + rejection → BUY: +3
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 49.7%): +0
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:19 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:19 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:22 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:22 │ INFO     │ SCAN #0360 │ [LABUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   Price: $0.7  │  POC: $0.64 (7.962%)  │  Liq Zone: $0.64
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   Regime: TRENDING (ADX: 27.68)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 1/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   ★ OI: 18992686.00 (→FLAT)  │  FR: 0.0115%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   ★ BTC Corr: -0.1689 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   │  ✦ VWAP Value (Below $0.7): +3
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   │  ✦ 🚫 MA CEILING: All EMA(8/21/50) above price = dead cat bounce trap: -3
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Pump on dying vol (11% of prev): -2
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 49.1%): +0
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:22 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:22 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:24 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:24 │ INFO     │ SCAN #0360 │ [XMRUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   Price: $376.65  │  POC: $382.71 (1.608%)  │  Liq Zone: $382.71
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   Regime: TRENDING (ADX: 27.44)  │  H1 Trend: BULLISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 13/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   ★ OI: 72804.15 (→FLAT)  │  FR: 0.0219%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   ★ BTC Corr: +0.1751 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   │  ✦ H1 Trend Align (BULL > EMA): +3
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   │  ✦ VWAP Value (Below $378.3): +3
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.1437): +1
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:3.52): +3
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 56.8%): +3
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:24 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:24 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:26 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:26 │ INFO     │ SCAN #0360 │ [MSTRUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   Price: $168.95  │  POC: $170.03 (0.634%)  │  Liq Zone: $170.03
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   Regime: TRENDING (ADX: 19.96)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 8/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   ★ OI: 49736.52 (→FLAT)  │  FR: 0.0000%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   ★ BTC Corr: +0.7461 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ Liq Magnet Above ($170.0): +2
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ Liq Magnet Above ($171.0): +2
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ VWAP Value (Below $169.3): +3
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.1073): +1
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (3 candles): +1
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.97): +3
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 51.5%): +0
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:26 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:26 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:28 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:28 │ INFO     │ SCAN #0360 │ [ORDIUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   Price: $4.35  │  POC: $4.25 (2.457%)  │  Liq Zone: $4.25
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   Regime: TRENDING (ADX: 22.52)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 3/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   ★ OI: 3089478.90 (→FLAT)  │  FR: 0.0050%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   ★ BTC Corr: +0.6211 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   │  ✦ Supertrend BULL (↑): +1
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (3 candles): +1
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.29): +3
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 58.7%): +3
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:28 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:28 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:30 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:30 │ INFO     │ SCAN #0360 │ [UNIUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   Price: $3.23  │  POC: $3.22 (0.112%)  │  Liq Zone: $3.22
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   Regime: TRENDING (ADX: 20.63)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 12/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   ★ OI: 17684639.00 (→FLAT)  │  FR: -0.0012%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   ★ BTC Corr: +0.6363 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   │  ✦ VWAP Value (Below $3.2): +3
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0010): +1
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:9993.00): +3
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:2.60): +3
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   │  ✦ 🎯 SNIPER ZONE: Pullback to EMA21 + rejection → BUY: +3
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 60.0%): +3
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:30 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:30 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:32 │ INFO     │ 🧊  [INJUSDT] LOSS COOLDOWN: 92min left before re-entry allowed.
+8|trading- | 2026-04-28 05:51:33 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:33 │ INFO     │ SCAN #0360 │ [TSLAUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   Price: $377.2  │  POC: $369.64 (2.004%)  │  Liq Zone: $369.64
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   Regime: TRENDING (ADX: 26.23)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   Score: [░░░░░░░░░░░░░░░░░░░░] 1/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   ★ OI: 36646.41 (→FLAT)  │  FR: 0.0112%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   ★ BTC Corr: +0.1606 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   │  ✦ VWAP Value (Above $376.5): +3
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   │  ✦ 🚫 MA FLOOR: All EMA(8/21/50) below price = strong uptrend: -3
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (4% of prev): -2
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 47.6%): +0
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:33 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:33 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:35 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:35 │ INFO     │ SCAN #0360 │ [ASTERUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   Price: $0.64  │  POC: $0.65 (0.732%)  │  Liq Zone: $0.65
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   Regime: TRENDING (ADX: 25.45)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 10/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   ★ OI: 117406883.00 (→FLAT)  │  FR: 0.0031%  │  Price: FLAT
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   ★ BTC Corr: +0.5107 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ Liq Magnet Above ($0.6): +2
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ Liq Magnet Above ($0.6): +2
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ VWAP Value (Below $0.6): +3
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.0001): +1
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:-15808.00): +3
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.21): +3
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 45.8%): +0
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:35 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:35 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:37 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:37 │ INFO     │ SCAN #0360 │ [VIRTUALUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   Price: $0.69  │  POC: $0.69 (0.789%)  │  Liq Zone: $0.69
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   Regime: TRENDING (ADX: 19.35)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 7/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   ★ OI: 23022486.80 (→FLAT)  │  FR: 0.0006%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   ★ BTC Corr: +0.7052 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   │  ✦ VWAP Value (Below $0.7): +3
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:5780.40): +3
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.86): +3
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 62.4%): +3
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:37 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:37 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:39 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:39 │ INFO     │ SCAN #0360 │ [MUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   Price: $3.65  │  POC: $3.96 (8.382%)  │  Liq Zone: $3.96
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   Regime: RANGING (ADX: 16.58)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 9/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   ★ OI: 8876739.00 (→FLAT)  │  FR: 0.0050%  │  Price: DROPPING
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   ★ BTC Corr: -0.0587 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   │  ✦ ★★ MACD Cross SELL (H:-0.0012): +1
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   │  ✦ ★★ EMA Triple SELL (FULL): +3
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-490.00): +3
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (23% of prev): -2
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 49.4%): +0
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:39 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:39 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:52 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:52 │ INFO     │ SCAN #0361 │ [BTCUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   Price: $76873.05  │  POC: $76711.44 (0.210%)  │  Liq Zone: $76711.44
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   Regime: TRENDING (ADX: 20.9)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 8/87 (need ≥18)
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   ★ OI: 98070.87 (→FLAT)  │  FR: -0.0040%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   ★ BTC Corr: +1.0000 (⚠ HIGH)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ Liq Magnet Below ($76711.4): +2
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ Liq Sweep SELL: +9
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:1.1x): +3
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ 🩸 EXHAUSTION: Dump on dying vol (34% of prev): -2
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ 🎯 SNIPER ZONE: Pullback to VWAP + rejection → SELL: +3
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ 🚨 Price RISING vs SELL: -8
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   │  ✦ 📊 Vol Delta OPPOSES SELL (Buy%: 56.9%): -3
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:52 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:52 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:54 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:54 │ INFO     │ SCAN #0361 │ [ETHUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   Price: $2288.69  │  POC: $2272.31 (0.716%)  │  Liq Zone: $2272.31
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   Regime: TRENDING (ADX: 18.77)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   Score: [██░░░░░░░░░░░░░░░░░░] 12/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   ★ OI: 2028939.39 (→FLAT)  │  FR: -0.0161%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   ★ BTC Corr: +0.8515 (⚠ HIGH)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   │  ✦ VWAP Value (Below $2290.8): +3
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   │  ✦ ★★ MACD Cross BUY (H:0.5962): +1
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   │  ✦ ★★ Heikin-Ashi BUY (2 candles): +1
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   │  ✦ ★★ CVD Rising (Δ:320.29): +3
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   │  ✦ ★★ Taker BUY Press (R:1.91): +3
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   │  ✦ 💀 LIQ HUNT: Shorts stacked! Price→UP: +3
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   │  ✦ 📊 Vol Delta BULLISH (Buy%: 64.6%): +3
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   │  ✦ ★ Counter-Trend Penalty (H1 BEAR): -5
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:54 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:54 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:56 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+8|trading- | 2026-04-28 05:51:56 │ INFO     │ SCAN #0361 │ [SOLUSDT] │ ⏳ WAIT
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   Price: $84.05  │  POC: $84.21 (0.199%)  │  Liq Zone: $84.21
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   Regime: TRENDING (ADX: 18.19)  │  H1 Trend: BEARISH  │  Fib GP: ❌
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   Score: [█░░░░░░░░░░░░░░░░░░░] 5/87 (need ≥20)
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   ★ OI: 9466817.71 (→FLAT)  │  FR: -0.0114%  │  Price: RISING
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   ★ ML: ACTIVE  │  Win Prob: 100.0%  │  Buffer: 2000 trades (WR: 57.7%)
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   ★ BTC Corr: +0.7314 (✅ OK)  │  Risk: Dynamic 10% Margin  │  SL: 3.0×ATR
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   ┌─ SCORE BREAKDOWN:
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   │  ✦ H1 Trend Align (BEAR < EMA): +3
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   │  ✦ Liq Magnet Below ($83.9): +2
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   │  ✦ Supertrend BEAR (↓): +1
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   │  ✦ ★★ EMA Triple SELL (PARTIAL): +1
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   │  ✦ ★★ CVD Falling (Δ:-2801.72): +3
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   │  ✦ ★★ Whale SELL Wall (IMB:0.9x): +3
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   │  ✦ 🚨 Price RISING vs SELL: -8
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   │  ✦ 📊 Vol Delta NEUTRAL (Buy%: 49.9%): +0
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   └─
+8|trading- | 2026-04-28 05:51:56 │ INFO     │   ⏳ Waiting for: Fib GP, Volume spike, RSI divergence
+8|trading- | 2026-04-28 05:51:56 │ INFO     │ ──────────────────────────────────────────────────────────────────────
+
